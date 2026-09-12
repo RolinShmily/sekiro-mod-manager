@@ -1,0 +1,25 @@
+[package]
+name = "smm-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Core library for Sekiro Mod Manager (SMM): normalization, conflict detection, and deployment planning."
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tempfile = "3"
+thiserror = "2.0"
+walkdir = "2.5"
+zip = "8.6.0"
+sevenz-rust = { version = "0.6", features = ["compress"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Storage_FileSystem",
+    "Win32_Foundation",
+    "Win32_Security",
+] }
+
+[dev-dependencies]

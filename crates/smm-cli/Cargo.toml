@@ -1,0 +1,17 @@
+[package]
+name = "smm-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "High-performance CLI for Sekiro Mod Manager (SMM)"
+
+[[bin]]
+name = "smm"
+path = "src/main.rs"
+
+[dependencies]
+smm-core = { path = "../smm-core" }
+clap = { version = "4", features = ["derive"] }
+colored = "3"
+comfy-table = "7"

@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/smm-core",
+    "crates/smm-cli",
+    "apps/smm-desktop/src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Sekiro Mod Manager Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/example/sekiro-mod-manager"

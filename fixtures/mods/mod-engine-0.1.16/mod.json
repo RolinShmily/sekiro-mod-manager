@@ -1,0 +1,13 @@
+{
+  "id": "mod-engine-0.1.16",
+  "name": "Sekiro Mod Engine",
+  "version": "0.1.16",
+  "author": "katalash",
+  "category": "loader",
+  "description": "Base loader and DLL wrapper (dinput8.dll) enabling loose file loading and asset redirection for Sekiro.",
+  "homepage": "https://github.com/katalash/ModEngine",
+  "license": "GPL-3.0-or-later",
+  "enabled": true,
+  "priority": 1,
+  "tags": ["loader", "dinput8", "system", "hook"]
+}

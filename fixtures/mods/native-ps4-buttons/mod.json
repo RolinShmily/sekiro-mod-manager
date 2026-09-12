@@ -1,0 +1,13 @@
+{
+  "id": "native-ps4-buttons",
+  "name": "Native PS4 Button Prompts",
+  "version": "1.0.0",
+  "author": "katalash",
+  "category": "ui",
+  "description": "Replaces default Xbox controller button prompts with native PlayStation DualShock 4 prompts.",
+  "homepage": "https://www.nexusmods.com/sekiro/mods/7",
+  "license": "Custom-Permissive",
+  "enabled": true,
+  "priority": 20,
+  "tags": ["ui", "hud", "ps4", "controller", "scaleform"]
+}

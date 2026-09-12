@@ -1,0 +1,13 @@
+{
+  "id": "unnormalized-nested-sample",
+  "name": "Unnormalized Nested Sample Mod",
+  "version": "0.9.0",
+  "author": "CommunityPacker",
+  "category": "test_sample",
+  "description": "A synthetic test fixture simulating non-standard nested zip structures (SomeMod_v1.0/Sekiro_Patch/mods/parts/...).",
+  "homepage": "https://github.com/example/unnormalized-sample",
+  "license": "MIT",
+  "enabled": true,
+  "priority": 40,
+  "tags": ["test", "unnormalized", "heuristic", "parts"]
+}

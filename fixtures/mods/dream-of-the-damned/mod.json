@@ -1,0 +1,13 @@
+{
+  "id": "dream-of-the-damned",
+  "name": "Sekiro: Dream of the Damned",
+  "version": "1.4.2",
+  "author": "Nuffly",
+  "category": "gameplay_overhaul",
+  "description": "Comprehensive gameplay overhaul revising combat mechanics, enemy AI, parameters, and events.",
+  "homepage": "https://github.com/nuffly/DotD",
+  "license": "Apache-2.0",
+  "enabled": true,
+  "priority": 10,
+  "tags": ["overhaul", "gameplay", "param", "boss", "events"]
+}
