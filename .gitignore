@@ -1,0 +1,67 @@
+# Rust build artifacts
+target/
+**/target/
+**/*.rs.bk
+*.pdb
+
+# Node & Package Managers
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Frontend & Vite build output
+dist/
+**/dist/
+dist-ssr/
+*.local
+
+# Tauri v2 build artifacts
+*.wixpdb
+*.msi
+
+# SMM Runtime state & test outputs
+.smm_settings.json
+**/.smm_settings.json
+.smm_manifest.json
+**/.smm_manifest.json
+*.tmp
+**/*.tmp
+test_game_mods/
+**/test_game_mods/
+staging/
+**/staging/
+mods_staging/
+**/mods_staging/
+exports/
+**/exports/
+.smm_source/
+**/.smm_source/
+dist-installer/*.exe
+
+# Screenshots & Visual Test Captures
+target/*.png
+*.png.tmp
+
+# Agent harness & session storage
+.memory/
+.pi/
+
+# IDE & Editor configuration
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS metadata
+.DS_Store
+Thumbs.db
+ehthumbs.db
