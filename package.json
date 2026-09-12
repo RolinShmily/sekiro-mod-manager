@@ -1,0 +1,14 @@
+{
+  "name": "sekiro-mods-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter smm-desktop dev",
+    "desktop:run": "target\\release\\smm-desktop.exe",
+    "desktop:dev": "pnpm --filter smm-desktop tauri dev",
+    "desktop:build": "pnpm --filter smm-desktop build && cargo build -p smm-desktop --release",
+    "build:cli": "cargo build -p smm-cli --release",
+    "package:installer": "powershell -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
+    "package": "pnpm run package:installer",
+    "test": "cargo test --workspace"
+  }
+}
