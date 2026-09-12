@@ -64,22 +64,21 @@ sekiro-mods/
 │       ├── src/                       # React 高品质组件库 (HeaderBar, ModList, ModDetails 等)
 │       └── src-tauri/                 # Tauri v2 原生绑定与 IPC 桥接
 ├── fixtures/                          # 用于算法测试的开源 Mod 基准套件
-├── dist-installer/                    # Windows 安装程序打包输出目录 (setup.exe)
+├── dist-installer/                    # 发布产物输出目录 (Sekiro-Mod-Manager.exe, Sekiro-Mod-Manager-Setup.exe, smm-cli.exe)
 └── scripts/
     └── build-installer.ps1            # 自动化一键打包流水线脚本
 ```
 
 ---
 
-## 安装与打包流水线
+## 安装与发布产物
 
-### 1. 下载预编译 Windows 安装包
-从 [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases) 下载最新发布的 `setup.exe`。
-安装程序将自动配置：
-- **Sekiro Mod Manager 桌面主程序** (`smm-desktop.exe`)，内置经典只狼印玺图标；
-- **SMM CLI 命令行工具** (`smm.exe`)，随程序目录释放，供终端与 AI-Agent 随时调用。
+可直接从 [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases) 下载：
+- **`Sekiro-Mod-Manager.exe`**：免安装绿色独立程序（双击直接启动 GUI，无需安装向导）；
+- **`Sekiro-Mod-Manager-Setup.exe`**：Windows 标准安装包（提供安装向导并创建桌面及开始菜单图标）；
+- **`smm-cli.exe`**：独立命令行终端工具（供 AI-Agent 自动化与脚本直接调用）。
 
-### 2. 从源码编译构建
+### 从源码编译构建
 确保本地已安装环境：
 - [Rust](https://www.rust-lang.org/) (1.80+)
 - [Node.js](https://nodejs.org/) (v20+) 与 [pnpm](https://pnpm.io/) (v9+)
@@ -98,11 +97,11 @@ cargo test --workspace
 # 启动桌面 GUI 开发热重载模式
 pnpm run desktop:dev
 
-# 一键执行全自动打包流水线生成 setup.exe
+# 一键执行全自动打包流水线
 pnpm run package
 ```
 
-打包完成后，最终安装器生成在 `dist-installer/setup.exe`，并附带 SHA-256 校验文件 `dist-installer/SHA256SUMS.txt`。
+打包完成后，最终产物统一生成在 `dist-installer/` 目录，并附带 SHA-256 校验文件 `dist-installer/SHA256SUMS.txt`。
 
 ---
 

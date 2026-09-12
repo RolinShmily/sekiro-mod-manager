@@ -61,22 +61,21 @@ sekiro-mods/
 │       ├── src/                       # React components (HeaderBar, ModList, ModDetails, etc.)
 │       └── src-tauri/                 # Tauri v2 native bindings & IPC handlers
 ├── fixtures/                          # Benchmark mod fixtures for integration tests
-├── dist-installer/                    # Windows installer output directory (setup.exe)
+├── dist-installer/                    # Release artifacts (Sekiro-Mod-Manager.exe, Sekiro-Mod-Manager-Setup.exe, smm-cli.exe)
 └── scripts/
     └── build-installer.ps1            # Automated one-click packaging pipeline
 ```
 
 ---
 
-## Installation & Packaging Pipeline
+## Installation & Releases
 
-### 1. Pre-built Windows Installer
-Download the latest `setup.exe` from [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases).
-The installer automatically sets up:
-- **Sekiro Mod Manager Desktop** (`smm-desktop.exe`) with the authentic Sekiro icon.
-- **SMM CLI** (`smm.exe`) in the application directory for terminal and AI-agent automation.
+Download the latest releases from [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases):
+- **`Sekiro-Mod-Manager.exe`**: Portable standalone desktop app (run directly without installation wizard).
+- **`Sekiro-Mod-Manager-Setup.exe`**: Windows setup installer (creates Start Menu & desktop shortcuts).
+- **`smm-cli.exe`**: Standalone command-line interface for terminal and AI-agent automation.
 
-### 2. Build from Source
+### Build from Source
 Ensure prerequisites are installed:
 - [Rust](https://www.rust-lang.org/) (1.80+)
 - [Node.js](https://nodejs.org/) (v20+) & [pnpm](https://pnpm.io/) (v9+)
@@ -95,11 +94,11 @@ cargo test --workspace
 # Run desktop GUI in development mode
 pnpm run desktop:dev
 
-# Build the one-click Windows installer (setup.exe)
+# Build the release artifacts
 pnpm run package
 ```
 
-The resulting installer will be generated at `dist-installer/setup.exe` along with `dist-installer/SHA256SUMS.txt`.
+The resulting artifacts will be generated in `dist-installer/` along with `dist-installer/SHA256SUMS.txt`.
 
 ---
 

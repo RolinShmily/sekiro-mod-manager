@@ -72,44 +72,66 @@ if (-not $sourceInstaller) {
     throw "NSIS installer output not found under $nsisDir"
 }
 
-$setupExe = Join-Path $distDir "setup.exe"
-$versionedExe = Join-Path $distDir "Sekiro-Mod-Manager-Setup-v$version.exe"
-$distCliExe = Join-Path $distDir "smm.exe"
-
-Copy-Item -Path $sourceInstaller.FullName -Destination $setupExe -Force
-Copy-Item -Path $sourceInstaller.FullName -Destination $versionedExe -Force
-if (Test-Path $cliExe) {
-    Copy-Item -Path $cliExe -Destination $distCliExe -Force
+# 1) Standalone Portable GUI: Sekiro-Mod-Manager.exe (no setup wizard required)
+$desktopExe = Join-Path $RootDir "target\release\smm-desktop.exe"
+$distStandaloneExe = Join-Path $distDir "Sekiro-Mod-Manager.exe"
+if (Test-Path $desktopExe) {
+    Copy-Item -Path $desktopExe -Destination $distStandaloneExe -Force
+    $desktopSize = (Get-Item $distStandaloneExe).Length
+    Write-Host "      Archived Standalone GUI: $distStandaloneExe ($([math]::Round($desktopSize/1MB, 2)) MB)" -ForegroundColor Green
 }
 
-$installerSize = (Get-Item $setupExe).Length
-Write-Host "      Archived: $setupExe ($([math]::Round($installerSize/1MB, 2)) MB)" -ForegroundColor Green
-Write-Host "      Archived: $versionedExe" -ForegroundColor Green
-if (Test-Path $distCliExe) {
-    Write-Host "      Archived: $distCliExe (CLI)" -ForegroundColor Green
+# 2) Single Windows Installer: Sekiro-Mod-Manager-Setup.exe
+$distSetupExe = Join-Path $distDir "Sekiro-Mod-Manager-Setup.exe"
+Copy-Item -Path $sourceInstaller.FullName -Destination $distSetupExe -Force
+$installerSize = (Get-Item $distSetupExe).Length
+Write-Host "      Archived Installer: $distSetupExe ($([math]::Round($installerSize/1MB, 2)) MB)" -ForegroundColor Green
+
+# 3) Standalone CLI: smm-cli.exe
+$cliCandidate = Join-Path $RootDir "target\release\smm-cli.exe"
+if (-not (Test-Path $cliCandidate)) {
+    $cliCandidate = Join-Path $RootDir "target\release\smm.exe"
 }
+$distCliExe = Join-Path $distDir "smm-cli.exe"
+if (Test-Path $cliCandidate) {
+    Copy-Item -Path $cliCandidate -Destination $distCliExe -Force
+    Write-Host "      Archived CLI: $distCliExe" -ForegroundColor Green
+}
+
+# Clean up legacy redundant files if present
+$legacySetup = Join-Path $distDir "setup.exe"
+if (Test-Path $legacySetup) { Remove-Item -Path $legacySetup -Force }
+$legacySmm = Join-Path $distDir "smm.exe"
+if (Test-Path $legacySmm) { Remove-Item -Path $legacySmm -Force }
+Get-ChildItem -Path $distDir -Filter "Sekiro-Mod-Manager-Setup-v*.exe" | ForEach-Object { Remove-Item $_.FullName -Force }
 
 # 5. Compute SHA256 checksums
 Write-Host "`n[5/5] Generating SHA256SUMS.txt checksums..." -ForegroundColor Yellow
 $checksumFile = Join-Path $distDir "SHA256SUMS.txt"
 
-$hashSetup = (Get-FileHash -Path $setupExe -Algorithm SHA256).Hash.ToLower()
-$hashVersioned = (Get-FileHash -Path $versionedExe -Algorithm SHA256).Hash.ToLower()
-
-$checksumLines = @(
-    "$hashSetup  setup.exe",
-    "$hashVersioned  Sekiro-Mod-Manager-Setup-v$version.exe"
-)
-
-# Optional accompanying binaries for verification
-$desktopExe = Join-Path $RootDir "target\release\smm-desktop.exe"
-if (Test-Path $desktopExe) {
-    $hashDesktop = (Get-FileHash -Path $desktopExe -Algorithm SHA256).Hash.ToLower()
-    $checksumLines += "$hashDesktop  smm-desktop.exe"
+function Get-Sha256Hex($filePath) {
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [System.IO.File]::OpenRead($filePath)
+    try {
+        $bytes = $sha256.ComputeHash($stream)
+        return (-join ($bytes | ForEach-Object { "{0:x2}" -f $_ }))
+    } finally {
+        $stream.Close()
+    }
 }
-if (Test-Path $cliExe) {
-    $hashCli = (Get-FileHash -Path $cliExe -Algorithm SHA256).Hash.ToLower()
-    $checksumLines += "$hashCli  smm.exe"
+
+$checksumLines = @()
+if (Test-Path $distStandaloneExe) {
+    $hashStandalone = Get-Sha256Hex $distStandaloneExe
+    $checksumLines += "$hashStandalone  Sekiro-Mod-Manager.exe"
+}
+if (Test-Path $distSetupExe) {
+    $hashSetup = Get-Sha256Hex $distSetupExe
+    $checksumLines += "$hashSetup  Sekiro-Mod-Manager-Setup.exe"
+}
+if (Test-Path $distCliExe) {
+    $hashCli = Get-Sha256Hex $distCliExe
+    $checksumLines += "$hashCli  smm-cli.exe"
 }
 
 [System.IO.File]::WriteAllLines($checksumFile, $checksumLines)
