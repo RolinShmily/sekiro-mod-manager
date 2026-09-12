@@ -3735,6 +3735,7 @@ dependencies = [
  "colored",
  "comfy-table",
  "smm-core",
+ "tempfile",
 ]
 
 [[package]]

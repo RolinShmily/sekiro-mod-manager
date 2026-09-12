@@ -1317,7 +1317,15 @@ mod tests {
 
     #[test]
     fn test_resolve_staging_dir_fallback() {
-        let resolved = resolve_staging_dir(None);
-        assert!(resolved.is_ok(), "Expected smart fallback to find staging");
+        let temp = tempfile::tempdir().unwrap();
+        let custom_staging = temp.path().join("my_staging");
+        std::fs::create_dir_all(&custom_staging).unwrap();
+
+        let resolved = resolve_staging_dir(Some(&custom_staging));
+        assert!(resolved.is_ok(), "Expected resolving explicit staging dir to succeed");
+        assert_eq!(resolved.unwrap(), custom_staging);
+
+        let created = resolve_or_create_staging_dir(Some(&custom_staging));
+        assert!(created.is_ok(), "Expected resolve_or_create_staging_dir to succeed");
     }
 }
