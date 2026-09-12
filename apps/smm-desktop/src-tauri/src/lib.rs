@@ -20,10 +20,13 @@ pub fn run() {
             commands::restore_mods,
             commands::diagnose_env,
             commands::setup_mod_engine,
+            commands::provision_engine_mod,
             commands::update_mod_info,
             commands::export_single_mod,
             commands::export_modpack,
             commands::import_modpack,
+            commands::pick_folder,
+            commands::pick_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

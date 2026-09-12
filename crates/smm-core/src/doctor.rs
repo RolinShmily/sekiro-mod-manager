@@ -4,7 +4,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{Result, SmmError};
+use crate::error::Result;
+use crate::types::ModInfo;
 use crate::executor::is_same_volume;
 
 /// Diagnostic status for an individual health check.
@@ -565,12 +566,11 @@ fn find_source_dinput8(source_or_staging: Option<&Path>) -> Option<PathBuf> {
 
     if let Some(src) = source_or_staging {
         candidates.push(src.join("dinput8.dll"));
+        candidates.push(src.join("mod-engine").join("dinput8.dll"));
         candidates.push(src.join("mod-engine-0.1.16").join("dinput8.dll"));
     }
 
-    candidates.push(PathBuf::from("fixtures/mods/mod-engine-0.1.16/dinput8.dll"));
-    candidates.push(PathBuf::from("../fixtures/mods/mod-engine-0.1.16/dinput8.dll"));
-    candidates.push(PathBuf::from("../../fixtures/mods/mod-engine-0.1.16/dinput8.dll"));
+    candidates.push(PathBuf::from("staging/mod-engine/dinput8.dll"));
     candidates.push(PathBuf::from("staging/mod-engine-0.1.16/dinput8.dll"));
     candidates.push(PathBuf::from("dinput8.dll"));
 
@@ -604,11 +604,8 @@ pub fn install_mod_engine(
     if let Some(src_dll) = find_source_dinput8(source_files_or_staging) {
         fs::copy(&src_dll, &target_dll)?;
     } else if !target_dll.exists() {
-        return Err(SmmError::EnvironmentError(
-            "Could not locate source 'dinput8.dll' to install. \
-             Please provide a path to ModEngine files via '--staging <path>' or place dinput8.dll in fixtures/mods/mod-engine-0.1.16/."
-                .to_string(),
-        ));
+        let embedded_dll = include_bytes!("../assets/dinput8.dll");
+        fs::write(&target_dll, embedded_dll)?;
     }
 
     // 2. Deploy or patch modengine.ini
@@ -625,6 +622,58 @@ pub fn install_mod_engine(
     fs::create_dir_all(&target_mods_dir)?;
 
     Ok(())
+}
+
+/// Provisions or installs Sekiro Mod Engine into the staging directory as a managed Mod.
+/// Creates `staging/mod-engine/` with `dinput8.dll`, `modengine.ini`, and standard `mod.json`.
+pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
+    fs::create_dir_all(staging_dir)?;
+    let engine_dir = staging_dir.join("mod-engine");
+    fs::create_dir_all(&engine_dir)?;
+
+    let dll_path = engine_dir.join("dinput8.dll");
+    let ini_path = engine_dir.join("modengine.ini");
+    let json_path = engine_dir.join("mod.json");
+
+    if !dll_path.exists() {
+        let embedded_dll = include_bytes!("../assets/dinput8.dll");
+        fs::write(&dll_path, embedded_dll)?;
+    }
+
+    if !ini_path.exists() {
+        let default_ini = "; Sekiro Mod Engine configuration file\r\n\
+                           ; https://github.com/katalash/ModEngine\r\n\
+                           \r\n\
+                           [files]\r\n\
+                           enabled=1\r\n\
+                           loadUXMFiles=0\r\n\
+                           cachePaths=1\r\n\
+                           modOverrideDirectory=\"\\mods\"\r\n\
+                           loadLooseParams=1\r\n\
+                           \r\n\
+                           [debug]\r\n\
+                           showDebugConsole=0\r\n\
+                           logFile=\"modengine.log\"\r\n";
+        fs::write(&ini_path, default_ini)?;
+    }
+
+    let mut info = ModInfo::new(
+        "mod-engine",
+        "Sekiro Mod Engine",
+        "0.1.16",
+        "katalash",
+        "loader",
+    );
+    info.description = Some("Core runtime file injection & DirectX input hook for Sekiro: Shadows Die Twice".to_string());
+    info.priority = 0;
+    info.source_url = Some("https://github.com/katalash/ModEngine".to_string());
+    info.homepage = Some("https://github.com/katalash/ModEngine".to_string());
+    info.license = Some("GPL-3.0-or-later".to_string());
+
+    let json_str = serde_json::to_string_pretty(&info)?;
+    fs::write(&json_path, json_str)?;
+
+    Ok(info)
 }
 
 #[cfg(test)]

@@ -10,6 +10,9 @@ import {
   X,
   PackageOpen,
   Boxes,
+  Zap,
+  DownloadCloud,
+  Loader2,
 } from 'lucide-react';
 import type { ModSummary } from '../types';
 import { formatBytes, getCategoryBadgeClass, getCategoryLabel } from '../utils/format';
@@ -19,6 +22,7 @@ interface ModListProps {
   selectedModId: string | null;
   conflictModIds: Set<string>;
   isLoading: boolean;
+  isProvisioningEngine?: boolean;
   onSelect: (modId: string) => void;
   onToggle: (modId: string, enabled: boolean) => void;
   onMoveUp: (modId: string) => void;
@@ -27,6 +31,7 @@ interface ModListProps {
   onOpenImport: () => void;
   onOpenImportModpack?: () => void;
   onOpenExportModpack?: () => void;
+  onProvisionModEngine?: () => void;
 }
 
 export const ModList: React.FC<ModListProps> = ({
@@ -34,6 +39,7 @@ export const ModList: React.FC<ModListProps> = ({
   selectedModId,
   conflictModIds,
   isLoading,
+  isProvisioningEngine = false,
   onSelect,
   onToggle,
   onMoveUp,
@@ -42,6 +48,7 @@ export const ModList: React.FC<ModListProps> = ({
   onOpenImport,
   onOpenImportModpack,
   onOpenExportModpack,
+  onProvisionModEngine,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -71,6 +78,12 @@ export const ModList: React.FC<ModListProps> = ({
     }
     return list;
   }, [mods, selectedCategory, searchQuery]);
+
+  const hasModEngine = useMemo(() => {
+    return mods.some(
+      (m) => m.category === 'loader' || m.id.toLowerCase().includes('engine')
+    );
+  }, [mods]);
 
   return (
     <aside className="w-[420px] h-full flex flex-col border-r border-hairline-soft bg-surface-soft select-none flex-shrink-0">
@@ -127,6 +140,35 @@ export const ModList: React.FC<ModListProps> = ({
         </div>
       </div>
 
+      {/* Mod Engine Quick Provision Banner if missing */}
+      {!hasModEngine && onProvisionModEngine && (
+        <div className="mx-3.5 mt-3 p-3 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between gap-3 shadow-subtle flex-shrink-0">
+          <div className="space-y-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
+              <Zap className="w-3.5 h-3.5 text-attention fill-attention" />
+              <span>缺少核心引擎 (Mod Engine)</span>
+            </div>
+            <p className="text-[11px] text-amber-900/70 truncate">
+              官方前置驱动 (katalash/ModEngine)
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onProvisionModEngine}
+            disabled={isProvisioningEngine}
+            className="px-3 py-1.5 rounded-full bg-ink-button hover:bg-charcoal text-white text-xs font-bold shadow-sm transition active:scale-[0.98] whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+            title="将 Sekiro Mod Engine 装配到模组列表"
+          >
+            {isProvisioningEngine ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <DownloadCloud className="w-3.5 h-3.5" />
+            )}
+            <span>装配引擎</span>
+          </button>
+        </div>
+      )}
+
       {/* Mod Cards List */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5">
         {filteredMods.length === 0 ? (
@@ -140,9 +182,24 @@ export const ModList: React.FC<ModListProps> = ({
               </p>
               <p className="text-xs text-steel leading-relaxed max-w-[240px]">
                 {mods.length === 0
-                  ? '点击下方「导入 Mod」或直接导入 ZIP / 7z 压缩包'
+                  ? '点击下方「导入 Mod」或直接装配 Mod Engine 核心'
                   : '请尝试更换搜索关键字或重置分类筛选'}
               </p>
+              {mods.length === 0 && !hasModEngine && onProvisionModEngine && (
+                <button
+                  type="button"
+                  onClick={onProvisionModEngine}
+                  disabled={isProvisioningEngine}
+                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-ink-button hover:bg-charcoal text-white text-xs font-bold shadow-sm transition"
+                >
+                  {isProvisioningEngine ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <DownloadCloud className="w-3.5 h-3.5" />
+                  )}
+                  <span>装配 Mod Engine</span>
+                </button>
+              )}
             </div>
           </div>
         ) : (

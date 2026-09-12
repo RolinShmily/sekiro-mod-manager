@@ -1,3 +1,0 @@
-Installation Guide:
-Manually copy the contents of Sekiro_Patch/mods/ into your Sekiro/mods directory.
-Do not copy Documentation or Extra_Screenshots.

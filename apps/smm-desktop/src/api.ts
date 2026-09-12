@@ -365,3 +365,55 @@ export async function setupModEngine(
     return invoke<void>('setup_mod_engine', { gameDir, stagingDir });
   }
 }
+
+export async function provisionEngineMod(stagingDir: string): Promise<ModInfo> {
+  if (isTauri()) {
+    return invoke<ModInfo>('provision_engine_mod', { stagingDir });
+  }
+  return {
+    id: 'mod-engine',
+    name: 'Sekiro Mod Engine',
+    version: '0.1.16',
+    author: 'katalash',
+    description: 'DirectX 11 input wrapper and mod loader for Sekiro',
+    category: 'loader',
+    license: 'GPL-3.0-or-later',
+    enabled: true,
+    priority: 0,
+    tags: ['loader', 'core'],
+    source_url: 'https://github.com/katalash/ModEngine',
+    homepage: 'https://github.com/katalash/ModEngine',
+  };
+}
+
+export async function pickFolder(
+  title?: string,
+  defaultPath?: string
+): Promise<string | null> {
+  if (isTauri()) {
+    const res = await invoke<string | null>('pick_folder', {
+      title,
+      defaultPath,
+    });
+    return res;
+  }
+  return null;
+}
+
+export async function pickFile(
+  title?: string,
+  defaultPath?: string,
+  filterName?: string,
+  extensions?: string[]
+): Promise<string | null> {
+  if (isTauri()) {
+    const res = await invoke<string | null>('pick_file', {
+      title,
+      defaultPath,
+      filterName,
+      extensions,
+    });
+    return res;
+  }
+  return null;
+}

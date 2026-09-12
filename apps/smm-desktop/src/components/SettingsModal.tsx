@@ -4,9 +4,11 @@ import {
   Settings,
   HardDrive,
   FolderArchive,
+  FolderOpen,
   Save,
 } from 'lucide-react';
 import { SekiroLogo } from './SekiroLogo';
+import { pickFolder } from '../api';
 import type { AppSettings } from '../types';
 
 interface SettingsModalProps {
@@ -43,8 +45,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setGameDir('C:\\Program Files (x86)\\Steam\\steamapps\\common\\Sekiro');
   }
 
-  function useFixturesPreset() {
-    setStagingDir('fixtures/mods');
+  async function handleBrowseGameDir() {
+    const selected = await pickFolder('选择《只狼》游戏安装主目录 (含 sekiro.exe)', gameDir);
+    if (selected) {
+      setGameDir(selected);
+    }
+  }
+
+  async function handleBrowseStagingDir() {
+    const selected = await pickFolder('选择模组暂存仓库目录 (Staging)', stagingDir);
+    if (selected) {
+      setStagingDir(selected);
+    }
   }
 
   return (
@@ -87,13 +99,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 填充 Steam 默认路径
               </button>
             </div>
-            <input
-              type="text"
-              value={gameDir}
-              onChange={(e) => setGameDir(e.target.value)}
-              placeholder="例如: C:\Program Files (x86)\Steam\steamapps\common\Sekiro"
-              className="w-full px-4 py-2.5 rounded-xl bg-canvas border border-hairline focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs text-ink outline-none font-mono shadow-subtle transition"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={gameDir}
+                onChange={(e) => setGameDir(e.target.value)}
+                placeholder="例如: C:\Program Files (x86)\Steam\steamapps\common\Sekiro"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-canvas border border-hairline focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs text-ink outline-none font-mono shadow-subtle transition"
+              />
+              <button
+                type="button"
+                onClick={handleBrowseGameDir}
+                className="px-4 py-2.5 rounded-xl bg-surface-soft hover:bg-canvas border border-hairline hover:border-primary/50 text-xs font-bold text-charcoal hover:text-ink flex items-center gap-1.5 transition shadow-subtle"
+                title="打开 Windows 资源管理器选择文件夹"
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-steel" />
+                <span>浏览...</span>
+              </button>
+            </div>
             <div className="text-[11px] text-steel font-sans">
               ModEngine 将以此目录下的 <code className="text-ink font-mono bg-surface-soft px-1.5 py-0.5 rounded border border-hairline-soft">mods/</code> 作为目标进行 NTFS 硬链接投影。
             </div>
@@ -106,21 +129,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <FolderArchive className="w-3.5 h-3.5 text-steel" />
                 <span>模组暂存仓库目录 (Staging):</span>
               </label>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={stagingDir}
+                onChange={(e) => setStagingDir(e.target.value)}
+                placeholder="例如: D:\SekiroModsStaging 或 D:\SteamLibrary\steamapps\common\Sekiro\mods_staging"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-canvas border border-hairline focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs text-ink outline-none font-mono shadow-subtle transition"
+              />
               <button
                 type="button"
-                onClick={useFixturesPreset}
-                className="text-[11px] font-semibold text-primary hover:underline"
+                onClick={handleBrowseStagingDir}
+                className="px-4 py-2.5 rounded-xl bg-surface-soft hover:bg-canvas border border-hairline hover:border-primary/50 text-xs font-bold text-charcoal hover:text-ink flex items-center gap-1.5 transition shadow-subtle"
+                title="打开 Windows 资源管理器选择文件夹"
               >
-                填充 fixtures/mods 样本
+                <FolderOpen className="w-3.5 h-3.5 text-steel" />
+                <span>浏览...</span>
               </button>
             </div>
-            <input
-              type="text"
-              value={stagingDir}
-              onChange={(e) => setStagingDir(e.target.value)}
-              placeholder="例如: fixtures/mods 或 D:\SekiroModsStaging"
-              className="w-full px-4 py-2.5 rounded-xl bg-canvas border border-hairline focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs text-ink outline-none font-mono shadow-subtle transition"
-            />
             <div className="text-[11px] text-steel font-sans">
               存放已归一化的 Mod 仓库。建议与游戏目录置于同一磁盘分区以激活 NTFS 零开销硬链接。
             </div>

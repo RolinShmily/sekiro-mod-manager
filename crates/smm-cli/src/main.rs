@@ -29,14 +29,14 @@ struct Cli {
 enum Commands {
     /// List all mods in the staging area with version, priority, and enabled status
     List {
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
 
     /// Deeply scan assets and report path and semantic conflicts
     Scan {
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -47,7 +47,7 @@ enum Commands {
         #[arg(short, long, required = true)]
         target: PathBuf,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
 
@@ -68,7 +68,7 @@ enum Commands {
         /// Identifier of the mod to enable
         mod_id: String,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -78,7 +78,7 @@ enum Commands {
         /// Identifier of the mod to disable
         mod_id: String,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -91,7 +91,7 @@ enum Commands {
         /// New priority number (e.g. 10, 50, 100)
         priority: u32,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -117,7 +117,7 @@ enum Commands {
         #[arg(short = 'w', long)]
         overwrite: bool,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -128,7 +128,7 @@ enum Commands {
         #[arg(short, long)]
         game_dir: Option<PathBuf>,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -139,7 +139,7 @@ enum Commands {
         #[arg(short, long, required = true)]
         game_dir: PathBuf,
 
-        /// Path to mods staging directory or source ModEngine directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory or source ModEngine directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -149,7 +149,7 @@ enum Commands {
         /// Identifier of the mod
         mod_id: String,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
@@ -163,13 +163,13 @@ enum Commands {
         #[arg(short, long)]
         yes: bool,
 
-        /// Path to mods staging directory [default: staging or fixtures/mods]
+        /// Path to mods staging directory [default: staging or staging]
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },
 }
 
-/// Resolves staging directory path with smart fallback to "staging" or "fixtures/mods".
+/// Resolves staging directory path with smart fallback to "staging" or "staging".
 fn resolve_staging_dir(staging_arg: Option<&Path>) -> Result<PathBuf, String> {
     if let Some(path) = staging_arg {
         if path.exists() {
@@ -183,9 +183,9 @@ fn resolve_staging_dir(staging_arg: Option<&Path>) -> Result<PathBuf, String> {
     } else {
         let candidates = [
             PathBuf::from("staging"),
-            PathBuf::from("fixtures/mods"),
-            PathBuf::from("../fixtures/mods"),
-            PathBuf::from("../../fixtures/mods"),
+            PathBuf::from("staging"),
+            PathBuf::from("../staging"),
+            PathBuf::from("../../staging"),
         ];
 
         for candidate in candidates {
@@ -210,9 +210,9 @@ fn resolve_or_create_staging_dir(staging_arg: Option<&Path>) -> Result<PathBuf, 
     } else {
         let candidates = [
             PathBuf::from("staging"),
-            PathBuf::from("fixtures/mods"),
-            PathBuf::from("../fixtures/mods"),
-            PathBuf::from("../../fixtures/mods"),
+            PathBuf::from("staging"),
+            PathBuf::from("../staging"),
+            PathBuf::from("../../staging"),
         ];
 
         for candidate in candidates {
@@ -1150,10 +1150,10 @@ mod tests {
 
     #[test]
     fn test_cli_parsing() {
-        let cli = Cli::try_parse_from(["smm", "list", "--staging", "fixtures/mods"]).unwrap();
+        let cli = Cli::try_parse_from(["smm", "list", "--staging", "staging"]).unwrap();
         match cli.command {
             Commands::List { staging } => {
-                assert_eq!(staging, Some(PathBuf::from("fixtures/mods")));
+                assert_eq!(staging, Some(PathBuf::from("staging")));
             }
             _ => panic!("Expected List command"),
         }
@@ -1167,7 +1167,7 @@ mod tests {
             "--target",
             "game_mods",
             "--staging",
-            "fixtures/mods",
+            "staging",
             "--profile",
             "custom",
         ])
@@ -1179,7 +1179,7 @@ mod tests {
                 profile,
             } => {
                 assert_eq!(target, PathBuf::from("game_mods"));
-                assert_eq!(staging, Some(PathBuf::from("fixtures/mods")));
+                assert_eq!(staging, Some(PathBuf::from("staging")));
                 assert_eq!(profile, "custom");
             }
             _ => panic!("Expected Deploy command"),
@@ -1199,13 +1199,13 @@ mod tests {
             "enable",
             "kusabimaru-reaper",
             "--staging",
-            "fixtures/mods",
+            "staging",
         ])
         .unwrap();
         match cli.command {
             Commands::Enable { mod_id, staging } => {
                 assert_eq!(mod_id, "kusabimaru-reaper");
-                assert_eq!(staging, Some(PathBuf::from("fixtures/mods")));
+                assert_eq!(staging, Some(PathBuf::from("staging")));
             }
             _ => panic!("Expected Enable command"),
         }
@@ -1288,11 +1288,11 @@ mod tests {
             _ => panic!("Expected Remove command"),
         }
 
-        let cli = Cli::try_parse_from(["smm", "doctor", "--game-dir", "C:\\Sekiro", "--staging", "fixtures/mods"]).unwrap();
+        let cli = Cli::try_parse_from(["smm", "doctor", "--game-dir", "C:\\Sekiro", "--staging", "staging"]).unwrap();
         match cli.command {
             Commands::Doctor { game_dir, staging } => {
                 assert_eq!(game_dir, Some(PathBuf::from("C:\\Sekiro")));
-                assert_eq!(staging, Some(PathBuf::from("fixtures/mods")));
+                assert_eq!(staging, Some(PathBuf::from("staging")));
             }
             _ => panic!("Expected Doctor command"),
         }
@@ -1318,6 +1318,6 @@ mod tests {
     #[test]
     fn test_resolve_staging_dir_fallback() {
         let resolved = resolve_staging_dir(None);
-        assert!(resolved.is_ok(), "Expected smart fallback to find fixtures/mods");
+        assert!(resolved.is_ok(), "Expected smart fallback to find staging");
     }
 }

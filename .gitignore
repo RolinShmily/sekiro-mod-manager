@@ -18,6 +18,8 @@ dist/
 **/dist/
 dist-ssr/
 *.local
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # Tauri v2 build artifacts
 *.wixpdb

@@ -21,7 +21,8 @@ pub use conflict::ConflictEngine;
 pub use deploy::DeploymentPlanner;
 pub use doctor::{
     diagnose_environment, install_mod_engine, parse_modengine_ini, patch_or_create_modengine_ini,
-    DiagnosticItem, DiagnosticStatus, HealthReport, ModEngineConfig, OverallHealth,
+    provision_mod_engine, DiagnosticItem, DiagnosticStatus, HealthReport, ModEngineConfig,
+    OverallHealth,
 };
 pub use error::{Result, SmmError};
 pub use executor::{

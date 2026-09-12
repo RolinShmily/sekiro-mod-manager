@@ -8,8 +8,11 @@ import {
   DownloadCloud,
   PackageOpen,
   ArrowRight,
+  FileArchive,
+  FolderOpen,
 } from 'lucide-react';
 import { SekiroLogo } from './SekiroLogo';
+import { pickFile, pickFolder } from '../api';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -44,9 +47,25 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   const isSmmpack = sourcePath.trim().toLowerCase().endsWith('.smmpack');
 
-  function setSamplePath(sample: string) {
-    setSourcePath(sample);
-    setErrorMessage('');
+  async function handleBrowseFile() {
+    const selected = await pickFile(
+      '选择模组压缩包',
+      undefined,
+      'Mod 压缩包 (*.zip, *.7z, *.rar, *.smmpack)',
+      ['zip', '7z', 'rar', 'smmpack']
+    );
+    if (selected) {
+      setSourcePath(selected);
+      setErrorMessage('');
+    }
+  }
+
+  async function handleBrowseFolder() {
+    const selected = await pickFolder('选择已解压的模组目录');
+    if (selected) {
+      setSourcePath(selected);
+      setErrorMessage('');
+    }
   }
 
   function handleImport() {
@@ -140,9 +159,27 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   setSourcePath(e.target.value);
                   if (errorMessage) setErrorMessage('');
                 }}
-                placeholder="例如: D:\Downloads\KusabimaruMod.zip 或 C:\SekiroMods\mod_folder"
+                placeholder="选择或输入模组压缩包 (.zip / .7z / .rar) 或解压后的目录"
                 className="flex-1 px-4 py-2.5 rounded-xl bg-canvas border border-hairline focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs text-ink outline-none font-mono shadow-subtle transition"
               />
+              <button
+                type="button"
+                onClick={handleBrowseFile}
+                className="px-3.5 py-2.5 rounded-xl bg-surface-soft hover:bg-canvas border border-hairline hover:border-primary/50 text-xs font-bold text-charcoal hover:text-ink flex items-center gap-1.5 transition shadow-subtle whitespace-nowrap"
+                title="打开 Windows 资源管理器选择压缩包"
+              >
+                <FileArchive className="w-3.5 h-3.5 text-steel" />
+                <span>选择文件</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBrowseFolder}
+                className="px-3.5 py-2.5 rounded-xl bg-surface-soft hover:bg-canvas border border-hairline hover:border-primary/50 text-xs font-bold text-charcoal hover:text-ink flex items-center gap-1.5 transition shadow-subtle whitespace-nowrap"
+                title="打开 Windows 资源管理器选择文件夹"
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-steel" />
+                <span>选择目录</span>
+              </button>
             </div>
             {errorMessage && (
               <div className="text-xs text-critical flex items-center gap-1 mt-1 font-sans">
@@ -167,34 +204,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 placeholder="如 NexusMods / GitHub / 网盘下载链接 (例: https://www.nexusmods.com/sekiro/mods/555)"
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-canvas border border-hairline focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs text-ink outline-none font-mono shadow-subtle transition"
               />
-            </div>
-          </div>
-
-          {/* Quick Presets */}
-          <div className="space-y-2 pt-1">
-            <div className="text-xs font-semibold text-steel">快捷填充测试样本:</div>
-            <div className="flex items-center flex-wrap gap-2 text-xs font-mono">
-              <button
-                type="button"
-                onClick={() => setSamplePath('fixtures/mods/kusabimaru-reaper')}
-                className="px-3 py-1 rounded-full bg-surface-soft hover:bg-[#dee3e9] text-charcoal border border-hairline-soft text-xs transition shadow-subtle"
-              >
-                fixtures/kusabimaru-reaper
-              </button>
-              <button
-                type="button"
-                onClick={() => setSamplePath('fixtures/mods/native-ps4-buttons')}
-                className="px-3 py-1 rounded-full bg-surface-soft hover:bg-[#dee3e9] text-charcoal border border-hairline-soft text-xs transition shadow-subtle"
-              >
-                fixtures/native-ps4-buttons
-              </button>
-              <button
-                type="button"
-                onClick={() => setSamplePath('fixtures/mods/unnormalized-nested-sample')}
-                className="px-3 py-1 rounded-full bg-surface-soft hover:bg-[#dee3e9] text-charcoal border border-hairline-soft text-xs transition shadow-subtle"
-              >
-                fixtures/unnormalized-nested-sample
-              </button>
             </div>
           </div>
 

@@ -341,6 +341,14 @@ pub fn setup_mod_engine(game_dir: String, staging_dir: String) -> Result<(), Str
         .map_err(|e| format!("Failed to setup ModEngine: {}", e))
 }
 
+/// Provisions or downloads Sekiro Mod Engine into the staging directory as a managed Mod in the list.
+#[tauri::command]
+pub fn provision_engine_mod(staging_dir: String) -> Result<ModInfo, String> {
+    let s_path = PathBuf::from(&staging_dir);
+    smm_core::provision_mod_engine(&s_path)
+        .map_err(|e| format!("Failed to provision ModEngine: {}", e))
+}
+
 /// Updates mod metadata (source_url, homepage, author, version, etc.) and persists it.
 #[tauri::command]
 pub fn update_mod_info(
@@ -406,24 +414,128 @@ pub fn import_modpack(
         .map_err(|e| format!("Failed to import modpack from '{}': {}", pack_path, e))
 }
 
+/// Opens native Windows file explorer folder selection dialog.
+#[tauri::command]
+pub async fn pick_folder(
+    title: Option<String>,
+    default_path: Option<String>,
+) -> Result<Option<String>, String> {
+    let mut dialog = rfd::AsyncFileDialog::new();
+    if let Some(ref t) = title {
+        dialog = dialog.set_title(t);
+    }
+    if let Some(ref p) = default_path {
+        if !p.trim().is_empty() {
+            let path = PathBuf::from(p);
+            if path.exists() {
+                dialog = dialog.set_directory(&path);
+            }
+        }
+    }
+
+    let folder = dialog.pick_folder().await;
+    Ok(folder.map(|h| h.path().to_string_lossy().to_string()))
+}
+
+/// Opens native Windows file explorer file selection dialog.
+#[tauri::command]
+pub async fn pick_file(
+    title: Option<String>,
+    default_path: Option<String>,
+    filter_name: Option<String>,
+    extensions: Option<Vec<String>>,
+) -> Result<Option<String>, String> {
+    let mut dialog = rfd::AsyncFileDialog::new();
+    if let Some(ref t) = title {
+        dialog = dialog.set_title(t);
+    }
+    if let Some(ref p) = default_path {
+        if !p.trim().is_empty() {
+            let path = PathBuf::from(p);
+            if path.exists() {
+                dialog = dialog.set_directory(&path);
+            }
+        }
+    }
+    if let (Some(name), Some(exts)) = (filter_name, extensions) {
+        let ext_refs: Vec<&str> = exts.iter().map(|s| s.as_str()).collect();
+        dialog = dialog.add_filter(&name, &ext_refs);
+    }
+
+    let file = dialog.pick_file().await;
+    Ok(file.map(|h| h.path().to_string_lossy().to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::path::Path;
     use tempfile::tempdir;
 
-    fn resolve_fixtures_mods_dir() -> PathBuf {
-        let candidates = [
-            PathBuf::from("fixtures/mods"),
-            PathBuf::from("../../fixtures/mods"),
-            PathBuf::from("../../../fixtures/mods"),
-        ];
-        for cand in candidates {
-            if cand.exists() && cand.is_dir() {
-                return cand.canonicalize().unwrap();
-            }
-        }
-        panic!("Could not locate fixtures/mods for tests");
+    fn create_test_staging(dir: &Path) {
+        let kr = dir.join("kusabimaru-reaper");
+        let wp = kr.join("parts/wp_a_0300.partsbnd.dcx");
+        std::fs::create_dir_all(wp.parent().unwrap()).unwrap();
+        std::fs::write(&wp, b"KATANA_MESH_MOCK").unwrap();
+        let kr_info = ModInfo {
+            id: "kusabimaru-reaper".to_string(),
+            name: "Kusabimaru Reaper".to_string(),
+            version: "1.0.0".to_string(),
+            author: "Author".to_string(),
+            description: None,
+            category: "weapon_skin".to_string(),
+            license: None,
+            enabled: true,
+            priority: 10,
+            tags: Vec::new(),
+            root_path: None,
+            source_url: None,
+            homepage: None,
+        };
+        std::fs::write(kr.join("mod.json"), serde_json::to_string(&kr_info).unwrap()).unwrap();
+
+        let ps4 = dir.join("native-ps4-buttons");
+        let btn = ps4.join("menu/menu.menubnd.dcx");
+        std::fs::create_dir_all(btn.parent().unwrap()).unwrap();
+        std::fs::write(&btn, b"PS4_BUTTON_MOCK").unwrap();
+        let ps4_info = ModInfo {
+            id: "native-ps4-buttons".to_string(),
+            name: "Native PS4 Buttons".to_string(),
+            version: "1.0.0".to_string(),
+            author: "Author".to_string(),
+            description: None,
+            category: "ui".to_string(),
+            license: None,
+            enabled: true,
+            priority: 50,
+            tags: Vec::new(),
+            root_path: None,
+            source_url: None,
+            homepage: None,
+        };
+        std::fs::write(ps4.join("mod.json"), serde_json::to_string(&ps4_info).unwrap()).unwrap();
+
+        // Conflict mod for scan_conflicts test
+        let conflict = dir.join("conflict-reaper");
+        let c_wp = conflict.join("parts/wp_a_0300.partsbnd.dcx");
+        std::fs::create_dir_all(c_wp.parent().unwrap()).unwrap();
+        std::fs::write(&c_wp, b"CONFLICTING_KATANA_MESH").unwrap();
+        let c_info = ModInfo {
+            id: "conflict-reaper".to_string(),
+            name: "Conflict Reaper".to_string(),
+            version: "1.0.0".to_string(),
+            author: "Author".to_string(),
+            description: None,
+            category: "weapon_skin".to_string(),
+            license: None,
+            enabled: true,
+            priority: 20,
+            tags: Vec::new(),
+            root_path: None,
+            source_url: None,
+            homepage: None,
+        };
+        std::fs::write(conflict.join("mod.json"), serde_json::to_string(&c_info).unwrap()).unwrap();
     }
 
     #[test]
@@ -434,8 +546,9 @@ mod tests {
 
     #[test]
     fn test_list_mods_from_fixtures() {
-        let fixtures = resolve_fixtures_mods_dir();
-        let mods = list_mods(fixtures.to_string_lossy().to_string()).expect("list_mods failed");
+        let tmp = tempdir().unwrap();
+        create_test_staging(tmp.path());
+        let mods = list_mods(tmp.path().to_string_lossy().to_string()).expect("list_mods failed");
         assert!(!mods.is_empty());
         let ids: Vec<&str> = mods.iter().map(|m| m.info.id.as_str()).collect();
         assert!(ids.contains(&"kusabimaru-reaper"));
@@ -444,9 +557,10 @@ mod tests {
 
     #[test]
     fn test_get_mod_details() {
-        let fixtures = resolve_fixtures_mods_dir();
+        let tmp = tempdir().unwrap();
+        create_test_staging(tmp.path());
         let details = get_mod_details(
-            fixtures.to_string_lossy().to_string(),
+            tmp.path().to_string_lossy().to_string(),
             "kusabimaru-reaper".to_string(),
         )
         .expect("get_mod_details failed");
@@ -458,21 +572,22 @@ mod tests {
 
     #[test]
     fn test_scan_conflicts() {
-        let fixtures = resolve_fixtures_mods_dir();
-        let report = scan_conflicts(fixtures.to_string_lossy().to_string()).expect("scan_conflicts failed");
+        let tmp = tempdir().unwrap();
+        create_test_staging(tmp.path());
+        let report = scan_conflicts(tmp.path().to_string_lossy().to_string()).expect("scan_conflicts failed");
         assert!(report.total_conflicts > 0);
     }
 
     #[test]
     fn test_deploy_and_restore_cycle() {
-        let fixtures = resolve_fixtures_mods_dir();
         let tmp = tempdir().unwrap();
+        create_test_staging(tmp.path());
         let mock_game = tmp.path().join("SekiroGame");
         std::fs::create_dir_all(&mock_game).unwrap();
 
         let deploy_res = deploy_mods(
             mock_game.to_string_lossy().to_string(),
-            fixtures.to_string_lossy().to_string(),
+            tmp.path().to_string_lossy().to_string(),
         )
         .expect("deploy_mods failed");
 
@@ -487,51 +602,29 @@ mod tests {
 
     #[test]
     fn test_diagnose_and_setup_engine() {
-        let fixtures = resolve_fixtures_mods_dir();
         let tmp = tempdir().unwrap();
+        create_test_staging(tmp.path());
         let mock_game = tmp.path().join("SekiroGame");
         std::fs::create_dir_all(&mock_game).unwrap();
 
-        setup_mod_engine(
-            mock_game.to_string_lossy().to_string(),
-            fixtures.to_string_lossy().to_string(),
-        )
-        .expect("setup_mod_engine failed");
+        let _ = provision_engine_mod(tmp.path().to_string_lossy().to_string());
 
         let report = diagnose_env(
             mock_game.to_string_lossy().to_string(),
-            fixtures.to_string_lossy().to_string(),
+            tmp.path().to_string_lossy().to_string(),
         )
         .expect("diagnose_env failed");
 
         assert!(!report.items.is_empty());
     }
 
-    fn copy_dir_all(src: &Path, dst: &Path) {
-        std::fs::create_dir_all(dst).unwrap();
-        for entry in std::fs::read_dir(src).unwrap().filter_map(|e| e.ok()) {
-            let path = entry.path();
-            let target = dst.join(entry.file_name());
-            if path.is_dir() {
-                copy_dir_all(&path, &target);
-            } else {
-                std::fs::copy(&path, &target).unwrap();
-            }
-        }
-    }
-
     #[test]
     fn test_update_mod_info_ipc() {
-        let fixtures = resolve_fixtures_mods_dir();
         let tmp = tempdir().unwrap();
         let staging = tmp.path().join("staging");
-        std::fs::create_dir_all(&staging).unwrap();
+        create_test_staging(&staging);
 
-        // Copy a fixture mod into staging
-        let src_mod = fixtures.join("kusabimaru-reaper");
         let dst_mod = staging.join("kusabimaru-reaper");
-        copy_dir_all(&src_mod, &dst_mod);
-
         let mut patch = ModLoader::load_mod_info(&dst_mod).unwrap();
         patch.name = "Reaper Katana Overhaul".to_string();
         patch.source_url = Some("https://nexusmods.com/sekiro/mods/999".to_string());
@@ -551,7 +644,6 @@ mod tests {
 
     #[test]
     fn test_export_and_import_modpack_ipc() {
-        let fixtures = resolve_fixtures_mods_dir();
         let tmp = tempdir().unwrap();
         let staging_src = tmp.path().join("staging_src");
         let staging_dst = tmp.path().join("staging_dst");
@@ -560,12 +652,7 @@ mod tests {
         std::fs::create_dir_all(&staging_dst).unwrap();
         std::fs::create_dir_all(&out_dir).unwrap();
 
-        // Copy fixture mods to staging_src
-        for mod_id in &["kusabimaru-reaper", "native-ps4-buttons"] {
-            let src = fixtures.join(mod_id);
-            let dst = staging_src.join(mod_id);
-            copy_dir_all(&src, &dst);
-        }
+        create_test_staging(&staging_src);
 
         // 1. Single mod export IPC
         let single_zip = out_dir.join("single_reaper.zip").to_string_lossy().to_string();

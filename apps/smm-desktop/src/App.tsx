@@ -5,6 +5,7 @@ import { ModDetails } from './components/ModDetails';
 import { DoctorModal } from './components/DoctorModal';
 import { ImportModal } from './components/ImportModal';
 import { SettingsModal } from './components/SettingsModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import { ExportModModal } from './components/ExportModModal';
 import { ExportModpackModal } from './components/ExportModpackModal';
 import { ImportModpackModal } from './components/ImportModpackModal';
@@ -23,6 +24,7 @@ import {
   restoreMods,
   diagnoseEnv,
   setupModEngine,
+  provisionEngineMod,
 } from './api';
 import type {
   AppSettings,
@@ -59,6 +61,7 @@ export const App: React.FC = () => {
 
   // Modals
   const [isDoctorOpen, setIsDoctorOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExportModOpen, setIsExportModOpen] = useState(false);
@@ -376,15 +379,12 @@ export const App: React.FC = () => {
   }, [settings.game_dir, settings.staging_dir, showToast, refreshHealth]);
 
   // Restore Action
-  const handleRestore = useCallback(async () => {
-    if (
-      !window.confirm(
-        '确认清空游戏 mods 目录中的所有部署链接吗？游戏将恢复为纯净状态。'
-      )
-    ) {
-      return;
-    }
+  const handleRestoreClick = useCallback(() => {
+    setIsRestoreModalOpen(true);
+  }, []);
 
+  const handleConfirmRestore = useCallback(async () => {
+    setIsRestoreModalOpen(false);
     setIsRestoring(true);
     try {
       const res = await restoreMods(settings.game_dir);
@@ -410,10 +410,15 @@ export const App: React.FC = () => {
     setIsFixingEngine(true);
     try {
       await setupModEngine(settings.game_dir, settings.staging_dir);
+      // Also provision to staging so it appears in mod list
+      try {
+        await provisionEngineMod(settings.staging_dir);
+        await refreshMods();
+      } catch (_) {}
       showToast({
         type: 'success',
         title: 'ModEngine 装配成功',
-        message: '已自动部署 dinput8.dll 并生成/修复标准 modengine.ini 配置。',
+        message: '已自动部署 dinput8.dll 并生成/修复标准 modengine.ini 配置，已同步至模组列表。',
       });
       await refreshHealth();
     } catch (err: any) {
@@ -425,7 +430,31 @@ export const App: React.FC = () => {
     } finally {
       setIsFixingEngine(false);
     }
-  }, [settings.game_dir, settings.staging_dir, showToast, refreshHealth]);
+  }, [settings.game_dir, settings.staging_dir, showToast, refreshMods, refreshHealth]);
+
+  // Provision ModEngine to staging mod list
+  const handleProvisionModEngine = useCallback(async () => {
+    setIsFixingEngine(true);
+    try {
+      const info = await provisionEngineMod(settings.staging_dir);
+      showToast({
+        type: 'success',
+        title: '已成功装配 Sekiro Mod Engine',
+        message: `模组 [${info.name}] 已加入暂存库，包含核心挂钩驱动 dinput8.dll 与标准 modengine.ini 配置。`,
+      });
+      await refreshMods();
+      await refreshConflicts();
+      await refreshHealth();
+    } catch (err: any) {
+      showToast({
+        type: 'error',
+        title: '装配 ModEngine 失败',
+        message: String(err),
+      });
+    } finally {
+      setIsFixingEngine(false);
+    }
+  }, [settings.staging_dir, showToast, refreshMods, refreshConflicts, refreshHealth]);
 
   // Import Action
   const handleImportMod = useCallback(
@@ -611,7 +640,7 @@ export const App: React.FC = () => {
         onOpenImportModpack={() => handleOpenImportModpack()}
         onOpenExportModpack={handleOpenExportModpack}
         onDeploy={handleDeploy}
-        onRestore={handleRestore}
+        onRestore={handleRestoreClick}
       />
 
       {/* Main Dual Column Workspace */}
@@ -622,6 +651,7 @@ export const App: React.FC = () => {
           selectedModId={selectedModId}
           conflictModIds={conflictModIds}
           isLoading={isLoadingMods}
+          isProvisioningEngine={isFixingEngine}
           onSelect={selectMod}
           onToggle={handleToggleMod}
           onMoveUp={handleMoveUp}
@@ -630,6 +660,7 @@ export const App: React.FC = () => {
           onOpenImport={() => setIsImportOpen(true)}
           onOpenImportModpack={() => handleOpenImportModpack()}
           onOpenExportModpack={handleOpenExportModpack}
+          onProvisionModEngine={handleProvisionModEngine}
         />
 
         {/* Right Column: PDP Product Details & Inspection */}
@@ -693,6 +724,19 @@ export const App: React.FC = () => {
         settings={settings}
         onClose={() => setIsSettingsOpen(false)}
         onSave={handleSaveSettings}
+      />
+
+      <ConfirmModal
+        isOpen={isRestoreModalOpen}
+        title="还原纯净环境确认"
+        subtitle="VANILLA ROLLBACK CONFIRMATION"
+        message="确认清空游戏 mods 目录中的所有部署链接吗？游戏将恢复为纯净原生状态。"
+        detail="本操作将安全卸载由只狼模组管理器挂载到游戏目录中的所有硬链接与核心加载器（dinput8.dll / modengine.ini）。"
+        confirmText="确认还原纯净"
+        cancelText="取消"
+        isConfirming={isRestoring}
+        onConfirm={handleConfirmRestore}
+        onCancel={() => setIsRestoreModalOpen(false)}
       />
 
       {/* Toast Notifications */}

@@ -241,6 +241,27 @@ pub fn create_hard_link(source: &Path, target: &Path) -> std::io::Result<()> {
     }
 }
 
+/// Resolves the physical destination path for a deployed asset.
+/// If `target_dir` is the game's `mods` subdirectory (e.g. `<game_dir>/mods`),
+/// core loader assets (`dinput8.dll` and `modengine.ini`) are projected into the game root
+/// (`<game_dir>/`), where the Sekiro executable and DirectX hook can load them.
+/// All other game assets are projected inside `target_dir` (`<game_dir>/mods/...`).
+pub fn resolve_destination_path(target_dir: &Path, rel_path: &str) -> PathBuf {
+    let is_loader = rel_path.eq_ignore_ascii_case("dinput8.dll")
+        || rel_path.eq_ignore_ascii_case("modengine.ini");
+    let is_in_mods_sub = target_dir
+        .file_name()
+        .map(|n| n.to_string_lossy().eq_ignore_ascii_case("mods"))
+        .unwrap_or(false);
+
+    if is_loader && is_in_mods_sub {
+        if let Some(parent) = target_dir.parent() {
+            return parent.join(rel_path);
+        }
+    }
+    target_dir.join(rel_path)
+}
+
 /// Recursively removes empty directories within `dir` (bottom-up), without deleting `dir` itself.
 fn remove_empty_subdirs(dir: &Path) -> usize {
     let mut removed = 0;
@@ -302,7 +323,7 @@ pub fn execute_deploy(plan: &DeployPlan, target_mods_dir: impl AsRef<Path>) -> R
             if let Ok(old_manifest) = serde_json::from_str::<DeployManifest>(&content) {
                 for old_file in old_manifest.files {
                     if !new_target_paths.contains(old_file.as_str()) {
-                        let obsolete_path = target_dir.join(&old_file);
+                        let obsolete_path = resolve_destination_path(target_dir, &old_file);
                         if obsolete_path.exists() || obsolete_path.symlink_metadata().is_ok() {
                             let _ = fs::remove_file(&obsolete_path);
                         }
@@ -322,7 +343,7 @@ pub fn execute_deploy(plan: &DeployPlan, target_mods_dir: impl AsRef<Path>) -> R
     let mut successfully_deployed_files = Vec::new();
 
     for mapping in &plan.mappings {
-        let dest_path = target_dir.join(&mapping.target_relative_path);
+        let dest_path = resolve_destination_path(target_dir, &mapping.target_relative_path);
 
         if !mapping.source_path.exists() {
             let msg = format!("Source file does not exist: {}", mapping.source_path.display());
@@ -465,7 +486,7 @@ pub fn restore_deploy(target_mods_dir: impl AsRef<Path>) -> Result<RestoreResult
         if let Ok(content) = fs::read_to_string(&manifest_path) {
             if let Ok(manifest) = serde_json::from_str::<DeployManifest>(&content) {
                 for file_rel in manifest.files {
-                    let file_path = target_dir.join(&file_rel);
+                    let file_path = resolve_destination_path(target_dir, &file_rel);
                     if file_path.exists() || file_path.symlink_metadata().is_ok() {
                         if fs::remove_file(&file_path).is_ok() {
                             removed_files += 1;

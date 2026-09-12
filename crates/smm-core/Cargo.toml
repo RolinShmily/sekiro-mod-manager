@@ -14,6 +14,7 @@ thiserror = "2.0"
 walkdir = "2.5"
 zip = "8.6.0"
 sevenz-rust = { version = "0.6", features = ["compress"] }
+unrar = "0.5.8"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [

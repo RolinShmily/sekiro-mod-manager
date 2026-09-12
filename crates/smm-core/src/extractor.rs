@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -261,15 +262,65 @@ pub fn extract_7z(archive_path: &Path, dest_dir: &Path) -> Result<()> {
     }
 }
 
-/// Decompresses a `.rar` archive using external `7z` or `unrar`.
-/// If neither tool is found, produces a helpful user diagnostic message.
+/// Decompresses a `.rar` archive:
+/// 1. Attempts native decompression via `unrar` crate.
+/// 2. If native fails, falls back to external `7z` or `unrar` if installed.
 pub fn extract_rar(archive_path: &Path, dest_dir: &Path) -> Result<()> {
-    // 1. Try external 7z first
+    fs::create_dir_all(dest_dir)?;
+
+    // 1. Try native unrar
+    if let Some(archive_path_str) = archive_path.to_str() {
+        if let Ok(mut archive) = unrar::Archive::new(archive_path_str).open_for_processing() {
+            let mut extracted_any = false;
+            let mut process_result = Ok(());
+
+            loop {
+                match archive.read_header() {
+                    Ok(Some(header)) => {
+                        let is_file = header.entry().is_file();
+                        if is_file {
+                            match header.extract_to(dest_dir) {
+                                Ok(next_archive) => {
+                                    archive = next_archive;
+                                    extracted_any = true;
+                                }
+                                Err(e) => {
+                                    process_result = Err(SmmError::ExtractionError(format!("RAR extraction failed: {}", e)));
+                                    break;
+                                }
+                            }
+                        } else {
+                            match header.skip() {
+                                Ok(next_archive) => {
+                                    archive = next_archive;
+                                }
+                                Err(e) => {
+                                    process_result = Err(SmmError::ExtractionError(format!("RAR skip error: {}", e)));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(e) => {
+                        process_result = Err(SmmError::ExtractionError(format!("RAR read error: {}", e)));
+                        break;
+                    }
+                }
+            }
+
+            if process_result.is_ok() && extracted_any {
+                return Ok(());
+            }
+        }
+    }
+
+    // 2. Try external 7z first
     if let Some(sevenz_bin) = find_external_7z() {
         return extract_with_external_7z(&sevenz_bin, archive_path, dest_dir);
     }
 
-    // 2. Try external unrar
+    // 3. Try external unrar
     if let Some(unrar_bin) = find_external_unrar() {
         let output = Command::new(&unrar_bin)
             .arg("x")
@@ -296,11 +347,9 @@ pub fn extract_rar(archive_path: &Path, dest_dir: &Path) -> Result<()> {
         }
     }
 
-    // 3. Neither tool is available
+    // 4. Neither tool is available
     Err(SmmError::ExtractionError(
-        "Extracting RAR archive files requires an external decompression tool (7-Zip or WinRAR). \
-         Please install 7-Zip (https://www.7-zip.org) and add it to your system PATH or install to 'C:\\Program Files\\7-Zip'."
-            .to_string(),
+        "Failed to decompress RAR archive. Please check file integrity or install 7-Zip (https://www.7-zip.org).".to_string(),
     ))
 }
 
