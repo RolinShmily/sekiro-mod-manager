@@ -10,6 +10,7 @@ import {
   ArrowRight,
   FileArchive,
   FolderOpen,
+  Globe,
 } from 'lucide-react';
 import { SekiroLogo } from './SekiroLogo';
 import { pickFile, pickFolder } from '../api';
@@ -189,19 +190,19 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             )}
           </div>
 
-          {/* Source URL Input (Requirement 3) */}
+          {/* Source URL Input */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-ink-deep flex items-center justify-between">
-              <span>来源地址 / 下载来源 (选填):</span>
-              <span className="text-[10px] text-steel font-mono">导入后自动持久化到模组元数据</span>
+              <span>模组来源链接 (选填):</span>
+              <span className="text-[10px] text-steel font-mono">导入后自动保存至模组信息</span>
             </label>
             <div className="relative flex items-center">
-              <DownloadCloud className="w-4 h-4 text-steel absolute left-3.5 pointer-events-none" />
+              <Globe className="w-4 h-4 text-steel absolute left-3.5 pointer-events-none" />
               <input
                 type="text"
                 value={sourceUrl}
                 onChange={(e) => setSourceUrl(e.target.value)}
-                placeholder="如 NexusMods / GitHub / 网盘下载链接 (例: https://www.nexusmods.com/sekiro/mods/555)"
+                placeholder="支持 3DM / Nexus / GitHub / GameBanana 等来源链接"
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-canvas border border-hairline focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs text-ink outline-none font-mono shadow-subtle transition"
               />
             </div>

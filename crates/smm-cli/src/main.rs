@@ -807,8 +807,8 @@ fn run_info(mod_id: &str, staging_arg: Option<&Path>) -> Result<(), String> {
     if let Some(lic) = &info.license {
         meta_table.add_row(vec![Cell::new("License"), Cell::new(lic)]);
     }
-    if let Some(home) = &info.homepage {
-        meta_table.add_row(vec![Cell::new("Homepage"), Cell::new(home)]);
+    if let Some(source) = info.source_url.as_ref().or(info.homepage.as_ref()) {
+        meta_table.add_row(vec![Cell::new("Source URL"), Cell::new(source)]);
     }
     if !info.tags.is_empty() {
         meta_table.add_row(vec![Cell::new("Tags"), Cell::new(info.tags.join(", "))]);

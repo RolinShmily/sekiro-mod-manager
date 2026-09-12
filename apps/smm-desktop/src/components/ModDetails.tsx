@@ -31,7 +31,7 @@ import type {
   ModInfo,
 } from '../types';
 import { formatBytes, getCategoryBadgeClass, getCategoryLabel } from '../utils/format';
-import { updateModInfo } from '../api';
+import { updateModInfo, openExternalUrl } from '../api';
 import { SekiroLogo } from './SekiroLogo';
 
 interface ModDetailsProps {
@@ -65,6 +65,20 @@ function parseDomainMeta(urlStr: string): DomainMeta {
         platform: 'Nexus Mods',
         badgeClass: 'bg-amber-100 text-amber-900 border-amber-300/80',
         dotClass: 'bg-[#da691e]',
+      };
+    }
+    if (host.includes('3dmgame.com')) {
+      return {
+        platform: '3DM',
+        badgeClass: 'bg-red-50 text-red-700 border-red-200',
+        dotClass: 'bg-red-600',
+      };
+    }
+    if (host.includes('gamebanana.com')) {
+      return {
+        platform: 'GameBanana',
+        badgeClass: 'bg-yellow-50 text-yellow-800 border-yellow-300',
+        dotClass: 'bg-yellow-500',
       };
     }
     if (host.includes('github.com')) {
@@ -155,7 +169,6 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
     author: '',
     category: '',
     source_url: '',
-    homepage: '',
     description: '',
   });
 
@@ -167,8 +180,7 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
         version: details.info.version || '',
         author: details.info.author || '',
         category: details.info.category || '',
-        source_url: details.info.source_url || '',
-        homepage: details.info.homepage || '',
+        source_url: details.info.source_url || details.info.homepage || '',
         description: details.info.description || '',
       });
       setEditError('');
@@ -247,11 +259,13 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
     }, 2000);
   };
 
-  const handleOpenLink = (url: string) => {
+  const handleOpenLink = async (url: string) => {
     if (!url) return;
-    const target =
-      url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
-    window.open(target, '_blank', 'noopener,noreferrer');
+    try {
+      await openExternalUrl(url);
+    } catch (e) {
+      console.error('Failed to open external url:', e);
+    }
   };
 
   const handleSaveMetadata = async () => {
@@ -276,7 +290,7 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
         author: editForm.author.trim() || 'Unknown',
         category: editForm.category.trim() || details.info.category,
         source_url: editForm.source_url.trim() || null,
-        homepage: editForm.homepage.trim() || null,
+        homepage: null,
         description: editForm.description.trim() || null,
       };
 
@@ -386,143 +400,79 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
         {/* Source URLs & Direct Operations Strip */}
         <div className="flex items-center justify-between flex-wrap gap-2.5 pt-1">
           <div className="flex items-center flex-wrap gap-2">
-            {/* Source URL Chip Capsule */}
-            {details.info.source_url ? (() => {
-              const meta = parseDomainMeta(details.info.source_url);
-              return (
-                <div className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full bg-white border border-hairline-soft text-xs shadow-subtle hover:border-slate/40 transition group">
-                  {/* Domain Tag */}
-                  <span
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.badgeClass} flex-shrink-0 select-none`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
-                    <span>{meta.platform}</span>
-                  </span>
+            {/* Unified Mod Source Chip Capsule */}
+            {(() => {
+              const currentSource = details.info.source_url || details.info.homepage;
+              if (currentSource) {
+                const meta = parseDomainMeta(currentSource);
+                return (
+                  <div className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full bg-white border border-hairline-soft text-xs shadow-subtle hover:border-slate/40 transition group">
+                    {/* Domain Tag */}
+                    <span
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.badgeClass} flex-shrink-0 select-none`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
+                      <span>{meta.platform}</span>
+                    </span>
 
-                  {/* Truncated URL */}
-                  <span
-                    className="font-mono text-ink font-medium max-w-[210px] truncate text-[11px]"
-                    title={details.info.source_url}
-                  >
-                    {details.info.source_url}
-                  </span>
+                    {/* Truncated URL */}
+                    <span
+                      className="font-mono text-ink font-medium max-w-[260px] truncate text-[11px]"
+                      title={currentSource}
+                    >
+                      {currentSource}
+                    </span>
 
-                  {/* Actions Strip */}
-                  <div className="flex items-center gap-0.5 ml-0.5 border-l border-hairline-soft pl-1 text-steel">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenLink(details.info.source_url!)}
-                      className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
-                      title="外链直达 (在新窗口中打开)"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(details.info.source_url!, 'source')}
-                      className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
-                      title="一键复制来源地址"
-                    >
-                      {copiedField === 'source' ? (
-                        <Check className="w-3.5 h-3.5 text-success" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditModalOpen(true)}
-                      className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
-                      title="一键编辑来源地址"
-                    >
-                      <Pencil className="w-3 h-3 text-steel group-hover:text-primary" />
-                    </button>
+                    {/* Actions Strip */}
+                    <div className="flex items-center gap-0.5 ml-0.5 border-l border-hairline-soft pl-1 text-steel">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenLink(currentSource)}
+                        className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
+                        title="在默认浏览器中打开外链"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(currentSource, 'source')}
+                        className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
+                        title="一键复制来源链接"
+                      >
+                        {copiedField === 'source' ? (
+                          <Check className="w-3.5 h-3.5 text-success" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
+                        title="编辑来源链接"
+                      >
+                        <Pencil className="w-3 h-3 text-steel group-hover:text-primary" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })() : (
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-soft/60 hover:bg-surface-soft border border-dashed border-hairline hover:border-primary/50 text-xs text-stone hover:text-primary transition group shadow-subtle"
-                title="点击填写来源地址"
-              >
-                <DownloadCloud className="w-3.5 h-3.5 text-stone group-hover:text-primary" />
-                <span className="text-[11px]">未设定来源地址</span>
-                <span className="text-primary font-bold text-[10px] ml-0.5 underline decoration-dotted">
-                  + 填写来源
-                </span>
-              </button>
-            )}
+                );
+              }
 
-            {/* Homepage Chip Capsule */}
-            {details.info.homepage ? (() => {
-              const meta = parseDomainMeta(details.info.homepage);
               return (
-                <div className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full bg-white border border-hairline-soft text-xs shadow-subtle hover:border-slate/40 transition group">
-                  {/* Domain Tag */}
-                  <span
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.badgeClass} flex-shrink-0 select-none`}
-                  >
-                    <Globe className="w-2.5 h-2.5" />
-                    <span>{meta.platform}</span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-soft/60 hover:bg-surface-soft border border-dashed border-hairline hover:border-primary/50 text-xs text-stone hover:text-primary transition group shadow-subtle"
+                  title="点击填写模组来源链接"
+                >
+                  <Globe className="w-3.5 h-3.5 text-stone group-hover:text-primary" />
+                  <span className="text-[11px]">未设定来源链接</span>
+                  <span className="text-primary font-bold text-[10px] ml-0.5 underline decoration-dotted">
+                    + 关联来源
                   </span>
-
-                  {/* Truncated URL */}
-                  <span
-                    className="font-mono text-ink font-medium max-w-[190px] truncate text-[11px]"
-                    title={details.info.homepage}
-                  >
-                    {details.info.homepage}
-                  </span>
-
-                  {/* Actions Strip */}
-                  <div className="flex items-center gap-0.5 ml-0.5 border-l border-hairline-soft pl-1 text-steel">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenLink(details.info.homepage!)}
-                      className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
-                      title="外链直达 (在新窗口中打开)"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(details.info.homepage!, 'homepage')}
-                      className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
-                      title="一键复制主页链接"
-                    >
-                      {copiedField === 'homepage' ? (
-                        <Check className="w-3.5 h-3.5 text-success" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditModalOpen(true)}
-                      className="p-1 hover:bg-surface-soft rounded-full hover:text-ink transition"
-                      title="一键编辑模组主页"
-                    >
-                      <Pencil className="w-3 h-3 text-steel group-hover:text-primary" />
-                    </button>
-                  </div>
-                </div>
+                </button>
               );
-            })() : (
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-soft/60 hover:bg-surface-soft border border-dashed border-hairline hover:border-primary/50 text-xs text-stone hover:text-primary transition group shadow-subtle"
-                title="点击填写模组主页"
-              >
-                <Globe className="w-3.5 h-3.5 text-stone group-hover:text-primary" />
-                <span className="text-[11px]">未设定主页</span>
-                <span className="text-primary font-bold text-[10px] ml-0.5 underline decoration-dotted">
-                  + 填写主页
-                </span>
-              </button>
-            )}
+            })()}
           </div>
 
           {/* Action CTAs: Edit Metadata & Export Mod */}
@@ -531,7 +481,7 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
               type="button"
               onClick={() => setIsEditModalOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-soft hover:bg-[#dee3e9] border border-hairline-soft text-charcoal hover:text-ink text-xs font-bold transition shadow-subtle active:scale-[0.98]"
-              title="修改来源地址、主页、作者与版本等元数据"
+              title="修改来源链接、作者与版本等元数据"
             >
               <Pencil className="w-3.5 h-3.5 text-steel" />
               <span>编辑元数据</span>
@@ -904,34 +854,16 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
               {/* Source URL Field */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-ink-deep flex items-center justify-between">
-                  <span>来源地址 / 下载来源 (source_url):</span>
-                  <span className="text-[10px] text-steel font-mono">支持 NexusMods / GitHub / 网盘链接</span>
-                </label>
-                <div className="relative flex items-center">
-                  <DownloadCloud className="w-4 h-4 text-steel absolute left-3 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={editForm.source_url}
-                    onChange={(e) => setEditForm({ ...editForm, source_url: e.target.value })}
-                    placeholder="例如: https://www.nexusmods.com/sekiro/mods/555 或网盘链接"
-                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-canvas border border-hairline focus:border-primary text-xs text-ink outline-none font-mono shadow-subtle"
-                  />
-                </div>
-              </div>
-
-              {/* Homepage Field */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-ink-deep flex items-center justify-between">
-                  <span>模组主页 (homepage):</span>
-                  <span className="text-[10px] text-steel font-mono">官方主页或展示页面</span>
+                  <span>模组来源链接 (URL):</span>
+                  <span className="text-[10px] text-steel font-mono">支持 3DM / Nexus / GitHub / GameBanana 等外链</span>
                 </label>
                 <div className="relative flex items-center">
                   <Globe className="w-4 h-4 text-steel absolute left-3 pointer-events-none" />
                   <input
                     type="text"
-                    value={editForm.homepage}
-                    onChange={(e) => setEditForm({ ...editForm, homepage: e.target.value })}
-                    placeholder="例如: https://github.com/example/sekiro-mod"
+                    value={editForm.source_url}
+                    onChange={(e) => setEditForm({ ...editForm, source_url: e.target.value })}
+                    placeholder="例如: 3DM、Nexus Mods、GitHub 或 GameBanana 链接"
                     className="w-full pl-9 pr-4 py-2 rounded-xl bg-canvas border border-hairline focus:border-primary text-xs text-ink outline-none font-mono shadow-subtle"
                   />
                 </div>

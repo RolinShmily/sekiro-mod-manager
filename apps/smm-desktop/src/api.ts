@@ -417,3 +417,21 @@ export async function pickFile(
   }
   return null;
 }
+
+export async function openExternalUrl(url: string): Promise<void> {
+  const trimmed = url.trim();
+  if (!trimmed) return;
+  if (isTauri()) {
+    try {
+      await invoke('open_external_url', { url: trimmed });
+      return;
+    } catch (err) {
+      console.warn('Failed to open external url via tauri:', err);
+    }
+  }
+  const target =
+    trimmed.startsWith('http://') || trimmed.startsWith('https://')
+      ? trimmed
+      : `https://${trimmed}`;
+  window.open(target, '_blank', 'noopener,noreferrer');
+}

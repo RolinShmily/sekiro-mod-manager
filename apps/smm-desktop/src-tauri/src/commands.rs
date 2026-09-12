@@ -466,6 +466,22 @@ pub async fn pick_file(
     Ok(file.map(|h| h.path().to_string_lossy().to_string()))
 }
 
+/// Opens a URL in the user's default system browser.
+#[tauri::command]
+pub async fn open_external_url(url: String) -> Result<(), String> {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return Err("URL cannot be empty".to_string());
+    }
+    let target = if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        trimmed.to_string()
+    } else {
+        format!("https://{}", trimmed)
+    };
+
+    open::that_detached(&target).map_err(|e| format!("Failed to open URL in browser: {}", e))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

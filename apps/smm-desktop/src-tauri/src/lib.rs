@@ -27,6 +27,7 @@ pub fn run() {
             commands::import_modpack,
             commands::pick_folder,
             commands::pick_file,
+            commands::open_external_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
