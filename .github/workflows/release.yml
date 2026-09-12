@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v0.1.0)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Installer & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run workspace tests
+        run: cargo test --workspace
+
+      - name: Run packaging pipeline (setup.exe)
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File scripts/build-installer.ps1
+
+      - name: Determine tag name
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+            echo "val=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.ref_name }}" ]; then
+            echo "val=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "val=v0.1.0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate release notes
+        id: notes
+        shell: powershell
+        run: |
+          $checksumContent = Get-Content "dist-installer\SHA256SUMS.txt" -Raw
+          $body = @"
+          ## Sekiro Mod Manager (SMM) Release ${{ steps.tag.outputs.val }}
+
+          High-Performance, Zero-Disk-Copy Desktop Mod Manager & Automation Core for *Sekiro: Shadows Die Twice*.
+
+          ### Included Assets
+          - **`setup.exe`**: One-click Windows installer (installs desktop app + CLI with classic Sekiro cinnabar seal icon).
+          - **`Sekiro-Mod-Manager-Setup-${{ steps.tag.outputs.val }}.exe`**: Versioned standalone installer.
+          - **`smm.exe`**: Standalone headless CLI executable for AI-Agents and terminal scripting.
+          - **`SHA256SUMS.txt`**: Cryptographic integrity verification hashes.
+
+          ### Core Highlights
+          - ⚡ **Win32 NTFS Hard Link Deployment**: Millisecond-level projection into game `mods/` directory with zero disk space cost.
+          - 🛡️ **Pristine Rollback**: One-click restore strictly driven by `.smm_manifest.json`.
+          - 🔍 **Heuristic Normalization**: Automated unnesting and standard FromSoftware folder re-alignment.
+          - ⚠️ **Three-Tier Semantic Conflict Detection**: Balance collision warnings (`gameparam`) and weapon/skin exclusivity.
+          - 📦 **Modpack Bundling & Provenance**: Full `.smmpack` bundle import/export and Nexus Mods source tracking.
+          - 🤖 **AI-Agent Ready**: Direct terminal invocation via `smm` CLI.
+
+          ### SHA-256 Checksums
+          ````text
+          $checksumContent
+          ````
+          "@
+          Set-Content -Path "RELEASE_NOTES.md" -Value $body -Encoding UTF8
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.val }}
+          name: Sekiro Mod Manager ${{ steps.tag.outputs.val }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: |
+            dist-installer/setup.exe
+            dist-installer/Sekiro-Mod-Manager-Setup-*.exe
+            dist-installer/smm.exe
+            dist-installer/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

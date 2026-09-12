@@ -74,13 +74,20 @@ if (-not $sourceInstaller) {
 
 $setupExe = Join-Path $distDir "setup.exe"
 $versionedExe = Join-Path $distDir "Sekiro-Mod-Manager-Setup-v$version.exe"
+$distCliExe = Join-Path $distDir "smm.exe"
 
 Copy-Item -Path $sourceInstaller.FullName -Destination $setupExe -Force
 Copy-Item -Path $sourceInstaller.FullName -Destination $versionedExe -Force
+if (Test-Path $cliExe) {
+    Copy-Item -Path $cliExe -Destination $distCliExe -Force
+}
 
 $installerSize = (Get-Item $setupExe).Length
 Write-Host "      Archived: $setupExe ($([math]::Round($installerSize/1MB, 2)) MB)" -ForegroundColor Green
 Write-Host "      Archived: $versionedExe" -ForegroundColor Green
+if (Test-Path $distCliExe) {
+    Write-Host "      Archived: $distCliExe (CLI)" -ForegroundColor Green
+}
 
 # 5. Compute SHA256 checksums
 Write-Host "`n[5/5] Generating SHA256SUMS.txt checksums..." -ForegroundColor Yellow
