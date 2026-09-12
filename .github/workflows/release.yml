@@ -45,6 +45,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build frontend bundle
+        run: pnpm --filter smm-desktop build
+
       - name: Run workspace tests
         run: cargo test --workspace
 
