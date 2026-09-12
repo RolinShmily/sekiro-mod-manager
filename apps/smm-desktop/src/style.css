@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Yuji+Boku:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, ::before, ::after {
+    font-family: "Maple Mono NF CN", "Maple Mono SC NF", "Maple Mono", monospace, sans-serif;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #1c1e21;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: "Maple Mono NF CN", "Maple Mono SC NF", "Maple Mono", monospace, sans-serif;
+  }
+}
+
+/* Custom subtle hardware-clean scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f4f7;
+}
+::-webkit-scrollbar-thumb {
+  background: #dee3e9;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ced0d4;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
