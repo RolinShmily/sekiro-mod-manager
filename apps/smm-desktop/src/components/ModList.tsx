@@ -379,63 +379,34 @@ export const ModList: React.FC<ModListProps> = ({
     <aside className="w-[420px] h-full flex flex-col border-r border-hairline-soft bg-surface-soft select-none flex-shrink-0">
       {/* Top Search & Filter Bar */}
       <div className="p-4 border-b border-hairline-soft bg-canvas space-y-3">
-        {/* Search Capsule Input */}
-        <div className="relative flex items-center">
-          <Search className="w-4 h-4 text-steel absolute left-3.5 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索模组名称、作者或标签..."
-            className="w-full pl-9 pr-8 py-2 rounded-full bg-surface-soft focus:bg-canvas border border-transparent focus:border-hairline text-xs text-ink placeholder-steel outline-none transition font-sans shadow-inner"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 text-steel hover:text-ink"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Pill Tab Filter Chips & View Mode Selector */}
-        <div className="flex items-center justify-between gap-2 pt-0.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar flex-1">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('all')}
-              className={`px-3.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap ${
-                selectedCategory === 'all'
-                  ? 'bg-ink-deep text-white shadow-sm'
-                  : 'bg-canvas text-charcoal border border-hairline hover:bg-surface-soft'
-              }`}
-            >
-              全部 ({mods.length})
-            </button>
-            {categories.map((cat) => (
+        {/* Search Capsule Input & View Mode Switcher */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 flex items-center">
+            <Search className="w-4 h-4 text-steel absolute left-3.5 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索模组名称、作者或标签..."
+              className="w-full pl-9 pr-8 py-2 rounded-full bg-surface-soft focus:bg-canvas border border-transparent focus:border-hairline text-xs text-ink placeholder-steel outline-none transition font-sans shadow-inner"
+            />
+            {searchQuery && (
               <button
-                key={cat}
                 type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? 'bg-ink-deep text-white shadow-sm'
-                    : 'bg-canvas text-charcoal border border-hairline hover:bg-surface-soft'
-                }`}
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 text-steel hover:text-ink"
               >
-                {getCategoryLabel(cat)}
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
+            )}
           </div>
 
           {/* View Mode Switcher */}
-          <div className="flex items-center bg-surface-soft p-0.5 rounded-lg border border-hairline-soft flex-shrink-0">
+          <div className="flex items-center bg-surface-soft p-0.5 rounded-xl border border-hairline-soft flex-shrink-0">
             <button
               type="button"
               onClick={() => handleViewModeChange('compact')}
-              className={`p-1.5 rounded-md transition ${
+              className={`p-1.5 rounded-lg transition ${
                 viewMode === 'compact'
                   ? 'bg-white text-ink-deep shadow-sm'
                   : 'text-slate-400 hover:text-charcoal'
@@ -447,7 +418,7 @@ export const ModList: React.FC<ModListProps> = ({
             <button
               type="button"
               onClick={() => handleViewModeChange('detailed')}
-              className={`p-1.5 rounded-md transition ${
+              className={`p-1.5 rounded-lg transition ${
                 viewMode === 'detailed'
                   ? 'bg-white text-ink-deep shadow-sm'
                   : 'text-slate-400 hover:text-charcoal'
@@ -459,7 +430,7 @@ export const ModList: React.FC<ModListProps> = ({
             <button
               type="button"
               onClick={() => handleViewModeChange('category')}
-              className={`p-1.5 rounded-md transition ${
+              className={`p-1.5 rounded-lg transition ${
                 viewMode === 'category'
                   ? 'bg-white text-ink-deep shadow-sm'
                   : 'text-slate-400 hover:text-charcoal'
@@ -469,6 +440,42 @@ export const ModList: React.FC<ModListProps> = ({
               <Layers className="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
+
+        {/* Pill Tab Filter Chips with Smooth Mouse Wheel Scroll */}
+        <div
+          onWheel={(e) => {
+            if (e.deltaY !== 0) {
+              e.currentTarget.scrollLeft += e.deltaY;
+            }
+          }}
+          className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar select-none"
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedCategory('all')}
+            className={`px-3.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap flex-shrink-0 ${
+              selectedCategory === 'all'
+                ? 'bg-ink-deep text-white shadow-sm'
+                : 'bg-canvas text-charcoal border border-hairline hover:bg-surface-soft'
+            }`}
+          >
+            全部 ({mods.length})
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap flex-shrink-0 ${
+                selectedCategory === cat
+                  ? 'bg-ink-deep text-white shadow-sm'
+                  : 'bg-canvas text-charcoal border border-hairline hover:bg-surface-soft'
+              }`}
+            >
+              {getCategoryLabel(cat)}
+            </button>
+          ))}
         </div>
       </div>
 

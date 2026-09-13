@@ -437,6 +437,32 @@ export async function openExternalUrl(url: string): Promise<void> {
   window.open(target, '_blank', 'noopener,noreferrer');
 }
 
+export async function openPathInExplorer(path: string): Promise<void> {
+  const trimmed = path.trim();
+  if (!trimmed) return;
+  if (isTauri()) {
+    try {
+      await invoke('open_path_in_explorer', { path: trimmed });
+      return;
+    } catch (err) {
+      console.warn('Failed to open path in explorer via tauri:', err);
+      throw err;
+    }
+  }
+}
+
+export async function launchGame(gameDir: string): Promise<void> {
+  const trimmed = gameDir.trim();
+  if (!trimmed) {
+    throw new Error('请先在设置中指定只狼游戏安装目录');
+  }
+  if (isTauri()) {
+    await invoke('launch_game', { gameDir: trimmed });
+    return;
+  }
+  throw new Error('启动游戏仅在桌面客户端环境下可用');
+}
+
 export async function pickFiles(
   title?: string,
   defaultPath?: string,

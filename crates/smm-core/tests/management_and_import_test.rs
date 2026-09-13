@@ -286,7 +286,7 @@ fn test_doctor_diagnostics_and_setup_engine() {
     assert_eq!(report3.overall_status, OverallHealth::Healthy);
     assert_eq!(report3.fail_count(), 0);
     assert_eq!(report3.warning_count(), 0);
-    assert_eq!(report3.pass_count(), 6);
+    assert_eq!(report3.pass_count(), 7);
 
     // 5. Scenario: Disable modengine in ini -> ActionRequired
     let disabled_ini = ini_content.replace("enabled=1", "enabled=0");

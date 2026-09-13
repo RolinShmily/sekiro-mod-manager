@@ -6,9 +6,10 @@ import {
   FolderArchive,
   FolderOpen,
   Save,
+  ExternalLink,
 } from 'lucide-react';
 import { SekiroLogo } from './SekiroLogo';
-import { pickFolder } from '../api';
+import { pickFolder, openPathInExplorer } from '../api';
 import type { AppSettings } from '../types';
 
 interface SettingsModalProps {
@@ -116,6 +117,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <FolderOpen className="w-3.5 h-3.5 text-steel" />
                 <span>浏览...</span>
               </button>
+              <button
+                type="button"
+                onClick={() => gameDir && openPathInExplorer(gameDir)}
+                disabled={!gameDir}
+                className="px-3.5 py-2.5 rounded-xl bg-surface-soft hover:bg-canvas border border-hairline hover:border-primary/50 text-xs font-bold text-charcoal hover:text-ink flex items-center gap-1.5 transition shadow-subtle disabled:opacity-40"
+                title="在 Windows 资源管理器中打开此游戏目录"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-steel" />
+                <span>打开</span>
+              </button>
             </div>
             <div className="text-[11px] text-steel font-sans">
               ModEngine 将以此目录下的 <code className="text-ink font-mono bg-surface-soft px-1.5 py-0.5 rounded border border-hairline-soft">mods/</code> 作为目标进行 NTFS 硬链接投影。
@@ -146,6 +157,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 <FolderOpen className="w-3.5 h-3.5 text-steel" />
                 <span>浏览...</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => stagingDir && openPathInExplorer(stagingDir)}
+                disabled={!stagingDir}
+                className="px-3.5 py-2.5 rounded-xl bg-surface-soft hover:bg-canvas border border-hairline hover:border-primary/50 text-xs font-bold text-charcoal hover:text-ink flex items-center gap-1.5 transition shadow-subtle disabled:opacity-40"
+                title="在 Windows 资源管理器中打开此暂存库目录"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-steel" />
+                <span>打开</span>
               </button>
             </div>
             <div className="text-[11px] text-steel font-sans">

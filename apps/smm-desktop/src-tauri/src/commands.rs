@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use smm_core::{
@@ -481,6 +481,56 @@ pub async fn open_external_url(url: String) -> Result<(), String> {
     };
 
     open::that_detached(&target).map_err(|e| format!("Failed to open URL in browser: {}", e))
+}
+
+/// Opens a file or directory in the system default file manager (Windows Explorer).
+#[tauri::command]
+pub async fn open_path_in_explorer(path: String) -> Result<(), String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("路径不能为空".to_string());
+    }
+    let p = Path::new(trimmed);
+    if !p.exists() {
+        return Err(format!("目标路径不存在: {}", trimmed));
+    }
+
+    open::that_detached(trimmed).map_err(|e| format!("在资源管理器中打开失败: {}", e))
+}
+
+/// Launches Sekiro: Shadows Die Twice (sekiro.exe) from the configured game directory.
+#[tauri::command]
+pub async fn launch_game(game_dir: String) -> Result<(), String> {
+    let trimmed = game_dir.trim();
+    if trimmed.is_empty() {
+        return Err("游戏目录尚未配置，请先在设置中指定只狼游戏目录".to_string());
+    }
+    let dir = PathBuf::from(trimmed);
+    let exe = dir.join("sekiro.exe");
+    if !exe.exists() {
+        return Err(format!("未在指定目录中找到可执行文件 sekiro.exe: {}", dir.display()));
+    }
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const DETACHED_PROCESS: u32 = 0x00000008;
+        std::process::Command::new(&exe)
+            .current_dir(&dir)
+            .creation_flags(DETACHED_PROCESS)
+            .spawn()
+            .map_err(|e| format!("启动游戏 sekiro.exe 失败: {}", e))?;
+    }
+
+    #[cfg(not(windows))]
+    {
+        std::process::Command::new(&exe)
+            .current_dir(&dir)
+            .spawn()
+            .map_err(|e| format!("启动游戏失败: {}", e))?;
+    }
+
+    Ok(())
 }
 
 /// Opens native Windows file explorer multiple files selection dialog.

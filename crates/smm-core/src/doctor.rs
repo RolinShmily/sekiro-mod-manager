@@ -332,7 +332,7 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
     let dinput8_path = game_dir.join("dinput8.dll");
     if dinput8_path.exists() && dinput8_path.is_file() {
         let size = fs::metadata(&dinput8_path).map(|m| m.len()).unwrap_or(0);
-        if size > 0 {
+        if size > 10000 {
             items.push(DiagnosticItem {
                 category: "ModEngine Hook".to_string(),
                 name: "dinput8.dll".to_string(),
@@ -348,9 +348,9 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                 category: "ModEngine Hook".to_string(),
                 name: "dinput8.dll".to_string(),
                 status: DiagnosticStatus::Warning,
-                message: "dinput8.dll is 0 bytes (empty placeholder).".to_string(),
+                message: format!("dinput8.dll is only {} bytes (stub/placeholder).", size),
                 remediation: Some(
-                    "Reinstall ModEngine by running 'smm setup-engine --game-dir <path>'.".to_string(),
+                    "Reinstall official ModEngine by clicking '装配引擎' or running 'smm setup-engine'.".to_string(),
                 ),
             });
         }
@@ -371,6 +371,14 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
     if ini_path.exists() && ini_path.is_file() {
         match fs::read_to_string(&ini_path) {
             Ok(content) => {
+                items.push(DiagnosticItem {
+                    category: "ModEngine Config".to_string(),
+                    name: "modengine.ini".to_string(),
+                    status: DiagnosticStatus::Pass,
+                    message: "ModEngine configuration file (modengine.ini) found and valid.".to_string(),
+                    remediation: None,
+                });
+
                 let config = parse_modengine_ini(&content);
 
                 // 3a. enabled
@@ -601,10 +609,15 @@ pub fn install_mod_engine(
     let target_mods_dir = game_dir.join("mods");
 
     // 1. Deploy dinput8.dll
+    let embedded_dll = include_bytes!("../assets/dinput8.dll");
     if let Some(src_dll) = find_source_dinput8(source_files_or_staging) {
-        fs::copy(&src_dll, &target_dll)?;
-    } else if !target_dll.exists() {
-        let embedded_dll = include_bytes!("../assets/dinput8.dll");
+        let src_size = fs::metadata(&src_dll).map(|m| m.len()).unwrap_or(0);
+        if src_size > 10000 {
+            fs::copy(&src_dll, &target_dll)?;
+        } else {
+            fs::write(&target_dll, embedded_dll)?;
+        }
+    } else {
         fs::write(&target_dll, embedded_dll)?;
     }
 
@@ -633,28 +646,27 @@ pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
 
     let dll_path = engine_dir.join("dinput8.dll");
     let ini_path = engine_dir.join("modengine.ini");
+    let readme_path = engine_dir.join("readme.txt");
     let json_path = engine_dir.join("mod.json");
 
-    if !dll_path.exists() {
-        let embedded_dll = include_bytes!("../assets/dinput8.dll");
+    let embedded_dll = include_bytes!("../assets/dinput8.dll");
+    let needs_dll_update = if dll_path.exists() {
+        fs::metadata(&dll_path).map(|m| m.len() < 10000).unwrap_or(true)
+    } else {
+        true
+    };
+    if needs_dll_update {
         fs::write(&dll_path, embedded_dll)?;
     }
 
     if !ini_path.exists() {
-        let default_ini = "; Sekiro Mod Engine configuration file\r\n\
-                           ; https://github.com/katalash/ModEngine\r\n\
-                           \r\n\
-                           [files]\r\n\
-                           enabled=1\r\n\
-                           loadUXMFiles=0\r\n\
-                           cachePaths=1\r\n\
-                           modOverrideDirectory=\"\\mods\"\r\n\
-                           loadLooseParams=1\r\n\
-                           \r\n\
-                           [debug]\r\n\
-                           showDebugConsole=0\r\n\
-                           logFile=\"modengine.log\"\r\n";
-        fs::write(&ini_path, default_ini)?;
+        let embedded_ini = include_bytes!("../assets/modengine.ini");
+        fs::write(&ini_path, embedded_ini)?;
+    }
+
+    if !readme_path.exists() {
+        let embedded_readme = include_bytes!("../assets/readme.txt");
+        let _ = fs::write(&readme_path, embedded_readme);
     }
 
     let mut info = ModInfo::new(
@@ -664,10 +676,10 @@ pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
         "katalash",
         "loader",
     );
-    info.description = Some("Core runtime file injection & DirectX input hook for Sekiro: Shadows Die Twice".to_string());
+    info.description = Some("Official runtime file injection & DirectX input hook for Sekiro: Shadows Die Twice".to_string());
     info.priority = 0;
-    info.source_url = Some("https://github.com/katalash/ModEngine".to_string());
-    info.homepage = Some("https://github.com/katalash/ModEngine".to_string());
+    info.source_url = Some("https://www.nexusmods.com/sekiro/mods/6".to_string());
+    info.homepage = Some("https://www.nexusmods.com/sekiro/mods/6".to_string());
     info.license = Some("GPL-3.0-or-later".to_string());
 
     let json_str = serde_json::to_string_pretty(&info)?;

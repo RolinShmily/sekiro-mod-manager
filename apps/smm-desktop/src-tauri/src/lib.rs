@@ -29,6 +29,8 @@ pub fn run() {
             commands::pick_file,
             commands::pick_files,
             commands::open_external_url,
+            commands::open_path_in_explorer,
+            commands::launch_game,
             commands::import_merged_mod_files,
             commands::list_presets,
             commands::create_preset_from_current,

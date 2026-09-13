@@ -1,3 +1,3 @@
-4f564eb5f4cdc7ef0fbe89456fc8e566d749fcd08b3db1fc09102df166bba1e9  Sekiro-Mod-Manager.exe
-873dcf4630cb875076e5ca2d16280ad94b043ac532b38404be86fa1d43cd8387  Sekiro-Mod-Manager-Setup.exe
+67f13f01e8520c81fe70f855b8e772895725489010eb835b9a6f5f4d324a08cf  Sekiro-Mod-Manager.exe
+84cd90eff45b3d48bb4800bffc8a09561b243c0144caefb006d9e55c8b3d4f43  Sekiro-Mod-Manager-Setup.exe
 b55e684f741d4ad9cef961d7135ba93c89ca41847551567045ec15ec3f375bd7  smm-cli.exe

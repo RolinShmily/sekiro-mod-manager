@@ -116,12 +116,12 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#e2e8f0] bg-white hover:bg-slate-50 text-xs text-charcoal shadow-sm transition-all focus:outline-none"
         title="选择或切换模组启用预设方案"
       >
-        <Bookmark className="w-3.5 h-3.5 text-primary" />
+        <Bookmark className="w-3.5 h-3.5 text-primary flex-shrink-0" />
         <span className="text-slate-400">方案:</span>
-        <span className="font-semibold text-slate-800 max-w-[120px] truncate">
-          {activePreset ? activePreset.name : '当前实时配置'}
+        <span className="font-semibold text-slate-800 max-w-[85px] sm:max-w-[110px] truncate">
+          {activePreset ? activePreset.name : '实时配置'}
         </span>
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
+        <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5 flex-shrink-0" />
       </button>
 
       {isOpen && (

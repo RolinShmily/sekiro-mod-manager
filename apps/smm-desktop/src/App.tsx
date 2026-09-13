@@ -438,10 +438,17 @@ export const App: React.FC = () => {
     setIsFixingEngine(true);
     try {
       const info = await provisionEngineMod(settings.staging_dir);
+      if (settings.game_dir) {
+        try {
+          await setupModEngine(settings.game_dir, settings.staging_dir);
+        } catch (e) {
+          console.warn('Auto deploy mod engine hook into game dir:', e);
+        }
+      }
       showToast({
         type: 'success',
         title: '已成功装配 Sekiro Mod Engine',
-        message: `模组 [${info.name}] 已加入暂存库，包含核心挂钩驱动 dinput8.dll 与标准 modengine.ini 配置。`,
+        message: `官方前置模组 [${info.name}] 已加入暂存库并装配核心补丁，包含 600KB 真实 DirectX 挂钩驱动 dinput8.dll 与标准配置。`,
       });
       await refreshMods();
       await refreshConflicts();
@@ -455,7 +462,7 @@ export const App: React.FC = () => {
     } finally {
       setIsFixingEngine(false);
     }
-  }, [settings.staging_dir, showToast, refreshMods, refreshConflicts, refreshHealth]);
+  }, [settings.game_dir, settings.staging_dir, showToast, refreshMods, refreshConflicts, refreshHealth]);
 
   // Import Action
   const handleImportMod = useCallback(

@@ -22,6 +22,7 @@ import {
   Boxes,
   X,
   Loader2,
+  FolderOpen,
 } from 'lucide-react';
 import type {
   AssetEntry,
@@ -31,7 +32,7 @@ import type {
   ModInfo,
 } from '../types';
 import { formatBytes, getCategoryBadgeClass, getCategoryLabel } from '../utils/format';
-import { updateModInfo, openExternalUrl } from '../api';
+import { updateModInfo, openExternalUrl, openPathInExplorer } from '../api';
 import { SekiroLogo } from './SekiroLogo';
 
 interface ModDetailsProps {
@@ -162,6 +163,23 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
     }
   }, [initialEditOpen]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const handleOpenModFolder = async () => {
+    if (!stagingDir || !details?.info.id) return;
+    const cleanStaging = stagingDir.replace(/[/\\]+$/, '');
+    const modPath = `${cleanStaging}/${details.info.id}`;
+    try {
+      await openPathInExplorer(modPath);
+    } catch (e: any) {
+      if (onShowToast) {
+        onShowToast({
+          type: 'error',
+          title: '打开目录失败',
+          message: String(e),
+        });
+      }
+    }
+  };
   const [editError, setEditError] = useState('');
   const [editForm, setEditForm] = useState({
     name: '',
@@ -475,8 +493,17 @@ export const ModDetails: React.FC<ModDetailsProps> = ({
             })()}
           </div>
 
-          {/* Action CTAs: Edit Metadata & Export Mod */}
+          {/* Action CTAs: Open Folder, Edit Metadata & Export Mod */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenModFolder}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-soft hover:bg-[#dee3e9] border border-hairline-soft text-charcoal hover:text-ink text-xs font-bold transition shadow-subtle active:scale-[0.98]"
+              title="在 Windows 资源管理器中直接打开该模组目录"
+            >
+              <FolderOpen className="w-3.5 h-3.5 text-steel" />
+              <span>打开目录</span>
+            </button>
             <button
               type="button"
               onClick={() => setIsEditModalOpen(true)}
