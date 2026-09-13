@@ -27,7 +27,14 @@ pub fn run() {
             commands::import_modpack,
             commands::pick_folder,
             commands::pick_file,
+            commands::pick_files,
             commands::open_external_url,
+            commands::import_merged_mod_files,
+            commands::list_presets,
+            commands::create_preset_from_current,
+            commands::save_preset,
+            commands::apply_preset,
+            commands::delete_preset,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

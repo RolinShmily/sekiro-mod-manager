@@ -7,6 +7,7 @@ import type {
   ModDetailsPayload,
   ModInfo,
   ModPackManifest,
+  ModPreset,
   ModSummary,
   RestoreResult,
 } from './types';
@@ -435,3 +436,112 @@ export async function openExternalUrl(url: string): Promise<void> {
       : `https://${trimmed}`;
   window.open(target, '_blank', 'noopener,noreferrer');
 }
+
+export async function pickFiles(
+  title?: string,
+  defaultPath?: string,
+  filterName?: string,
+  extensions?: string[]
+): Promise<string[] | null> {
+  if (isTauri()) {
+    const res = await invoke<string[] | null>('pick_files', {
+      title,
+      defaultPath,
+      filterName,
+      extensions,
+    });
+    return res;
+  }
+  return null;
+}
+
+export async function importMergedModFiles(
+  sourcePaths: string[],
+  stagingDir: string,
+  customName?: string,
+  sourceUrl?: string
+): Promise<ModInfo> {
+  if (isTauri()) {
+    return invoke<ModInfo>('import_merged_mod_files', {
+      sourcePaths,
+      stagingDir,
+      customName,
+      sourceUrl,
+    });
+  }
+  return {
+    id: 'mock-merged-mod',
+    name: customName || 'Mock Merged Mod',
+    version: '1.0.0',
+    author: 'Community',
+    category: 'general',
+    enabled: true,
+    priority: 100,
+    tags: ['merged'],
+  };
+}
+
+export async function listPresets(stagingDir: string): Promise<ModPreset[]> {
+  if (isTauri()) {
+    return invoke<ModPreset[]>('list_presets', { stagingDir });
+  }
+  return [];
+}
+
+export async function createPresetFromCurrent(
+  stagingDir: string,
+  name: string,
+  description?: string
+): Promise<ModPreset> {
+  if (isTauri()) {
+    return invoke<ModPreset>('create_preset_from_current', {
+      stagingDir,
+      name,
+      description,
+    });
+  }
+  return {
+    id: `preset_${Date.now()}`,
+    name,
+    description,
+    created_at: Math.floor(Date.now() / 1000),
+    updated_at: Math.floor(Date.now() / 1000),
+    mods: [],
+  };
+}
+
+export async function savePreset(
+  stagingDir: string,
+  preset: ModPreset
+): Promise<ModPreset> {
+  if (isTauri()) {
+    return invoke<ModPreset>('save_preset', { stagingDir, preset });
+  }
+  return preset;
+}
+
+export async function applyPreset(
+  stagingDir: string,
+  presetId: string
+): Promise<ModPreset> {
+  if (isTauri()) {
+    return invoke<ModPreset>('apply_preset', { stagingDir, presetId });
+  }
+  return {
+    id: presetId,
+    name: 'Mock Preset',
+    created_at: 0,
+    updated_at: 0,
+    mods: [],
+  };
+}
+
+export async function deletePreset(
+  stagingDir: string,
+  presetId: string
+): Promise<void> {
+  if (isTauri()) {
+    await invoke('delete_preset', { stagingDir, presetId });
+  }
+}
+

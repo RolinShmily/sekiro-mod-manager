@@ -19,6 +19,7 @@ import {
   setModPriority,
   deleteMod,
   importModFile,
+  importMergedModFiles,
   scanConflicts,
   deployMods,
   restoreMods,
@@ -483,6 +484,37 @@ export const App: React.FC = () => {
     [settings.staging_dir, showToast, refreshAll, selectMod]
   );
 
+  const handleImportMerged = useCallback(
+    async (sourcePaths: string[], customName?: string, sourceUrl?: string) => {
+      setIsImporting(true);
+      try {
+        const imported = await importMergedModFiles(
+          sourcePaths,
+          settings.staging_dir,
+          customName,
+          sourceUrl
+        );
+        setIsImportOpen(false);
+        showToast({
+          type: 'success',
+          title: '多文件合并导入成功！',
+          message: `已成功将 ${sourcePaths.length} 个部件文件合并导入为「${imported.name}」。`,
+        });
+        await refreshAll();
+        await selectMod(imported.id);
+      } catch (err: any) {
+        showToast({
+          type: 'error',
+          title: '合并导入失败',
+          message: String(err),
+        });
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [settings.staging_dir, showToast, refreshAll, selectMod]
+  );
+
   // Modpack & Single Mod Handlers
   const handleOpenExportMod = useCallback((mod: ModInfo) => {
     setModToExport(mod);
@@ -639,6 +671,8 @@ export const App: React.FC = () => {
         }}
         onOpenImportModpack={() => handleOpenImportModpack()}
         onOpenExportModpack={handleOpenExportModpack}
+        onPresetApplied={refreshAll}
+        showToast={(title, message, type) => showToast({ type, title, message })}
         onDeploy={handleDeploy}
         onRestore={handleRestoreClick}
       />
@@ -692,6 +726,7 @@ export const App: React.FC = () => {
         initialSourcePath={initialImportSourcePath}
         onClose={() => setIsImportOpen(false)}
         onImport={handleImportMod}
+        onImportMerged={handleImportMerged}
         onRouteToModpackImport={handleRouteToModpackImport}
       />
 

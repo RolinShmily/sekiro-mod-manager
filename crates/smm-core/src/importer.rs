@@ -256,6 +256,167 @@ pub fn import_mod(
     Ok(mod_info)
 }
 
+/// Imports multiple files/archives merged together into a single unified mod package.
+/// Designed for mods like Nexus #1454 (NPC Cloth Physics) where multiple separate download
+/// archives belong to the same mod concept.
+pub fn import_multiple_files_as_mod(
+    source_paths: &[PathBuf],
+    staging_dir: &Path,
+    options: &ImportOptions,
+) -> Result<ModInfo> {
+    if source_paths.is_empty() {
+        return Err(SmmError::NormalizationError {
+            path: PathBuf::new(),
+            message: "No source files provided for merged import".to_string(),
+        });
+    }
+
+    if source_paths.len() == 1 {
+        return import_mod(&source_paths[0], staging_dir, options);
+    }
+
+    std::fs::create_dir_all(staging_dir)?;
+
+    let temp_workspace = tempfile::Builder::new()
+        .prefix(".smm_merge_import_")
+        .tempdir_in(staging_dir)
+        .or_else(|_| tempfile::tempdir())?;
+
+    let merged_staging = temp_workspace.path().join("merged");
+    std::fs::create_dir_all(&merged_staging)?;
+
+    let source_backup_dir = merged_staging.join(".smm_source");
+    std::fs::create_dir_all(&source_backup_dir)?;
+
+    // Extract / copy each file into intermediate folders, normalize, and merge into merged_staging
+    for (idx, src) in source_paths.iter().enumerate() {
+        if !src.exists() {
+            return Err(SmmError::NormalizationError {
+                path: src.clone(),
+                message: format!("Source path does not exist: {}", src.display()),
+            });
+        }
+
+        // Backup original source
+        if src.is_file() {
+            if let Some(name) = src.file_name() {
+                let _ = std::fs::copy(src, source_backup_dir.join(name));
+            }
+        }
+
+        let item_unpack = temp_workspace.path().join(format!("item_{}", idx));
+        std::fs::create_dir_all(&item_unpack)?;
+
+        if src.is_file() {
+            if !is_supported_archive(src) {
+                return Err(SmmError::NormalizationError {
+                    path: src.clone(),
+                    message: format!("Unsupported archive format: {}", src.display()),
+                });
+            }
+            extract_archive(src, &item_unpack)?;
+        } else if src.is_dir() {
+            copy_dir_recursive(src, &item_unpack)?;
+        }
+
+        // Check for nested archives inside item_unpack
+        let nested_archives: Vec<PathBuf> = WalkDir::new(&item_unpack)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file() && is_supported_archive(e.path()))
+            .map(|e| e.into_path())
+            .collect();
+
+        for arc in nested_archives {
+            let nested_out = temp_workspace.path().join(format!(
+                "item_nested_{}_{}",
+                idx,
+                arc.file_stem().and_then(|s| s.to_str()).unwrap_or("sub")
+            ));
+            std::fs::create_dir_all(&nested_out)?;
+            if extract_archive(&arc, &nested_out).is_ok() {
+                let _ = copy_dir_recursive(&nested_out, &item_unpack);
+            }
+            let _ = std::fs::remove_file(arc);
+        }
+
+        // Normalize this item
+        let norm = Normalizer::normalize_directory(&item_unpack)?;
+        for asset in norm.assets {
+            let dest = merged_staging.join(&asset.relative_path);
+            if let Some(parent) = dest.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            let _ = std::fs::copy(&asset.source_path, &dest);
+        }
+
+        // Also copy any documentation files
+        let docs = collect_documentation_files(&item_unpack);
+        for (filename, src_path) in docs {
+            let dest_path = merged_staging.join(&filename);
+            if !dest_path.exists() {
+                let _ = std::fs::copy(&src_path, &dest_path);
+            }
+        }
+    }
+
+    // Normalize final merged directory
+    let norm_result = Normalizer::normalize_directory(&merged_staging)?;
+    if norm_result.assets.is_empty() {
+        return Err(SmmError::NoAssetsFound(source_paths[0].clone()));
+    }
+
+    let default_name = options.custom_name.clone().unwrap_or_else(|| {
+        let first_stem = source_paths[0]
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("merged-mod");
+        format!("Merged - {}", humanize_name(first_stem))
+    });
+
+    let mod_id = options
+        .custom_id
+        .clone()
+        .unwrap_or_else(|| slugify(&default_name));
+
+    let category = infer_category(&norm_result.assets);
+    let priority = options
+        .priority
+        .unwrap_or_else(|| default_priority_for_category(&category));
+
+    let mut mod_info = ModInfo::new(&mod_id, &default_name, "1.0.0", "Community", &category);
+    mod_info.category = category;
+    mod_info.priority = priority;
+    mod_info.source_url = options.source_url.clone();
+    mod_info.description = Some(format!(
+        "Merged mod bundle consisting of {} component files.",
+        source_paths.len()
+    ));
+
+    // Write metadata
+    save_mod_info(&merged_staging, &mod_info)?;
+
+    let target_dir = staging_dir.join(&mod_id);
+    if target_dir.exists() {
+        if options.overwrite {
+            let _ = std::fs::remove_dir_all(&target_dir);
+        } else {
+            return Err(SmmError::NormalizationError {
+                path: target_dir,
+                message: format!("Mod with ID '{}' already exists in staging", mod_id),
+            });
+        }
+    }
+
+    if std::fs::rename(&merged_staging, &target_dir).is_err() {
+        copy_dir_recursive(&merged_staging, &target_dir)?;
+        let _ = std::fs::remove_dir_all(&merged_staging);
+    }
+
+    mod_info.root_path = Some(target_dir);
+    Ok(mod_info)
+}
+
 /// Unpacks a zip archive safely into the destination directory.
 #[inline]
 pub fn extract_zip_archive(zip_path: &Path, extract_to: &Path) -> Result<()> {

@@ -150,6 +150,22 @@ export interface ModPackManifest {
   mods: ModPackItem[];
 }
 
+export interface ModPresetEntry {
+  mod_id: string;
+  priority: number;
+}
+
+export interface ModPreset {
+  id: string;
+  name: string;
+  description?: string | null;
+  created_at: number;
+  updated_at: number;
+  mods: ModPresetEntry[];
+}
+
+export type ViewMode = 'compact' | 'detailed' | 'category';
+
 export interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';

@@ -14,6 +14,7 @@ pub mod importer;
 pub mod loader;
 pub mod manager;
 pub mod normalizer;
+pub mod preset;
 pub mod types;
 
 // Re-exports of core entities
@@ -37,21 +38,22 @@ pub use extractor::{
     find_external_7z, find_external_unrar, is_supported_archive, ArchiveFormat,
 };
 pub use importer::{
-    default_priority_for_category, extract_version, humanize_name, import_mod, infer_category,
-    slugify, ImportOptions,
+    default_priority_for_category, extract_version, humanize_name, import_mod,
+    import_multiple_files_as_mod, infer_category, slugify, ImportOptions,
 };
 pub use loader::ModLoader;
 pub use manager::{
     delete_mod, find_mod_dir, get_mod_details, save_mod_info, set_mod_enabled, set_mod_priority,
     update_mod_info, ModManager,
 };
+pub use preset::{PresetManager, PRESETS_FILE_NAME};
 
 pub use normalizer::{
     NormalizationResult, Normalizer, CANONICAL_DIRS, CANONICAL_ROOT_FILES, FILE_SIGNATURES,
 };
 pub use types::{
     is_critical_asset, is_slot_asset, AssetCategory, AssetEntry, ConflictRecord, ConflictReport,
-    ConflictSeverity, DeployMapping, DeployPlan, ModCategory, ModInfo,
+    ConflictSeverity, DeployMapping, DeployPlan, ModCategory, ModInfo, ModPreset, ModPresetEntry,
 };
 
 

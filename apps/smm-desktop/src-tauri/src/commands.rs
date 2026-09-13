@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 use smm_core::{
     diagnose_environment, execute_deploy, import_mod, install_mod_engine, restore_deploy,
     AssetEntry, ConflictEngine, ConflictReport, DeployResult, DeploymentPlanner, HealthReport,
-    ImportOptions, ModInfo, ModLoader, ModManager, ModPackManifest, RestoreResult,
+    ImportOptions, ModInfo, ModLoader, ModManager, ModPackManifest, ModPreset, PresetManager,
+    RestoreResult,
 };
 
 /// Application persistent settings.
@@ -482,6 +483,115 @@ pub async fn open_external_url(url: String) -> Result<(), String> {
     open::that_detached(&target).map_err(|e| format!("Failed to open URL in browser: {}", e))
 }
 
+/// Opens native Windows file explorer multiple files selection dialog.
+#[tauri::command]
+pub async fn pick_files(
+    title: Option<String>,
+    default_path: Option<String>,
+    filter_name: Option<String>,
+    extensions: Option<Vec<String>>,
+) -> Result<Option<Vec<String>>, String> {
+    let mut dialog = rfd::AsyncFileDialog::new();
+    if let Some(ref t) = title {
+        dialog = dialog.set_title(t);
+    }
+    if let Some(ref p) = default_path {
+        if !p.trim().is_empty() {
+            let path = PathBuf::from(p);
+            if path.exists() {
+                dialog = dialog.set_directory(&path);
+            }
+        }
+    }
+    if let (Some(name), Some(exts)) = (filter_name, extensions) {
+        let ext_refs: Vec<&str> = exts.iter().map(|s| s.as_str()).collect();
+        dialog = dialog.add_filter(&name, &ext_refs);
+    }
+
+    let files = dialog.pick_files().await;
+    Ok(files.map(|list| {
+        list.into_iter()
+            .map(|h| h.path().to_string_lossy().to_string())
+            .collect()
+    }))
+}
+
+/// Imports multiple files merged as a single mod package.
+#[tauri::command]
+pub fn import_merged_mod_files(
+    source_paths: Vec<String>,
+    staging_dir: String,
+    custom_name: Option<String>,
+    source_url: Option<String>,
+) -> Result<ModInfo, String> {
+    let paths: Vec<PathBuf> = source_paths.into_iter().map(PathBuf::from).collect();
+    let stg = PathBuf::from(&staging_dir);
+
+    let options = ImportOptions {
+        custom_id: None,
+        custom_name,
+        priority: None,
+        overwrite: true,
+        source_url,
+    };
+
+    smm_core::import_multiple_files_as_mod(&paths, &stg, &options)
+        .map_err(|e| format!("Failed to import merged mods: {}", e))
+}
+
+/// Lists all saved user activation presets.
+#[tauri::command]
+pub fn list_presets(staging_dir: String) -> Result<Vec<ModPreset>, String> {
+    let stg = PathBuf::from(&staging_dir);
+    PresetManager::list_presets(&stg)
+        .map_err(|e| format!("Failed to list presets: {}", e))
+}
+
+/// Creates a new preset capturing current enabled mods and their priorities.
+#[tauri::command]
+pub fn create_preset_from_current(
+    staging_dir: String,
+    name: String,
+    description: Option<String>,
+) -> Result<ModPreset, String> {
+    let stg = PathBuf::from(&staging_dir);
+    PresetManager::create_preset_from_current(&stg, &name, description)
+        .map_err(|e| format!("Failed to create preset: {}", e))
+}
+
+/// Saves or updates a preset.
+#[tauri::command]
+pub fn save_preset(
+    staging_dir: String,
+    preset: ModPreset,
+) -> Result<ModPreset, String> {
+    let stg = PathBuf::from(&staging_dir);
+    PresetManager::save_preset(&stg, preset)
+        .map_err(|e| format!("Failed to save preset: {}", e))
+}
+
+/// Applies a preset: enables matching mods with priorities, disables non-matching mods.
+#[tauri::command]
+pub fn apply_preset(
+    staging_dir: String,
+    preset_id: String,
+) -> Result<ModPreset, String> {
+    let stg = PathBuf::from(&staging_dir);
+    PresetManager::apply_preset(&stg, &preset_id)
+        .map_err(|e| format!("Failed to apply preset: {}", e))
+}
+
+/// Deletes a preset by ID.
+#[tauri::command]
+pub fn delete_preset(
+    staging_dir: String,
+    preset_id: String,
+) -> Result<(), String> {
+    let stg = PathBuf::from(&staging_dir);
+    PresetManager::delete_preset(&stg, &preset_id)
+        .map_err(|e| format!("Failed to delete preset: {}", e))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -708,6 +818,37 @@ mod tests {
         assert_eq!(manifest.mods.len(), 2);
         assert!(staging_dst.join("kusabimaru-reaper").exists());
         assert!(staging_dst.join("native-ps4-buttons").exists());
+    }
+
+    #[test]
+    fn test_preset_ipc_cycle() {
+        let tmp = tempdir().unwrap();
+        let staging = tmp.path().to_string_lossy().to_string();
+        create_test_staging(tmp.path());
+
+        // 1. Initially 0 presets
+        let list1 = list_presets(staging.clone()).expect("list_presets failed");
+        assert!(list1.is_empty());
+
+        // 2. Create preset from current state
+        let preset = create_preset_from_current(
+            staging.clone(),
+            "Combat Build".to_string(),
+            Some("Active mods preset".to_string()),
+        )
+        .expect("create_preset failed");
+
+        assert_eq!(preset.name, "Combat Build");
+        assert!(!preset.mods.is_empty());
+
+        // 3. Apply preset
+        let applied = apply_preset(staging.clone(), preset.id.clone()).expect("apply_preset failed");
+        assert_eq!(applied.id, preset.id);
+
+        // 4. Delete preset
+        delete_preset(staging.clone(), preset.id).expect("delete_preset failed");
+        let list2 = list_presets(staging).expect("list_presets after delete failed");
+        assert!(list2.is_empty());
     }
 }
 

@@ -14,6 +14,7 @@ import {
   Boxes,
 } from 'lucide-react';
 import { SekiroLogo } from './SekiroLogo';
+import { PresetSelector } from './PresetSelector';
 import type { AppSettings, ConflictReport, HealthReport, OverallHealth } from '../types';
 
 interface HeaderBarProps {
@@ -27,6 +28,8 @@ interface HeaderBarProps {
   onOpenConflicts: () => void;
   onOpenImportModpack?: () => void;
   onOpenExportModpack?: () => void;
+  onPresetApplied?: () => void;
+  showToast?: (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info') => void;
   onDeploy: () => void;
   onRestore: () => void;
 }
@@ -42,6 +45,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenConflicts,
   onOpenImportModpack,
   onOpenExportModpack,
+  onPresetApplied,
+  showToast,
   onDeploy,
   onRestore,
 }) => {
@@ -135,14 +140,14 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <header className="h-16 border-b border-hairline-soft bg-canvas px-6 flex items-center justify-between select-none z-30 flex-shrink-0 shadow-subtle gap-4">
       {/* Brand & Main Identity */}
-      <div className="flex items-center gap-4 min-w-0">
+      <div className="flex items-center gap-4 flex-shrink-0">
         <div className="flex items-center gap-3 flex-shrink-0">
           <SekiroLogo
             size={38}
             className="shadow-subtle rounded-full hover:scale-105 transition-transform duration-200 cursor-pointer flex-shrink-0"
             title="只狼 · 影逝二度 Mod Manager"
           />
-          <div className="min-w-0">
+          <div className="flex-shrink-0">
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-sm tracking-tight text-ink-deep uppercase font-sans whitespace-nowrap">
                 Sekiro Mod Manager
@@ -158,6 +163,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Preset Selector Quick Trigger */}
+        {settings.staging_dir && onPresetApplied && showToast && (
+          <div className="flex items-center gap-3">
+            <div className="h-6 w-px bg-hairline-soft hidden lg:block" />
+            <PresetSelector
+              stagingDir={settings.staging_dir}
+              onPresetApplied={onPresetApplied}
+              showToast={showToast}
+            />
+          </div>
+        )}
 
         {/* Path Quick Indicators */}
         <div className="hidden 2xl:flex items-center gap-2 ml-2 flex-shrink-0">

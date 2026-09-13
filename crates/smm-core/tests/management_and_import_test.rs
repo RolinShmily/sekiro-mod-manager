@@ -6,8 +6,9 @@ use zip::ZipWriter;
 
 use smm_core::{
     delete_mod, diagnose_environment, execute_deploy, find_mod_dir, get_mod_details, import_mod,
-    install_mod_engine, restore_deploy, set_mod_enabled, set_mod_priority, AssetCategory,
-    DeploymentPlanner, DiagnosticStatus, ImportOptions, ModLoader, OverallHealth,
+    import_multiple_files_as_mod, install_mod_engine, restore_deploy, set_mod_enabled,
+    set_mod_priority, AssetCategory, DeploymentPlanner, DiagnosticStatus, ImportOptions, ModLoader,
+    OverallHealth,
 };
 
 #[test]
@@ -387,4 +388,55 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
     assert!(lamia_assets.iter().any(|a| a.relative_path == "parts/am_m_9000.partsbnd.dcx"));
     assert!(lamia_assets.iter().any(|a| a.relative_path == "parts/wp_a_0310.partsbnd.dcx"));
 }
+
+#[test]
+fn test_import_multiple_files_merged_bundle() {
+    let tmp = tempdir().expect("Failed to create tempdir");
+    let base = tmp.path();
+    let staging_dir = base.join("staging");
+
+    // Component 1: Emma cloth physics (e.g. Nexus 1454)
+    let emma_zip = base.join("EmmaCloth_v1.0.zip");
+    {
+        let file = File::create(&emma_zip).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        zip.start_file("chr/c0100.chrbnd.dcx", opt).unwrap();
+        zip.write_all(b"EMMA_PHYSICS").unwrap();
+        zip.finish().unwrap();
+    }
+
+    // Component 2: Kuro cloth physics
+    let kuro_zip = base.join("KuroCloth_v1.0.zip");
+    {
+        let file = File::create(&kuro_zip).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        zip.start_file("chr/c0200.chrbnd.dcx", opt).unwrap();
+        zip.write_all(b"KURO_PHYSICS").unwrap();
+        zip.finish().unwrap();
+    }
+
+    let files = vec![emma_zip, kuro_zip];
+    let opts = ImportOptions {
+        custom_name: Some("NPC Cloth Physics".to_string()),
+        ..Default::default()
+    };
+
+    let imported = import_multiple_files_as_mod(&files, &staging_dir, &opts)
+        .expect("Failed to import merged multi-file mod");
+
+    assert_eq!(imported.name, "NPC Cloth Physics");
+    assert_eq!(imported.id, "npc-cloth-physics");
+
+    let (_, assets) = ModLoader::scan_mod(&staging_dir.join(&imported.id)).unwrap();
+    assert_eq!(assets.len(), 2);
+    assert!(assets.iter().any(|a| a.relative_path == "chr/c0100.chrbnd.dcx"));
+    assert!(assets.iter().any(|a| a.relative_path == "chr/c0200.chrbnd.dcx"));
+
+    // Check backup source archives
+    assert!(staging_dir.join(&imported.id).join(".smm_source/EmmaCloth_v1.0.zip").exists());
+    assert!(staging_dir.join(&imported.id).join(".smm_source/KuroCloth_v1.0.zip").exists());
+}
+
 

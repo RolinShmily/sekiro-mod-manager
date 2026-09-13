@@ -232,3 +232,31 @@ pub struct DeployPlan {
     /// Summary conflict report associated with this deployment
     pub conflict_report: ConflictReport,
 }
+
+/// Single mod configuration inside a preset.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ModPresetEntry {
+    /// Target mod identifier
+    pub mod_id: String,
+    /// Priority assigned to this mod in this preset
+    pub priority: u32,
+}
+
+/// A saved user activation preset specifying which mods are enabled and their priority order.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ModPreset {
+    /// Unique identifier for this preset
+    pub id: String,
+    /// Human-friendly display name (e.g. "修罗一心与剑光特效")
+    pub name: String,
+    /// Optional user description
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Created epoch timestamp
+    pub created_at: u64,
+    /// Last updated epoch timestamp
+    pub updated_at: u64,
+    /// List of mods enabled in this preset with their respective deployment priorities
+    pub mods: Vec<ModPresetEntry>,
+}
+

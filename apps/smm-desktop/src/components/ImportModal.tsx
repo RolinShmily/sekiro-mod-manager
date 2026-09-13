@@ -13,7 +13,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { SekiroLogo } from './SekiroLogo';
-import { pickFile, pickFolder } from '../api';
+import { pickFile, pickFiles, pickFolder } from '../api';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ interface ImportModalProps {
   initialSourcePath?: string;
   onClose: () => void;
   onImport: (sourcePath: string, sourceUrl?: string) => void;
+  onImportMerged?: (sourcePaths: string[], customName?: string, sourceUrl?: string) => void;
   onRouteToModpackImport?: (packPath: string) => void;
 }
 
@@ -32,9 +33,13 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   initialSourcePath = '',
   onClose,
   onImport,
+  onImportMerged,
   onRouteToModpackImport,
 }) => {
   const [sourcePath, setSourcePath] = useState(initialSourcePath);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [isMergeMode, setIsMergeMode] = useState(true);
+  const [mergedModName, setMergedModName] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -49,14 +54,24 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const isSmmpack = sourcePath.trim().toLowerCase().endsWith('.smmpack');
 
   async function handleBrowseFile() {
-    const selected = await pickFile(
-      '选择模组压缩包',
+    const selected = await pickFiles(
+      '选择模组压缩包 (按住 Ctrl 或 Shift 可多选合并)',
       undefined,
       'Mod 压缩包 (*.zip, *.7z, *.rar, *.smmpack)',
       ['zip', '7z', 'rar', 'smmpack']
     );
-    if (selected) {
-      setSourcePath(selected);
+    if (selected && selected.length > 0) {
+      if (selected.length === 1) {
+        setSourcePath(selected[0]);
+        setSelectedFiles([]);
+      } else {
+        setSelectedFiles(selected);
+        setSourcePath(selected.join('; '));
+        // Suggest a default merged name from the first file
+        const firstFile = selected[0].split(/[/\\]/).pop() || '';
+        const cleanName = firstFile.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        setMergedModName(cleanName);
+      }
       setErrorMessage('');
     }
   }
@@ -65,11 +80,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     const selected = await pickFolder('选择已解压的模组目录');
     if (selected) {
       setSourcePath(selected);
+      setSelectedFiles([]);
       setErrorMessage('');
     }
   }
 
   function handleImport() {
+    if (selectedFiles.length > 1 && isMergeMode && onImportMerged) {
+      setErrorMessage('');
+      onImportMerged(selectedFiles, mergedModName.trim() || undefined, sourceUrl.trim() || undefined);
+      return;
+    }
+
     const trimmedPath = sourcePath.trim();
     if (!trimmedPath) {
       setErrorMessage('请输入或选择本地模组压缩包或文件夹路径');
@@ -151,13 +173,17 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
           {/* Source Path Input */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-ink-deep">本地压缩包或目录路径:</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-ink-deep">本地压缩包或目录路径:</label>
+              <span className="text-[10px] text-slate-400">支持多选文件合并导入</span>
+            </div>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={sourcePath}
                 onChange={(e) => {
                   setSourcePath(e.target.value);
+                  setSelectedFiles([]);
                   if (errorMessage) setErrorMessage('');
                 }}
                 placeholder="选择或输入模组压缩包 (.zip / .7z / .rar) 或解压后的目录"
@@ -167,10 +193,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 type="button"
                 onClick={handleBrowseFile}
                 className="px-3.5 py-2.5 rounded-xl bg-surface-soft hover:bg-canvas border border-hairline hover:border-primary/50 text-xs font-bold text-charcoal hover:text-ink flex items-center gap-1.5 transition shadow-subtle whitespace-nowrap"
-                title="打开 Windows 资源管理器选择压缩包"
+                title="打开 Windows 资源管理器选择压缩包 (可按住 Ctrl 多选)"
               >
                 <FileArchive className="w-3.5 h-3.5 text-steel" />
-                <span>选择文件</span>
+                <span>选择文件(多选)</span>
               </button>
               <button
                 type="button"
@@ -189,6 +215,51 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* Multi-file Merged Import Panel */}
+          {selectedFiles.length > 1 && (
+            <div className="p-3.5 rounded-xl bg-cyan-50/60 border border-cyan-200 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="merge-toggle"
+                    checked={isMergeMode}
+                    onChange={(e) => setIsMergeMode(e.target.checked)}
+                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="merge-toggle" className="text-xs font-bold text-cyan-950 cursor-pointer">
+                    合并导入为一个模组 (适合 NPC Cloth Physics 等多文件模组)
+                  </label>
+                </div>
+                <span className="text-[10px] font-mono text-cyan-700 bg-cyan-100 px-2 py-0.5 rounded-full">
+                  已选 {selectedFiles.length} 个文件
+                </span>
+              </div>
+
+              {isMergeMode && (
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[11px] font-semibold text-cyan-900">
+                    合并后的模组名称:
+                  </label>
+                  <input
+                    type="text"
+                    value={mergedModName}
+                    onChange={(e) => setMergedModName(e.target.value)}
+                    placeholder="输入合并后的展示名称 (如: NPC Cloth Physics)"
+                    className="w-full px-3 py-1.5 text-xs bg-white border border-cyan-200 rounded-lg text-ink focus:border-primary focus:outline-none"
+                  />
+                  <div className="max-h-20 overflow-y-auto space-y-1 text-[11px] text-cyan-800 font-mono bg-white/70 p-2 rounded border border-cyan-100">
+                    {selectedFiles.map((f, i) => (
+                      <div key={i} className="truncate">
+                        • {f.split(/[/\\]/).pop()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Source URL Input */}
           <div className="space-y-1.5">
