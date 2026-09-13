@@ -6,9 +6,12 @@ use crate::types::{AssetCategory, AssetEntry};
 
 /// Canonical top-level asset directories in Sekiro Mod Engine.
 pub const CANONICAL_DIRS: &[&str] = &[
-    "parts", "chr", "param", "sfx", "sound", "msg", "menu", "font", "mtd", "event", "map", "action",
+    "parts", "chr", "param", "sfx", "sound", "msg", "menu", "mtd", "event", "map", "action",
     "cutscene", "script",
 ];
+
+/// Known canonical UI subdirectories that belong under `menu/`
+pub const UI_SUB_DIRS: &[&str] = &["hi", "font", "low"];
 
 /// Canonical root files that belong in the game root (alongside sekiro.exe).
 pub const CANONICAL_ROOT_FILES: &[&str] = &["dinput8.dll", "modengine.ini"];
@@ -25,9 +28,10 @@ pub const FILE_SIGNATURES: &[(&str, &str, AssetCategory)] = &[
     (".bank", "sound", AssetCategory::Sound),
     (".fev", "sound", AssetCategory::Sound),
     (".emevd.dcx", "event", AssetCategory::Event),
-    (".tpf.dcx", "menu", AssetCategory::Menu),
+    (".tpf.dcx", "menu/hi", AssetCategory::Menu),
     (".menubnd.dcx", "menu", AssetCategory::Menu),
-    (".gfx", "font", AssetCategory::Font),
+    (".gfx", "menu/font", AssetCategory::Font),
+    (".swf", "menu/font", AssetCategory::Font),
     (".mtd", "mtd", AssetCategory::Mtd),
     (".mtdbnd.dcx", "mtd", AssetCategory::Mtd),
     (".msb.dcx", "map", AssetCategory::Map),
@@ -95,17 +99,46 @@ impl Normalizer {
                 .collect::<Vec<_>>()
                 .join("/");
 
-            // Heuristic fix for loose files matching signatures: place into canonical dir
-            if !normalized_rel_str.contains('/')
+            let lower = normalized_rel_str.to_ascii_lowercase();
+
+            // 1. Sekiro UI Subdirectory Normalization
+            // In Sekiro, UI assets belong under `menu/` (e.g. menu/hi/, menu/font/, menu/low/).
+            // Authors often pack `hi/`, `font/`, `low/` directly without the parent `menu/`.
+            if lower.starts_with("hi/") || lower.starts_with("font/") || lower.starts_with("low/") {
+                normalized_rel_str = format!("menu/{normalized_rel_str}");
+            } else if lower.starts_with("menu/") {
+                // Ensure common textures are placed in menu/hi/ and loose GFX in menu/font/
+                if lower == "menu/01_common.tpf.dcx"
+                    || lower == "menu/01_common.tpf"
+                    || lower.starts_with("menu/00_solo")
+                {
+                    normalized_rel_str = format!("menu/hi/{}", &normalized_rel_str[5..]);
+                } else if (lower.ends_with(".gfx") || lower.ends_with(".swf"))
+                    && !lower.starts_with("menu/font/")
+                {
+                    normalized_rel_str = format!("menu/font/{}", &normalized_rel_str[5..]);
+                }
+            } else if !normalized_rel_str.contains('/')
                 && !CANONICAL_ROOT_FILES.contains(&normalized_rel_str.as_str())
             {
-                let lower = normalized_rel_str.to_ascii_lowercase();
+                // Heuristic fix for loose files matching signatures: place into canonical dir
                 let mut mapped = false;
-                for (sig, canon_dir, _) in FILE_SIGNATURES {
-                    if lower.ends_with(sig) {
-                        normalized_rel_str = format!("{canon_dir}/{normalized_rel_str}");
-                        mapped = true;
-                        break;
+                if lower == "01_common.tpf.dcx"
+                    || lower == "01_common.tpf"
+                    || lower.starts_with("00_solo")
+                {
+                    normalized_rel_str = format!("menu/hi/{normalized_rel_str}");
+                    mapped = true;
+                } else if lower.ends_with(".gfx") || lower.ends_with(".swf") {
+                    normalized_rel_str = format!("menu/font/{normalized_rel_str}");
+                    mapped = true;
+                } else {
+                    for (sig, canon_dir, _) in FILE_SIGNATURES {
+                        if lower.ends_with(sig) {
+                            normalized_rel_str = format!("{canon_dir}/{normalized_rel_str}");
+                            mapped = true;
+                            break;
+                        }
                     }
                 }
                 if !mapped {
@@ -188,15 +221,18 @@ impl Normalizer {
             return Ok(candidate);
         }
 
-        // Step 3: Check if there is a directory containing loose files matching Sekiro signatures
-        for entry in WalkDir::new(base_path)
-            .min_depth(0)
-            .max_depth(4)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            if entry.file_type().is_dir() && Self::contains_signature_files(entry.path()) {
-                return Ok(entry.path().to_path_buf());
+        // Step 3: Check if there is a directory containing loose files matching Sekiro signatures.
+        // Search by increasing depth (shallowest first) to avoid prematurely diving into child subfolders.
+        for depth in 0..=4 {
+            for entry in WalkDir::new(base_path)
+                .min_depth(depth)
+                .max_depth(depth)
+                .into_iter()
+                .filter_map(|e| e.ok())
+            {
+                if entry.file_type().is_dir() && Self::contains_signature_files(entry.path()) {
+                    return Ok(entry.path().to_path_buf());
+                }
             }
         }
 
@@ -225,7 +261,9 @@ impl Normalizer {
             let is_dir = item.file_type().map(|t| t.is_dir()).unwrap_or(false);
 
             if is_dir {
-                if CANONICAL_DIRS.iter().any(|&c| c == name) {
+                if CANONICAL_DIRS.iter().any(|&c| c == name)
+                    || UI_SUB_DIRS.iter().any(|&u| u == name)
+                {
                     count += 1;
                 }
             } else {
@@ -293,9 +331,12 @@ impl Normalizer {
             return AssetCategory::Msg;
         }
         if lower.starts_with("menu/") {
+            if lower.contains("/font/") || lower.ends_with(".gfx") || lower.ends_with(".swf") {
+                return AssetCategory::Font;
+            }
             return AssetCategory::Menu;
         }
-        if lower.starts_with("font/") {
+        if lower.starts_with("font/") || lower.ends_with(".gfx") || lower.ends_with(".swf") {
             return AssetCategory::Font;
         }
         if lower.starts_with("mtd/") {
@@ -334,6 +375,26 @@ impl Normalizer {
         // Hidden files or files in hidden folders relative to root (e.g. .smm_source/, .smm_mod.json)
         if file_name.starts_with('.') {
             return true;
+        }
+
+        // Ignore unpacked Yabber / Witchy workspace files (e.g. `_yabber-tpf.xml`, folders with `-tpf-dcx`, `-bnd-dcx`, etc.)
+        if lower.starts_with("_yabber") || lower.starts_with("_witchy") || lower.ends_with(".xml") {
+            return true;
+        }
+
+        if let Ok(rel) = path.strip_prefix(root) {
+            let rel_str = rel.to_string_lossy().to_ascii_lowercase();
+            if rel_str.contains("-tpf-dcx")
+                || rel_str.contains("-bnd-dcx")
+                || rel_str.contains("-partsbnd-dcx")
+                || rel_str.contains("-chrbnd-dcx")
+                || rel_str.contains("-menubnd-dcx")
+                || rel_str.contains("-geombnd-dcx")
+                || rel_str.contains("-ffxbnd-dcx")
+                || rel_str.contains("-anibnd-dcx")
+            {
+                return true;
+            }
         }
 
         // Archive files should not be deployed as game assets

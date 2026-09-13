@@ -211,12 +211,12 @@ fn test_native_ps4_buttons_fixture() {
     let rel_paths: Vec<&str> = assets.iter().map(|a| a.relative_path.as_str()).collect();
     assert!(rel_paths.contains(&"menu/hi/01_common.tpf.dcx"));
     assert!(rel_paths.contains(&"menu/menu.menubnd.dcx"));
-    assert!(rel_paths.contains(&"font/font_ps4.gfx"));
+    assert!(rel_paths.contains(&"menu/font/font_ps4.gfx"));
 
     let font_asset = assets
         .iter()
-        .find(|a| a.relative_path == "font/font_ps4.gfx")
-        .expect("font_ps4.gfx missing");
+        .find(|a| a.relative_path == "menu/font/font_ps4.gfx")
+        .expect("menu/font/font_ps4.gfx missing");
     assert_eq!(font_asset.category, AssetCategory::Font);
 }
 

@@ -439,4 +439,44 @@ fn test_import_multiple_files_merged_bundle() {
     assert!(staging_dir.join(&imported.id).join(".smm_source/KuroCloth_v1.0.zip").exists());
 }
 
+#[test]
+fn test_ui_theme_normalization_and_yabber_artifacts_exclusion() {
+    let tmp = tempdir().expect("Failed to create tempdir");
+    let base = tmp.path();
+    let staging_dir = base.join("staging");
+
+    // Recreate Black Dragon Wooden Theme package structure
+    let theme_zip = base.join("BlackDragonTheme.zip");
+    {
+        let file = File::create(&theme_zip).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+
+        // Loose GFX file
+        zip.start_file("BlackDragonTheme/05_001_title_logo.gfx", opt).unwrap();
+        zip.write_all(b"GFX_DATA").unwrap();
+
+        // High-res packed TPF
+        zip.start_file("BlackDragonTheme/hi/01_common.tpf.dcx", opt).unwrap();
+        zip.write_all(b"TPF_DATA").unwrap();
+
+        // Unpacked Yabber artifacts (must be ignored!)
+        zip.start_file("BlackDragonTheme/hi/01_common-tpf-dcx/MENU_BG_Base1.dds", opt).unwrap();
+        zip.write_all(b"RAW_DDS").unwrap();
+        zip.start_file("BlackDragonTheme/hi/01_common-tpf-dcx/_yabber-tpf.xml", opt).unwrap();
+        zip.write_all(b"<xml></xml>").unwrap();
+
+        zip.finish().unwrap();
+    }
+
+    let imported = import_mod(&theme_zip, &staging_dir, &ImportOptions::default())
+        .expect("Failed to import UI theme mod");
+
+    let (_, assets) = ModLoader::scan_mod(&staging_dir.join(&imported.id)).unwrap();
+    assert_eq!(assets.len(), 2);
+    assert!(assets.iter().any(|a| a.relative_path == "menu/hi/01_common.tpf.dcx"));
+    assert!(assets.iter().any(|a| a.relative_path == "menu/font/05_001_title_logo.gfx"));
+    assert!(!assets.iter().any(|a| a.relative_path.contains("01_common-tpf-dcx")));
+}
+
 
