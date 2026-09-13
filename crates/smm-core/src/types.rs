@@ -105,6 +105,7 @@ pub enum AssetCategory {
     Script,
     Loader,
     Cutscene,
+    Sfx,
     Other,
 }
 

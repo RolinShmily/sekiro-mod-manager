@@ -301,3 +301,90 @@ fn test_doctor_diagnostics_and_setup_engine() {
     assert_eq!(report5.overall_status, OverallHealth::Healthy);
 }
 
+#[test]
+fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
+    let tmp = tempdir().expect("Failed to create tempdir");
+    let base = tmp.path();
+    let staging_dir = base.join("staging");
+
+    // 1. Test Loose texbnd without chr/ directory (e.g. Shura Isshin #2204)
+    let isshin_zip = base.join("IsshinSkin_v1.0.zip");
+    {
+        let file = File::create(&isshin_zip).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        zip.start_file("Custom Isshin/c5409.texbnd.dcx", opt).unwrap();
+        zip.write_all(b"MOCK_ISSHIN_TEXTURE").unwrap();
+        zip.finish().unwrap();
+    }
+    let imported_isshin = import_mod(&isshin_zip, &staging_dir, &ImportOptions::default())
+        .expect("Failed to import loose texbnd mod");
+    let (_, isshin_assets) = ModLoader::scan_mod(&staging_dir.join(&imported_isshin.id)).unwrap();
+    assert_eq!(isshin_assets.len(), 1);
+    assert_eq!(isshin_assets[0].relative_path, "chr/c5409.texbnd.dcx");
+    assert_eq!(isshin_assets[0].category, AssetCategory::Chr);
+
+    // 2. Test Sfx directory package (e.g. Blue Effect #2243)
+    let blue_effect_zip = base.join("BlueLazulite_v1.6.zip");
+    {
+        let file = File::create(&blue_effect_zip).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        zip.start_file("Blue Flame/sfx/sfxbnd_commoneffects.ffxbnd.dcx", opt).unwrap();
+        zip.write_all(b"MOCK_SFX_BUNDLE").unwrap();
+        zip.start_file("Blue Flame/Fxr files/f000300235.fxr", opt).unwrap();
+        zip.write_all(b"MOCK_FXR").unwrap();
+        zip.finish().unwrap();
+    }
+    let imported_blue = import_mod(&blue_effect_zip, &staging_dir, &ImportOptions::default())
+        .expect("Failed to import sfx mod");
+    assert_eq!(imported_blue.category, "vfx");
+    let (_, blue_assets) = ModLoader::scan_mod(&staging_dir.join(&imported_blue.id)).unwrap();
+    assert!(blue_assets.iter().any(|a| a.relative_path == "sfx/sfxbnd_commoneffects.ffxbnd.dcx"));
+
+    // 3. Test Nested archive with integration zip (e.g. Lamia #1715)
+    let nested_outer_zip = base.join("LamiaBundle_v1.1.zip");
+    {
+        // Inner integration zip
+        let inner_int_path = base.join("Lamia(integration).zip");
+        {
+            let file = File::create(&inner_int_path).unwrap();
+            let mut zip = ZipWriter::new(file);
+            let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+            zip.start_file("am_m_9000.partsbnd.dcx", opt).unwrap();
+            zip.write_all(b"ARM").unwrap();
+            zip.start_file("wp_a_0310.partsbnd.dcx", opt).unwrap();
+            zip.write_all(b"MORTAL_BLADE").unwrap();
+            zip.finish().unwrap();
+        }
+
+        // Inner secondary zip
+        let inner_char_path = base.join("Lamia(character).zip");
+        {
+            let file = File::create(&inner_char_path).unwrap();
+            let mut zip = ZipWriter::new(file);
+            let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+            zip.start_file("am_m_9000.partsbnd.dcx", opt).unwrap();
+            zip.write_all(b"ARM_ONLY").unwrap();
+            zip.finish().unwrap();
+        }
+
+        // Outer zip wrapping both
+        let file = File::create(&nested_outer_zip).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        zip.start_file("Lamia(integration).zip", opt).unwrap();
+        zip.write_all(&std::fs::read(&inner_int_path).unwrap()).unwrap();
+        zip.start_file("Lamia(character).zip", opt).unwrap();
+        zip.write_all(&std::fs::read(&inner_char_path).unwrap()).unwrap();
+        zip.finish().unwrap();
+    }
+
+    let imported_lamia = import_mod(&nested_outer_zip, &staging_dir, &ImportOptions::default())
+        .expect("Failed to import nested archive mod");
+    let (_, lamia_assets) = ModLoader::scan_mod(&staging_dir.join(&imported_lamia.id)).unwrap();
+    assert_eq!(lamia_assets.len(), 2);
+    assert!(lamia_assets.iter().any(|a| a.relative_path == "parts/am_m_9000.partsbnd.dcx"));
+    assert!(lamia_assets.iter().any(|a| a.relative_path == "parts/wp_a_0310.partsbnd.dcx"));
+}
+

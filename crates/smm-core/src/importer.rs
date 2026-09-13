@@ -79,6 +79,54 @@ pub fn import_mod(
         });
     }
 
+    // Step 1.5: Smart recursive extraction for nested archives (e.g. multi-component / multi-pack zip archives)
+    let mut nested_iteration = 0;
+    while nested_iteration < 3 && Normalizer::find_canonical_root(&unpack_dir).is_err() {
+        let nested_archives: Vec<PathBuf> = WalkDir::new(&unpack_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file() && is_supported_archive(e.path()))
+            .map(|e| e.into_path())
+            .collect();
+
+        if nested_archives.is_empty() {
+            break;
+        }
+
+        // If there are multiple archives, determine if one is an integration/all-in-one pack
+        if let Some(primary_archive) = pick_primary_nested_archive(&nested_archives) {
+            let nested_out = temp_workspace
+                .path()
+                .join(format!("nested_extracted_{}", nested_iteration));
+            std::fs::create_dir_all(&nested_out)?;
+
+            // Extract the selected primary archive
+            extract_archive(&primary_archive, &nested_out)?;
+
+            // Remove processed nested archives from unpack_dir so they don't loop or clutter
+            for arc in &nested_archives {
+                let _ = std::fs::remove_file(arc);
+            }
+
+            // Copy extracted files into unpack_dir
+            copy_dir_recursive(&nested_out, &unpack_dir)?;
+        } else {
+            // Extract all nested archives into unpack_dir
+            for (idx, arc) in nested_archives.iter().enumerate() {
+                let nested_out = temp_workspace
+                    .path()
+                    .join(format!("nested_extracted_{}_{}", nested_iteration, idx));
+                std::fs::create_dir_all(&nested_out)?;
+                if extract_archive(arc, &nested_out).is_ok() {
+                    let _ = copy_dir_recursive(&nested_out, &unpack_dir);
+                }
+                let _ = std::fs::remove_file(arc);
+            }
+        }
+
+        nested_iteration += 1;
+    }
+
     // Step 2: Normalize directory and locate canonical Sekiro assets
     let norm_result = Normalizer::normalize_directory(&unpack_dir)?;
     if norm_result.assets.is_empty() {
@@ -402,6 +450,7 @@ pub fn infer_category(assets: &[AssetEntry]) -> String {
     let mut has_sound = false;
     let mut has_map = false;
     let mut has_script = false;
+    let mut has_sfx = false;
 
     for a in assets {
         match a.category {
@@ -419,6 +468,7 @@ pub fn infer_category(assets: &[AssetEntry]) -> String {
             AssetCategory::Sound => has_sound = true,
             AssetCategory::Map => has_map = true,
             AssetCategory::Script => has_script = true,
+            AssetCategory::Sfx => has_sfx = true,
             _ => {}
         }
     }
@@ -427,6 +477,8 @@ pub fn infer_category(assets: &[AssetEntry]) -> String {
         "loader".to_string()
     } else if has_param {
         "gameplay_overhaul".to_string()
+    } else if has_sfx {
+        "vfx".to_string()
     } else if has_weapon {
         "weapon_skin".to_string()
     } else if has_chr || has_parts {
@@ -449,6 +501,7 @@ pub fn default_priority_for_category(category: &str) -> u32 {
     match category {
         "loader" => 10,
         "gameplay_overhaul" => 50,
+        "vfx" => 80,
         "weapon_skin" | "character_skin" => 100,
         "ui" => 100,
         "audio" => 100,
@@ -456,6 +509,38 @@ pub fn default_priority_for_category(category: &str) -> u32 {
         "script" => 100,
         _ => 100,
     }
+}
+
+/// Intelligently chooses the primary mod archive when an archive contains multiple nested packages.
+/// Returns Some(archive) if an integration/full/main package is identified or if only one exists.
+pub fn pick_primary_nested_archive(archives: &[PathBuf]) -> Option<PathBuf> {
+    if archives.is_empty() {
+        return None;
+    }
+    if archives.len() == 1 {
+        return Some(archives[0].clone());
+    }
+
+    let keywords = [
+        "integration", "integrate", "aio", "all-in-one", "all in one",
+        "full", "complete", "main", "base", "default",
+        "整合", "完整", "全套", "主体", "基础", "默认",
+    ];
+
+    for keyword in &keywords {
+        if let Some(found) = archives.iter().find(|p| {
+            let name = p.file_name().unwrap_or_default().to_string_lossy().to_ascii_lowercase();
+            name.contains(keyword)
+        }) {
+            return Some(found.clone());
+        }
+    }
+
+    // If no keyword matched, choose the largest archive by file size
+    archives
+        .iter()
+        .max_by_key(|p| std::fs::metadata(p).map(|m| m.len()).unwrap_or(0))
+        .cloned()
 }
 
 #[cfg(test)]

@@ -20,6 +20,7 @@ export function getCategoryLabel(category: string): string {
     ui: '用户界面',
     audio: '音效 / 原声',
     animation: '招式动作',
+    vfx: '视觉特效',
     map: '地图场景',
     script: '功能脚本',
     test_sample: '测试样本',
@@ -43,6 +44,8 @@ export function getCategoryBadgeClass(category: string): { bg: string; text: str
       return { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-200' };
     case 'animation':
       return { bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-200' };
+    case 'vfx':
+      return { bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-200' };
     default:
       return { bg: 'bg-[#f1f4f7]', text: 'text-charcoal', border: 'border-[#dee3e9]' };
   }

@@ -6,7 +6,7 @@ use crate::types::{AssetCategory, AssetEntry};
 
 /// Canonical top-level asset directories in Sekiro Mod Engine.
 pub const CANONICAL_DIRS: &[&str] = &[
-    "parts", "chr", "param", "sound", "msg", "menu", "font", "mtd", "event", "map", "action",
+    "parts", "chr", "param", "sfx", "sound", "msg", "menu", "font", "mtd", "event", "map", "action",
     "cutscene", "script",
 ];
 
@@ -18,6 +18,8 @@ pub const FILE_SIGNATURES: &[(&str, &str, AssetCategory)] = &[
     (".partsbnd.dcx", "parts", AssetCategory::Parts),
     (".chrbnd.dcx", "chr", AssetCategory::Chr),
     (".anibnd.dcx", "chr", AssetCategory::Chr),
+    (".texbnd.dcx", "chr", AssetCategory::Chr),
+    (".ffxbnd.dcx", "sfx", AssetCategory::Sfx),
     (".parambnd.dcx", "param/gameparam", AssetCategory::Param),
     (".fsb", "sound", AssetCategory::Sound),
     (".bank", "sound", AssetCategory::Sound),
@@ -27,8 +29,13 @@ pub const FILE_SIGNATURES: &[(&str, &str, AssetCategory)] = &[
     (".menubnd.dcx", "menu", AssetCategory::Menu),
     (".gfx", "font", AssetCategory::Font),
     (".mtd", "mtd", AssetCategory::Mtd),
+    (".mtdbnd.dcx", "mtd", AssetCategory::Mtd),
     (".msb.dcx", "map", AssetCategory::Map),
+    (".msgbnd.dcx", "msg", AssetCategory::Msg),
     (".lua", "script", AssetCategory::Script),
+    (".fxr", "sfx", AssetCategory::Sfx),
+    (".hkx", "action", AssetCategory::Other),
+    (".bk2", "cutscene", AssetCategory::Cutscene),
 ];
 
 /// Result of directory normalization.
@@ -93,10 +100,24 @@ impl Normalizer {
                 && !CANONICAL_ROOT_FILES.contains(&normalized_rel_str.as_str())
             {
                 let lower = normalized_rel_str.to_ascii_lowercase();
+                let mut mapped = false;
                 for (sig, canon_dir, _) in FILE_SIGNATURES {
                     if lower.ends_with(sig) {
                         normalized_rel_str = format!("{canon_dir}/{normalized_rel_str}");
+                        mapped = true;
                         break;
+                    }
+                }
+                if !mapped {
+                    if (lower.starts_with("wp_") || lower.starts_with("am_") || lower.starts_with("bd_") || lower.starts_with("fc_") || lower.starts_with("lg_"))
+                        && (lower.ends_with(".dcx") || lower.ends_with(".partsbnd") || lower.ends_with(".tpf")) {
+                        normalized_rel_str = format!("parts/{normalized_rel_str}");
+                    } else if lower.starts_with('c') && lower.chars().skip(1).take(4).all(|c| c.is_ascii_digit())
+                        && (lower.ends_with(".dcx") || lower.ends_with(".chrbnd") || lower.ends_with(".texbnd") || lower.ends_with(".anibnd")) {
+                        normalized_rel_str = format!("chr/{normalized_rel_str}");
+                    } else if (lower.starts_with("sfx") || lower.starts_with("f000"))
+                        && (lower.ends_with(".dcx") || lower.ends_with(".ffxbnd") || lower.ends_with(".fxr")) {
+                        normalized_rel_str = format!("sfx/{normalized_rel_str}");
                     }
                 }
             }
@@ -229,6 +250,18 @@ impl Normalizer {
                 if FILE_SIGNATURES.iter().any(|(sig, _, _)| name.ends_with(sig)) {
                     return true;
                 }
+                if (name.starts_with("wp_") || name.starts_with("am_") || name.starts_with("bd_") || name.starts_with("fc_") || name.starts_with("lg_"))
+                    && (name.ends_with(".dcx") || name.ends_with(".partsbnd") || name.ends_with(".tpf")) {
+                    return true;
+                }
+                if name.starts_with('c') && name.chars().skip(1).take(4).all(|c| c.is_ascii_digit())
+                    && (name.ends_with(".dcx") || name.ends_with(".chrbnd") || name.ends_with(".texbnd") || name.ends_with(".anibnd")) {
+                    return true;
+                }
+                if (name.starts_with("sfx") || name.starts_with("f000"))
+                    && (name.ends_with(".dcx") || name.ends_with(".ffxbnd") || name.ends_with(".fxr")) {
+                    return true;
+                }
             }
         }
         false
@@ -249,6 +282,9 @@ impl Normalizer {
         }
         if lower.starts_with("param/") {
             return AssetCategory::Param;
+        }
+        if lower.starts_with("sfx/") || lower.ends_with(".ffxbnd.dcx") || lower.ends_with(".fxr") {
+            return AssetCategory::Sfx;
         }
         if lower.starts_with("sound/") {
             return AssetCategory::Sound;
@@ -297,6 +333,16 @@ impl Normalizer {
 
         // Hidden files or files in hidden folders relative to root (e.g. .smm_source/, .smm_mod.json)
         if file_name.starts_with('.') {
+            return true;
+        }
+
+        // Archive files should not be deployed as game assets
+        if lower.ends_with(".zip")
+            || lower.ends_with(".7z")
+            || lower.ends_with(".rar")
+            || lower.ends_with(".tar")
+            || lower.ends_with(".gz")
+        {
             return true;
         }
 
