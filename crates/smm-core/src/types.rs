@@ -102,6 +102,7 @@ pub enum AssetCategory {
     Mtd,
     Event,
     Map,
+    Obj,
     Script,
     Loader,
     Cutscene,

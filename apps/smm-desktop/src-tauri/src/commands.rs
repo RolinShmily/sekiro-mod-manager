@@ -228,11 +228,12 @@ pub fn import_mod_file(
     staging_dir: String,
     source_url: Option<String>,
 ) -> Result<ModInfo, String> {
-    let src = PathBuf::from(&source_path);
+    let clean_source = source_path.trim().trim_matches('"').trim_matches('\'').to_string();
+    let src = PathBuf::from(&clean_source);
     let stg = PathBuf::from(&staging_dir);
 
     if !src.exists() {
-        return Err(format!("Source mod path does not exist: {}", source_path));
+        return Err(format!("Source mod path does not exist: {}", clean_source));
     }
 
     let options = ImportOptions {
@@ -244,7 +245,7 @@ pub fn import_mod_file(
     };
 
     import_mod(&src, &stg, &options)
-        .map_err(|e| format!("Failed to import mod from '{}': {}", source_path, e))
+        .map_err(|e| format!("Failed to import mod from '{}': {}", clean_source, e))
 }
 
 /// Scans active mods in staging and returns collision / shadowing matrix report.
@@ -574,7 +575,10 @@ pub fn import_merged_mod_files(
     custom_name: Option<String>,
     source_url: Option<String>,
 ) -> Result<ModInfo, String> {
-    let paths: Vec<PathBuf> = source_paths.into_iter().map(PathBuf::from).collect();
+    let paths: Vec<PathBuf> = source_paths
+        .into_iter()
+        .map(|p| PathBuf::from(p.trim().trim_matches('"').trim_matches('\'')))
+        .collect();
     let stg = PathBuf::from(&staging_dir);
 
     let options = ImportOptions {

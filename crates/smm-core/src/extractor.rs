@@ -427,4 +427,16 @@ mod tests {
             assert!(path.is_file());
         }
     }
+
+    #[test]
+    fn test_extract_real_rar() {
+        let real_rar = Path::new("D:/game-mods-saves/sekiro/mods/zips/Emma's Injury Sounds-537-1-0-1581425534.rar");
+        if !real_rar.exists() {
+            return;
+        }
+        let tmp = tempdir().unwrap();
+        let dest = tmp.path().join("unpacked");
+        extract_rar(real_rar, &dest).expect("Failed to extract RAR");
+        assert!(dest.join("sound").join("main.fsb").exists() || dest.join("sound/main.fsb").exists());
+    }
 }

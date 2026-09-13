@@ -663,11 +663,15 @@ fn run_import(
     overwrite: bool,
     staging_arg: Option<&Path>,
 ) -> Result<(), String> {
+    let clean_str = source.to_string_lossy();
+    let trimmed = clean_str.trim().trim_matches('"').trim_matches('\'');
+    let source_clean = PathBuf::from(trimmed);
+
     let staging_path = resolve_or_create_staging_dir(staging_arg)?;
     println!(
         "\n{} {}",
         "Importing Mod Package:".bold().cyan(),
-        source.display().to_string().bold()
+        source_clean.display().to_string().bold()
     );
 
     let opts = ImportOptions {
@@ -678,7 +682,7 @@ fn run_import(
         source_url: None,
     };
 
-    let imported = import_mod(source, &staging_path, &opts)
+    let imported = import_mod(&source_clean, &staging_path, &opts)
         .map_err(|e| format!("Mod import failed: {}", e))?;
 
     let root_path = imported

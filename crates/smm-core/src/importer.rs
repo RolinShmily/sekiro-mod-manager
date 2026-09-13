@@ -610,6 +610,7 @@ pub fn infer_category(assets: &[AssetEntry]) -> String {
     let mut has_ui = false;
     let mut has_sound = false;
     let mut has_map = false;
+    let mut has_obj = false;
     let mut has_script = false;
     let mut has_sfx = false;
 
@@ -628,6 +629,7 @@ pub fn infer_category(assets: &[AssetEntry]) -> String {
             AssetCategory::Menu | AssetCategory::Font | AssetCategory::Msg => has_ui = true,
             AssetCategory::Sound => has_sound = true,
             AssetCategory::Map => has_map = true,
+            AssetCategory::Obj => has_obj = true,
             AssetCategory::Script => has_script = true,
             AssetCategory::Sfx => has_sfx = true,
             _ => {}
@@ -648,7 +650,7 @@ pub fn infer_category(assets: &[AssetEntry]) -> String {
         "ui".to_string()
     } else if has_sound {
         "audio".to_string()
-    } else if has_map {
+    } else if has_obj || has_map {
         "map".to_string()
     } else if has_script {
         "script".to_string()

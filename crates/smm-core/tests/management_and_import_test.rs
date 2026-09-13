@@ -479,4 +479,40 @@ fn test_ui_theme_normalization_and_yabber_artifacts_exclusion() {
     assert!(!assets.iter().any(|a| a.relative_path.contains("01_common-tpf-dcx")));
 }
 
+#[test]
+fn test_import_obj_mod_sculptor_idol() {
+    let tmp = tempdir().expect("Failed to create tempdir");
+    let base = tmp.path();
+    let staging_dir = base.join("staging");
+
+    // Recreate Sculptor's Idol with Monobloc structure:
+    // mods/obj/o005000.objbnd.dcx
+    // mods/obj/o005500.objbnd.dcx
+    let zip_path = base.join("Sculptors_Idol_with_Monobloc-1422.zip");
+    {
+        let file = File::create(&zip_path).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+
+        zip.start_file("mods/obj/o005000.objbnd.dcx", opt).unwrap();
+        zip.write_all(b"DCX_OBJ_5000").unwrap();
+
+        zip.start_file("mods/obj/o005500.objbnd.dcx", opt).unwrap();
+        zip.write_all(b"DCX_OBJ_5500").unwrap();
+
+        zip.finish().unwrap();
+    }
+
+    let imported = import_mod(&zip_path, &staging_dir, &ImportOptions::default())
+        .expect("Failed to import obj mod");
+
+    assert_eq!(imported.category, "map");
+
+    let (_info, assets) = ModLoader::scan_mod(&staging_dir.join(&imported.id)).unwrap();
+    assert_eq!(assets.len(), 2);
+    assert!(assets.iter().any(|a| a.relative_path == "obj/o005000.objbnd.dcx"));
+    assert!(assets.iter().any(|a| a.relative_path == "obj/o005500.objbnd.dcx"));
+    assert_eq!(assets[0].category, AssetCategory::Obj);
+}
+
 

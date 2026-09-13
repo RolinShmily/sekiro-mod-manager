@@ -88,11 +88,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   function handleImport() {
     if (selectedFiles.length > 1 && isMergeMode && onImportMerged) {
       setErrorMessage('');
-      onImportMerged(selectedFiles, mergedModName.trim() || undefined, sourceUrl.trim() || undefined);
+      const cleanFiles = selectedFiles.map((p) => p.trim().replace(/^["']|["']$/g, ''));
+      onImportMerged(cleanFiles, mergedModName.trim() || undefined, sourceUrl.trim() || undefined);
       return;
     }
 
-    const trimmedPath = sourcePath.trim();
+    const trimmedPath = sourcePath.trim().replace(/^["']|["']$/g, '');
     if (!trimmedPath) {
       setErrorMessage('请输入或选择本地模组压缩包或文件夹路径');
       return;

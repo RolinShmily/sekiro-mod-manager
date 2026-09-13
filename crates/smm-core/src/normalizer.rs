@@ -6,12 +6,15 @@ use crate::types::{AssetCategory, AssetEntry};
 
 /// Canonical top-level asset directories in Sekiro Mod Engine.
 pub const CANONICAL_DIRS: &[&str] = &[
-    "parts", "chr", "param", "sfx", "sound", "msg", "menu", "mtd", "event", "map", "action",
+    "parts", "chr", "obj", "param", "sfx", "sound", "msg", "menu", "mtd", "event", "map", "action",
     "cutscene", "script",
 ];
 
 /// Known canonical UI subdirectories that belong under `menu/`
 pub const UI_SUB_DIRS: &[&str] = &["hi", "font", "low"];
+
+/// Recognized audio subdirectories that map to `sound/`
+pub const AUDIO_SUB_DIRS: &[&str] = &["sounds", "audio", "voice", "voices", "music"];
 
 /// Canonical root files that belong in the game root (alongside sekiro.exe).
 pub const CANONICAL_ROOT_FILES: &[&str] = &["dinput8.dll", "modengine.ini"];
@@ -22,11 +25,19 @@ pub const FILE_SIGNATURES: &[(&str, &str, AssetCategory)] = &[
     (".chrbnd.dcx", "chr", AssetCategory::Chr),
     (".anibnd.dcx", "chr", AssetCategory::Chr),
     (".texbnd.dcx", "chr", AssetCategory::Chr),
+    (".objbnd.dcx", "obj", AssetCategory::Obj),
+    (".objbnd", "obj", AssetCategory::Obj),
     (".ffxbnd.dcx", "sfx", AssetCategory::Sfx),
     (".parambnd.dcx", "param/gameparam", AssetCategory::Param),
     (".fsb", "sound", AssetCategory::Sound),
     (".bank", "sound", AssetCategory::Sound),
+    (".bnk", "sound", AssetCategory::Sound),
     (".fev", "sound", AssetCategory::Sound),
+    (".mch", "sound", AssetCategory::Sound),
+    (".mix", "sound", AssetCategory::Sound),
+    (".rpc", "sound", AssetCategory::Sound),
+    (".itl", "sound", AssetCategory::Sound),
+    (".wem", "sound", AssetCategory::Sound),
     (".emevd.dcx", "event", AssetCategory::Event),
     (".tpf.dcx", "menu/hi", AssetCategory::Menu),
     (".menubnd.dcx", "menu", AssetCategory::Menu),
@@ -106,6 +117,16 @@ impl Normalizer {
             // Authors often pack `hi/`, `font/`, `low/` directly without the parent `menu/`.
             if lower.starts_with("hi/") || lower.starts_with("font/") || lower.starts_with("low/") {
                 normalized_rel_str = format!("menu/{normalized_rel_str}");
+            } else if lower.starts_with("sounds/") {
+                normalized_rel_str = format!("sound/{}", &normalized_rel_str[7..]);
+            } else if lower.starts_with("audio/") {
+                normalized_rel_str = format!("sound/{}", &normalized_rel_str[6..]);
+            } else if lower.starts_with("voice/") {
+                normalized_rel_str = format!("sound/{}", &normalized_rel_str[6..]);
+            } else if lower.starts_with("voices/") {
+                normalized_rel_str = format!("sound/{}", &normalized_rel_str[7..]);
+            } else if lower.starts_with("music/") {
+                normalized_rel_str = format!("sound/{}", &normalized_rel_str[6..]);
             } else if lower.starts_with("menu/") {
                 // Ensure common textures are placed in menu/hi/ and loose GFX in menu/font/
                 if lower == "menu/01_common.tpf.dcx"
@@ -151,6 +172,9 @@ impl Normalizer {
                     } else if (lower.starts_with("sfx") || lower.starts_with("f000"))
                         && (lower.ends_with(".dcx") || lower.ends_with(".ffxbnd") || lower.ends_with(".fxr")) {
                         normalized_rel_str = format!("sfx/{normalized_rel_str}");
+                    } else if lower.starts_with('o') && lower.chars().skip(1).take(6).all(|c| c.is_ascii_digit())
+                        && (lower.ends_with(".dcx") || lower.ends_with(".objbnd")) {
+                        normalized_rel_str = format!("obj/{normalized_rel_str}");
                     }
                 }
             }
@@ -263,6 +287,7 @@ impl Normalizer {
             if is_dir {
                 if CANONICAL_DIRS.iter().any(|&c| c == name)
                     || UI_SUB_DIRS.iter().any(|&u| u == name)
+                    || AUDIO_SUB_DIRS.iter().any(|&a| a == name)
                 {
                     count += 1;
                 }
@@ -300,6 +325,10 @@ impl Normalizer {
                     && (name.ends_with(".dcx") || name.ends_with(".ffxbnd") || name.ends_with(".fxr")) {
                     return true;
                 }
+                if name.starts_with('o') && name.chars().skip(1).take(6).all(|c| c.is_ascii_digit())
+                    && (name.ends_with(".dcx") || name.ends_with(".objbnd")) {
+                    return true;
+                }
             }
         }
         false
@@ -317,6 +346,9 @@ impl Normalizer {
         }
         if lower.starts_with("chr/") {
             return AssetCategory::Chr;
+        }
+        if lower.starts_with("obj/") {
+            return AssetCategory::Obj;
         }
         if lower.starts_with("param/") {
             return AssetCategory::Param;
