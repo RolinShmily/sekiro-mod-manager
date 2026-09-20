@@ -54,6 +54,15 @@ jobs:
       - name: Build frontend bundle
         run: pnpm --filter smm-desktop build
 
+      - name: Verify subset font artifacts
+        shell: bash
+        run: |
+          # smm-desktop build 前置运行 scripts/subset-fonts.mjs（按量子集化）；此处断言产物齐全非空
+          for f in inter-400 inter-500 inter-600 inter-700 jetbrains-mono-400 jetbrains-mono-700 noto-sans-sc-400 noto-sans-sc-600 noto-sans-sc-700; do
+            [ -s "apps/smm-desktop/dist/fonts/$f.woff2" ] || { echo "::error::subset font artifact missing or empty: $f.woff2"; exit 1; }
+          done
+          echo "All 9 subset font artifacts present in dist/fonts."
+
       - name: Run workspace tests
         run: cargo test --workspace
 

@@ -64,9 +64,9 @@ export default {
         pill: 'rgba(0, 0, 0, 0.15) 1px 1px 0px 0px',
       },
       fontFamily: {
-        sans: ['"Maple Mono NF CN"', '"Maple Mono SC NF"', '"Maple Mono"', 'monospace', 'sans-serif'],
-        mono: ['"Maple Mono NF CN"', '"Maple Mono SC NF"', '"Maple Mono"', 'monospace'],
-        serif: ['"Cinzel"', '"Maple Mono NF CN"', '"Noto Serif SC"', 'serif'],
+        sans: ['Inter', 'Noto Sans SC', 'system-ui', '-apple-system', 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Noto Sans SC', 'ui-monospace', 'Cascadia Mono', 'Consolas', 'monospace'],
+        serif: ['Georgia', 'Noto Serif SC', 'SimSun', 'serif'],
       },
     },
   },

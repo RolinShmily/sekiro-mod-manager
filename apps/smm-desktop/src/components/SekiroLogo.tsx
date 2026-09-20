@@ -96,7 +96,7 @@ export const SekiroLogo: React.FC<SekiroLogoProps> = ({
           fill="#ffffff"
           fontSize="36"
           fontWeight="900"
-          fontFamily='"Yuji Boku", "Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", serif'
+          fontFamily='"Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", "STSong", serif'
         >
           隻
         </text>
@@ -109,7 +109,7 @@ export const SekiroLogo: React.FC<SekiroLogoProps> = ({
           fill="#ffffff"
           fontSize="36"
           fontWeight="900"
-          fontFamily='"Yuji Boku", "Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", serif'
+          fontFamily='"Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", "STSong", serif'
         >
           狼
         </text>

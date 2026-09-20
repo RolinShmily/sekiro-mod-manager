@@ -26,8 +26,8 @@
   <circle cx="84" cy="84" r="1.5" fill="#fef08a" fill-opacity="0.8" />
 
   <g filter="url(#sekiro-ink-shadow)">
-    <text x="50" y="46" text-anchor="middle" fill="#ffffff" font-size="36" font-weight="900" font-family='"Yuji Boku", "Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", serif'>隻</text>
-    <text x="50" y="83" text-anchor="middle" fill="#ffffff" font-size="36" font-weight="900" font-family='"Yuji Boku", "Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", serif'>狼</text>
+    <text x="50" y="46" text-anchor="middle" fill="#ffffff" font-size="36" font-weight="900" font-family='"Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", "STSong", serif'>隻</text>
+    <text x="50" y="83" text-anchor="middle" fill="#ffffff" font-size="36" font-weight="900" font-family='"Shippori Mincho", "Klee One", "Noto Serif JP", "Yu Mincho", "MS Mincho", "STSong", serif'>狼</text>
   </g>
 
   <path d="M24 16 Q 50 13 76 16" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.4" stroke-linecap="round" />

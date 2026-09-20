@@ -6,9 +6,16 @@
     "desktop:run": "target\\release\\smm-desktop.exe",
     "desktop:dev": "pnpm --filter smm-desktop tauri dev",
     "desktop:build": "pnpm --filter smm-desktop build && cargo build -p smm-desktop --release",
+    "fonts:subset": "node scripts/subset-fonts.mjs",
     "build:cli": "cargo build -p smm-cli --release",
     "package:installer": "powershell -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
     "package": "pnpm run package:installer",
     "test": "cargo test --workspace"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/noto-sans-sc": "^5.3.0",
+    "subset-font": "^2.7.0"
   }
 }
