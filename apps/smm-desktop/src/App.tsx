@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { HeaderBar } from './components/HeaderBar';
-import { ModList } from './components/ModList';
-import { ModDetails } from './components/ModDetails';
-import { DoctorModal } from './components/DoctorModal';
-import { ImportModal } from './components/ImportModal';
-import { SettingsModal } from './components/SettingsModal';
-import { ConfirmModal } from './components/ConfirmModal';
-import { ExportModModal } from './components/ExportModModal';
-import { ExportModpackModal } from './components/ExportModpackModal';
-import { ImportModpackModal } from './components/ImportModpackModal';
-import { Toast } from './components/Toast';
+import { HeaderBar } from './components/layout/HeaderBar';
+import { ModList } from './components/mods/ModList';
+import { ModDetails } from './components/mods/ModDetails';
+import { DoctorModal } from './components/modals/DoctorModal';
+import { ImportModal } from './components/modals/ImportModal';
+import { SettingsModal } from './components/modals/SettingsModal';
+import { ConfirmModal } from './components/modals/ConfirmModal';
+import { ExportModModal } from './components/modals/ExportModModal';
+import { ExportModpackModal } from './components/modals/ExportModpackModal';
+import { ImportModpackModal } from './components/modals/ImportModpackModal';
+import { Toast } from './components/layout/Toast';
 import {
   getSettings,
   saveSettings,
