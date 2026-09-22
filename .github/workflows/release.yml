@@ -95,7 +95,7 @@ jobs:
           - **Sekiro-Mod-Manager-Setup.exe**: Windows setup installer (Windows 安装向导版).
           - **smm-cli.exe**: Standalone CLI executable for AI-Agents and terminal scripting (命令行工具).
           - **SHA256SUMS.txt**: Cryptographic integrity verification hashes (校验哈希清单).
-          - **LICENSE / THIRD-PARTY-LICENSES.txt**: MIT license, plus the verbatim OFL 1.1 and RARLAB UnRAR texts (开源许可证与第三方许可证原文). The Setup installer also places both at the install directory root, alongside ``smm.exe``.
+          - **LICENSE / licenses/**: MIT license, plus the verbatim upstream texts ``OFL-1.1.txt`` (embedded subset fonts) and ``UnRAR.txt`` (statically linked RARLAB code) (开源许可证与第三方许可证原文). The Setup installer places them in a ``licenses`` folder next to ``smm.exe``.
 
           ### Core Highlights
           - ⚡ **Win32 NTFS Hard Link Deployment**: Millisecond-level projection into game ``mods/`` directory with zero disk space cost.
@@ -125,7 +125,6 @@ jobs:
             dist-installer/Sekiro-Mod-Manager-Setup.exe
             dist-installer/smm-cli.exe
             dist-installer/SHA256SUMS.txt
-            dist-installer/LICENSE
-            dist-installer/THIRD-PARTY-LICENSES.txt
+            dist-installer/licenses/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

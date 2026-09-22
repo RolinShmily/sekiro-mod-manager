@@ -34,7 +34,9 @@
 sekiro-mods/
 ├── Cargo.toml                         # Workspace root configuration
 ├── LICENSE                            # MIT License
-├── THIRD-PARTY-LICENSES.txt           # All third-party obligations + license texts
+├── licenses/                          # Verbatim upstream license texts
+│   ├── OFL-1.1.txt                    #   SIL OFL 1.1 (Inter / JetBrains Mono / Noto Sans SC)
+│   └── UnRAR.txt                      #   RARLAB UnRAR license (via `unrar_sys`)
 ├── README.md                          # English documentation
 ├── README.zh-CN.md                    # Simplified Chinese documentation
 ├── package.json                       # Scripts: build, package, test
@@ -181,15 +183,13 @@ Download ModEngine yourself from [NexusMods #6](https://www.nexusmods.com/sekiro
 
 ### Third-party licenses
 
-Two components are redistributed in binary form, and their **full license texts ship with every
-release** in [`THIRD-PARTY-LICENSES.txt`](THIRD-PARTY-LICENSES.txt) — that file is the authoritative,
-self-contained record of every third-party obligation, including the verbatim OFL 1.1 and RARLAB
-UnRAR texts and the notices `lucide-react` (ISC) and `colored` (MPL-2.0) require:
+Two components are redistributed in binary form, so their **verbatim license texts ship with every
+release** in [`licenses/`](licenses/):
 
-| Component | License |
-| :--- | :--- |
-| Inter, JetBrains Mono, Noto Sans SC — subset `.woff2` fonts embedded in the app | SIL Open Font License 1.1 |
-| RARLAB UnRAR — vendored via `unrar_sys 0.5.8`, statically linked into `smm.exe` and `Sekiro-Mod-Manager.exe` | UnRAR freeware license (non-OSI) |
+| Component | License | Text |
+| :--- | :--- | :--- |
+| Inter, JetBrains Mono, Noto Sans SC — subset `.woff2` fonts embedded in the app | SIL Open Font License 1.1 | [`OFL-1.1.txt`](licenses/OFL-1.1.txt) |
+| RARLAB UnRAR — vendored via `unrar_sys 0.5.8`, statically linked into `smm.exe` and `Sekiro-Mod-Manager.exe` | UnRAR freeware license (non-OSI) | [`UnRAR.txt`](licenses/UnRAR.txt) |
 
 > **UnRAR constraint:** clause 2 of that license forbids using the code to build a RAR (WinRAR)
 > compatible archiver. SMM uses it for **read-only RAR extraction only**; RAR compression must never
@@ -235,7 +235,7 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 </details>
 
-The texts in `THIRD-PARTY-LICENSES.txt` are verbatim copies. When bumping `@fontsource/*` or
+The files in `licenses/` are verbatim upstream texts. When bumping `@fontsource/*` or
 `unrar_sys`, re-check them: the UnRAR section mirrors
 `unrar_sys-<version>/vendor/unrar/license.txt` in the Cargo registry, and the OFL body comes from
 `node_modules/@fontsource/inter/LICENSE`. The packaging pipeline aborts if the file is missing.

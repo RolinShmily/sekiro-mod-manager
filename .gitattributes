@@ -7,4 +7,4 @@
 # clause 2 requires the verbatim text, or the SIL OFL text for the embedded fonts.
 #
 # Pinning eol=lf keeps source, repository and shipped copies identical on every platform.LICENSE                  text eol=lf
-THIRD-PARTY-LICENSES.txt text eol=lf
+licenses/** text eol=lf

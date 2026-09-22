@@ -29,7 +29,8 @@ Write-Host "Target Version: v$version`n" -ForegroundColor Magenta
 #    RARLAB UnRAR license (statically linked via unrar_sys). Fail fast, before the long build.
 $requiredLicenseFiles = @(
     "LICENSE",
-    "THIRD-PARTY-LICENSES.txt"
+    "licenses\OFL-1.1.txt",
+    "licenses\UnRAR.txt"
 )
 $missing = @()
 foreach ($rel in $requiredLicenseFiles) {
@@ -117,9 +118,14 @@ if (Test-Path $cliCandidate) {
 # 4) License files: shipped alongside the portable exes (Sekiro-Mod-Manager.exe is a
 #    single-file binary with no resource directory of its own) and inside the NSIS installer
 #    (via `bundle.licenseFile` and `bundle.resources` in tauri.conf.json).
-Copy-Item -Path (Join-Path $RootDir "LICENSE") -Destination (Join-Path $distDir "LICENSE") -Force
-Copy-Item -Path (Join-Path $RootDir "THIRD-PARTY-LICENSES.txt") -Destination (Join-Path $distDir "THIRD-PARTY-LICENSES.txt") -Force
-Write-Host "      Archived LICENSE and THIRD-PARTY-LICENSES.txt to dist-installer/" -ForegroundColor Green
+$distLicensesDir = Join-Path $distDir "licenses"
+if (Test-Path $distLicensesDir) { Remove-Item -Path $distLicensesDir -Recurse -Force }
+New-Item -ItemType Directory -Path $distLicensesDir -Force | Out-Null
+
+Copy-Item -Path (Join-Path $RootDir "LICENSE") -Destination (Join-Path $distLicensesDir "LICENSE") -Force
+Copy-Item -Path (Join-Path $RootDir "licenses\*") -Destination $distLicensesDir -Force
+$distLicenseCount = (Get-ChildItem -Path $distLicensesDir -File).Count
+Write-Host "      Archived $distLicenseCount license file(s) to dist-installer/licenses/" -ForegroundColor Green
 
 # Clean up legacy redundant files if present
 $legacySetup = Join-Path $distDir "setup.exe"
