@@ -16,6 +16,12 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # Major upgrades expect a real migration and a human decision, so they are
+      # never opened automatically. Bump them deliberately when ready.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
 
   # pnpm workspace — the lockfile lives at the repository root.
   - package-ecosystem: npm
@@ -32,7 +38,14 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # See the cargo entry: majors are bumped by hand, not by Dependabot.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
 
+  # GitHub Actions publish a floating major tag (v4 -> v7), so a major bump is the
+  # normal, expected signal here and is deliberately NOT ignored.
   - package-ecosystem: github-actions
     directory: /
     schedule:

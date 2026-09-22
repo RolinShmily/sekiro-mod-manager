@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [Unreleased]
+
+### Changed
+
+- Adopt the Node 24 Action lines: `actions/checkout@v7`, `actions/setup-node@v7`,
+  `pnpm/action-setup@v6` and `softprops/action-gh-release@v3`. The previous versions still ran on
+  the deprecated Node 20 runtime.
+- Dependabot now opens minor and patch updates only for Cargo and npm; major upgrades are made
+  deliberately by hand. GitHub Actions majors are still opened, since that is how those actions
+  ship.
+
 ## [0.2.0] - 2026-09-22
 
 ### Added
