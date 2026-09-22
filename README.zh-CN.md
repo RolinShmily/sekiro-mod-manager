@@ -37,6 +37,11 @@
 sekiro-mods/
 ├── Cargo.toml                         # Workspace 根配置
 ├── LICENSE                            # MIT 开源许可证
+├── NOTICE                             # MIT 授权范围声明（哪些部分才适用 MIT）
+├── licenses/                          # 第三方许可证全文与归属声明
+│   ├── OFL-1.1.txt                    #   SIL OFL 1.1（Inter / JetBrains Mono / Noto Sans SC）
+│   ├── UnRAR.txt                      #   RARLAB UnRAR 许可证（经 `unrar_sys` 引入）
+│   └── THIRD-PARTY-NOTICES.md         #   直接运行时依赖归属清单
 ├── README.md                          # 英文架构与使用文档
 ├── README.zh-CN.md                    # 中文架构与使用文档
 ├── DESIGN.md                          # 界面视觉与交互规范设计字典
@@ -63,7 +68,6 @@ sekiro-mods/
 │   └── smm-desktop/                   # Tauri v2 + React 18 + Tailwind CSS 桌面 GUI
 │       ├── src/                       # React 高品质组件库 (HeaderBar, ModList, ModDetails 等)
 │       └── src-tauri/                 # Tauri v2 原生绑定与 IPC 桥接
-├── fixtures/                          # 用于算法测试的开源 Mod 基准套件
 ├── dist-installer/                    # 发布产物输出目录 (Sekiro-Mod-Manager.exe, Sekiro-Mod-Manager-Setup.exe, smm-cli.exe)
 └── scripts/
     └── build-installer.ps1            # 自动化一键打包流水线脚本
@@ -134,22 +138,38 @@ smm restore --game-dir "D:\SteamLibrary\steamapps\common\Sekiro"
 
 ---
 
-## 第三方测试 Mod 来源与合规声明 (Attributions)
+## 引用的第三方项目 (Referenced Third-Party Software)
 
-本仓库在开发和自动化算法验证套件（`fixtures/mods/`）中引入了社区优秀的开源 Mod 作品作为基准测试样本。我们严格遵守开源协议与原作者署名规范：
+SMM 仅在**名称与元数据层面**与下列社区项目发生关联。**本列表中的任何内容都未被 SMM 再分发**：
+测试套件在运行时于临时目录（`tempfile::tempdir_in`）动态合成全部夹具，因此没有任何第三方 Mod 内容
+——尤其是任何 ModEngine 二进制——被包含在本仓库或任何发布产物中。全部知识产权归各原作者所有。
 
-| 模组名称 | 作者 / 团队 | 官方仓库 / 来源 | 开源协议 | 在测试套件中的角色 |
+| 项目 | 作者 | 来源 | Upstream 协议 | SMM 与其交互的方式 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Sekiro Mod Engine** (v0.1.16) | **katalash** | [GitHub](https://github.com/katalash/ModEngine) / [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) | **GPL-3.0-or-later** | 基础 Loader 与 Hook 环境验证 (`dinput8.dll`, `modengine.ini`)。 |
-| **Sekiro: Dream of the Damned** | **Nuffly** | [GitHub](https://github.com/nuffly/DotD) / [NexusMods #793](https://www.nexusmods.com/sekiro/mods/793) | **Apache-2.0** | 全量玩法大修，验证 `chr/`, `event/`, `map/` 及 `gameparam` 冲突检测。 |
-| **Native PS4 Buttons** | **katalash** | [NexusMods #7](https://www.nexusmods.com/sekiro/mods/7) | **Custom Permissive** | UI 与 Scaleform 资源解析 (`menu/`, `font/`)。 |
-| **Kusabimaru Reaper Weapon & Arm** | **Eyedea** | [NexusMods #350](https://www.nexusmods.com/sekiro/mods/350) | **CC-BY-NC-4.0** | 武器与义手专属槽位语义互斥 (`wp_a_0300`, `am_m_9000`)。 |
+| **Sekiro Mod Engine** (v0.1.16) | **katalash** | [GitHub](https://github.com/katalash/ModEngine) / [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) | **未公开任何许可证**——专有，"all rights reserved" | SMM 仅检测已安装的 `dinput8.dll` 并生成/修正 `modengine.ini`。**须由您自行下载 ModEngine**；SMM 从不内嵌、捆绑或代其部署二进制。 |
+| **Sekiro: Dream of the Damned** | **Nuffly** | [GitHub](https://github.com/nuffly/DotD) / [NexusMods #793](https://www.nexusmods.com/sekiro/mods/793) | Apache-2.0 | 作为合成冲突检测夹具（`chr/`、`event/`、`map/`、`gameparam`）的命名与元数据参照。 |
+| **Native PS4 Buttons** | **katalash** | [NexusMods #7](https://www.nexusmods.com/sekiro/mods/7) | Custom Permissive | 作为合成 UI 资源夹具（`menu/`、`font/`）的命名与元数据参照。 |
+| **Kusabimaru Reaper Weapon & Arm** | **Eyedea** | [NexusMods #350](https://www.nexusmods.com/sekiro/mods/350) | CC-BY-NC-4.0 | 作为合成武器专属槽位夹具（`wp_a_0300`、`am_m_9000`）的命名与元数据参照。 |
 
-*注：测试夹具中仅保留剥离后的占位符头文件与元数据，用于目录拓扑与算法测试，不含任何受版权保护的完整商用模型与材质。*
+*Upstream 协议仅供参照，不代表我们代原作者做出声明，请以原始出处为准。上表中 ModEngine 的许可状态已
+经 GitHub API 核实（`repos/katalash/ModEngine/license` 返回 HTTP 404）。*
 
 ---
 
 ## 开源协议
 
 本项目采用 [MIT 开源许可证](LICENSE)。
-《只狼：影逝二度》（Sekiro: Shadows Die Twice）系 FromSoftware, Inc. 与 Activision 之注册商标，本项目为社区非官方开源工具。
+
+**MIT 授权范围：** 仅覆盖本项目原创源代码（`crates/`、`apps/`、`scripts/`），**不**涵盖第三方组件、
+社区模组、游戏资源与商标。完整范围声明见 [NOTICE](NOTICE)，upstream 许可证全文与归属声明见
+[licenses/](licenses/) 目录：
+
+- [licenses/OFL-1.1.txt](licenses/OFL-1.1.txt) — Inter、JetBrains Mono、Noto Sans SC（内嵌子集字体）
+- [licenses/UnRAR.txt](licenses/UnRAR.txt) — RARLAB UnRAR（经 `unrar_sys` 静态链接）
+- [licenses/THIRD-PARTY-NOTICES.md](licenses/THIRD-PARTY-NOTICES.md) — 直接运行时依赖
+
+**ModEngine 未被捆绑。** Sekiro Mod Engine（`dinput8.dll`）是 katalash 的第三方软件，未公开任何许可证，
+因此 SMM 不以任何形式再分发它。需由您自行提供；SMM 仅做检测并生成 `modengine.ini`。
+
+《只狼：影逝二度》（Sekiro: Shadows Die Twice）系 FromSoftware, Inc. 与 Activision 之注册商标，
+本项目为社区非官方开源工具。

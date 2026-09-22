@@ -1,6 +1,7 @@
 {
   "name": "sekiro-mods-workspace",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "pnpm --filter smm-desktop dev",
     "desktop:run": "target\\release\\smm-desktop.exe",

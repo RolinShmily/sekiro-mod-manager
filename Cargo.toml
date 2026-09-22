@@ -10,5 +10,5 @@ members = [
 version = "0.1.6"
 edition = "2021"
 authors = ["Sekiro Mod Manager Contributors"]
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/example/sekiro-mod-manager"
+license = "MIT"
+repository = "https://github.com/RolinShmily/sekiro-mod-manager"

@@ -34,6 +34,11 @@
 sekiro-mods/
 ├── Cargo.toml                         # Workspace root configuration
 ├── LICENSE                            # MIT License
+├── NOTICE                             # Scope declaration: what the MIT grant covers
+├── licenses/                          # Third-party license texts & attribution
+│   ├── OFL-1.1.txt                    #   SIL OFL 1.1 (Inter / JetBrains Mono / Noto Sans SC)
+│   ├── UnRAR.txt                      #   RARLAB UnRAR license (via `unrar_sys`)
+│   └── THIRD-PARTY-NOTICES.md         #   Direct runtime dependency attribution
 ├── README.md                          # English documentation
 ├── README.zh-CN.md                    # Simplified Chinese documentation
 ├── DESIGN.md                          # UI/UX design specifications & design tokens
@@ -60,7 +65,6 @@ sekiro-mods/
 │   └── smm-desktop/                   # Tauri v2 + React 18 + Tailwind CSS desktop GUI
 │       ├── src/                       # React components (HeaderBar, ModList, ModDetails, etc.)
 │       └── src-tauri/                 # Tauri v2 native bindings & IPC handlers
-├── fixtures/                          # Benchmark mod fixtures for integration tests
 ├── dist-installer/                    # Release artifacts (Sekiro-Mod-Manager.exe, Sekiro-Mod-Manager-Setup.exe, smm-cli.exe)
 └── scripts/
     └── build-installer.ps1            # Automated one-click packaging pipeline
@@ -131,22 +135,43 @@ smm restore --game-dir "D:\SteamLibrary\steamapps\common\Sekiro"
 
 ---
 
-## Sources & Attributions (Test Fixtures)
+## Referenced Third-Party Software
 
-This project integrates representative community mods in `fixtures/mods/` strictly for algorithmic normalization and test suite validation. All intellectual property remains with their respective creators:
+SMM interoperates with the following community projects **by name and metadata only**. Nothing in
+this list is redistributed with SMM: the test suite synthesises all of its fixtures at runtime in
+throwaway temp directories (`tempfile::tempdir_in`), so no third-party mod content — and in
+particular no ModEngine binary — is included in this repository or in any release artifact. All
+intellectual property remains with the respective creators.
 
-| Project Name | Author / Contributor | Source Repository | License | Role in Test Suite |
+| Project | Author | Source | Upstream license | How SMM interacts with it |
 | :--- | :--- | :--- | :--- | :--- |
-| **Sekiro Mod Engine** (v0.1.16) | **katalash** | [GitHub](https://github.com/katalash/ModEngine) / [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) | **GPL-3.0-or-later** | Base Loader & Hook environment checks (`dinput8.dll`, `modengine.ini`). |
-| **Sekiro: Dream of the Damned** | **Nuffly** | [GitHub](https://github.com/nuffly/DotD) / [NexusMods #793](https://www.nexusmods.com/sekiro/mods/793) | **Apache-2.0** | Comprehensive overhaul validating `chr/`, `event/`, `map/`, and `gameparam` collision detection. |
-| **Native PS4 Buttons** | **katalash** | [NexusMods #7](https://www.nexusmods.com/sekiro/mods/7) | **Custom Permissive** | UI & Scaleform resources (`menu/`, `font/`). |
-| **Kusabimaru Reaper Weapon & Arm** | **Eyedea** | [NexusMods #350](https://www.nexusmods.com/sekiro/mods/350) | **CC-BY-NC-4.0** | Weapon and prosthetic slot mutual exclusivity (`wp_a_0300`, `am_m_9000`). |
+| **Sekiro Mod Engine** (v0.1.16) | **katalash** | [GitHub](https://github.com/katalash/ModEngine) / [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) | **None published** — proprietary, "all rights reserved" | SMM detects an installed `dinput8.dll` and generates/patches `modengine.ini`. **You must download ModEngine yourself**; SMM never embeds, bundles, or deploys its binary. |
+| **Sekiro: Dream of the Damned** | **Nuffly** | [GitHub](https://github.com/nuffly/DotD) / [NexusMods #793](https://www.nexusmods.com/sekiro/mods/793) | Apache-2.0 | Used as a naming/metadata reference in synthetic conflict-resolution fixtures (`chr/`, `event/`, `map/`, `gameparam`). |
+| **Native PS4 Buttons** | **katalash** | [NexusMods #7](https://www.nexusmods.com/sekiro/mods/7) | Custom Permissive | Used as a naming/metadata reference in synthetic UI-resource fixtures (`menu/`, `font/`). |
+| **Kusabimaru Reaper Weapon & Arm** | **Eyedea** | [NexusMods #350](https://www.nexusmods.com/sekiro/mods/350) | CC-BY-NC-4.0 | Used as a naming/metadata reference in synthetic weapon-slot exclusivity fixtures (`wp_a_0300`, `am_m_9000`). |
 
-*Note: The test fixtures contain stripped lightweight placeholder binaries and metadata strictly for topology and path testing, without commercial distribution of copyrighted full assets.*
+*Upstream licenses are listed for reference only and are not asserted on the authors' behalf —
+verify them at the source. The ModEngine license status above was confirmed via the GitHub API
+(`repos/katalash/ModEngine/license` returns HTTP 404).*
 
 ---
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-Sekiro: Shadows Die Twice is a registered trademark of FromSoftware, Inc. and Activision. This project is an unofficial community tool.
+
+**Scope of the MIT grant:** the MIT License covers only our own source code (`crates/`, `apps/`,
+`scripts/`). It does **not** extend to third-party components, community mods, game assets, or
+trademarks. See [NOTICE](NOTICE) for the full scope declaration and the [licenses/](licenses/)
+directory for upstream license texts and attribution:
+
+- [licenses/OFL-1.1.txt](licenses/OFL-1.1.txt) — Inter, JetBrains Mono, Noto Sans SC (bundled subset fonts)
+- [licenses/UnRAR.txt](licenses/UnRAR.txt) — RARLAB UnRAR (statically linked via `unrar_sys`)
+- [licenses/THIRD-PARTY-NOTICES.md](licenses/THIRD-PARTY-NOTICES.md) — direct runtime dependencies
+
+**ModEngine is not bundled.** Sekiro Mod Engine (`dinput8.dll`) is third-party software by katalash
+with no published license, so SMM does not redistribute it in any form. You supply it yourself;
+SMM only detects it and configures `modengine.ini`.
+
+Sekiro: Shadows Die Twice is a registered trademark of FromSoftware, Inc. and Activision. This
+project is an unofficial community tool.
