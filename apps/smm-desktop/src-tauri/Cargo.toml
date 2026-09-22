@@ -19,7 +19,7 @@ tauri = { version = "2", features = ["custom-protocol"] }
 smm-core = { path = "../../../crates/smm-core" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rfd = "0.15"
+rfd = "0.17"
 open = "5"
 
 [dev-dependencies]
