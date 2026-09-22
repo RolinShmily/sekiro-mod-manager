@@ -34,10 +34,9 @@
 sekiro-mods/
 ├── Cargo.toml                         # Workspace root configuration
 ├── LICENSE                            # MIT License
-├── THIRD-PARTY-LICENSES.txt           # Verbatim OFL 1.1 + RARLAB UnRAR texts
+├── THIRD-PARTY-LICENSES.txt           # All third-party obligations + license texts
 ├── README.md                          # English documentation
 ├── README.zh-CN.md                    # Simplified Chinese documentation
-├── DESIGN.md                          # UI/UX design specifications & design tokens
 ├── package.json                       # Scripts: build, package, test
 ├── pnpm-workspace.yaml                # Monorepo package workspace
 ├── crates/
@@ -146,7 +145,7 @@ The MIT License covers **only our own source code**:
 | React 18 + Tailwind frontend | `apps/smm-desktop/src/` |
 | Tauri v2 native bindings and IPC layer | `apps/smm-desktop/src-tauri/` |
 | Build, packaging and font-subsetting scripts, CI | `scripts/`, `.github/workflows/` |
-| Documentation | `README.md`, `README.zh-CN.md`, `DESIGN.md` |
+| Documentation | `README.md`, `README.zh-CN.md` |
 
 It does **not** extend to any of the following, and grants no rights to them:
 
@@ -183,7 +182,9 @@ Download ModEngine yourself from [NexusMods #6](https://www.nexusmods.com/sekiro
 ### Third-party licenses
 
 Two components are redistributed in binary form, and their **full license texts ship with every
-release** in [`THIRD-PARTY-LICENSES.txt`](THIRD-PARTY-LICENSES.txt):
+release** in [`THIRD-PARTY-LICENSES.txt`](THIRD-PARTY-LICENSES.txt) — that file is the authoritative,
+self-contained record of every third-party obligation, including the verbatim OFL 1.1 and RARLAB
+UnRAR texts and the notices `lucide-react` (ISC) and `colored` (MPL-2.0) require:
 
 | Component | License |
 | :--- | :--- |

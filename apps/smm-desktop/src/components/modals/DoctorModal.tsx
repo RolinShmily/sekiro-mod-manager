@@ -84,7 +84,7 @@ export const DoctorModal: React.FC<DoctorModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Fix Button (DESIGN.md button-buy-cta cobalt pill) */}
+          {/* Quick Fix Button (button-buy-cta cobalt pill) */}
           <button
             type="button"
             onClick={onFixModEngine}

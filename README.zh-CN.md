@@ -27,7 +27,7 @@
   - `[INFO]` 普通覆盖：贴图、UI、音效按优先级正常接管。
 - 📦 **来源全景溯源与整合包分发**：记录 Nexus Mods / GitHub / 网盘下载原址，支持附带原始压缩包导出单模组，以及一键打包/解包 `.smmpack` 模组整合包。
 - 🤖 **AI-Agent 与自动化支持**：桌面端安装器同步将无头命令行工具（`smm.exe`）一并安装，方便 AI Agent 或终端脚本对模组进行全自动化管理。
-- 🎨 **极简日式硬件级视觉体系**：严格落地 DESIGN.md 设计规范，纯白底色、经典战国朱砂金纹「隻狼」印玺图标、100% 纯矢量 SVG、首选 `"Maple Mono NF CN"` 等宽字体。
+- 🎨 **极简日式硬件级视觉体系**：严格落地统一设计规范，纯白底色、经典战国朱砂金纹「隻狼」印玺图标、100% 纯矢量 SVG、首选 `"Maple Mono NF CN"` 等宽字体。
 
 ---
 
@@ -37,10 +37,9 @@
 sekiro-mods/
 ├── Cargo.toml                         # Workspace 根配置
 ├── LICENSE                            # MIT 开源许可证
-├── THIRD-PARTY-LICENSES.txt           # OFL 1.1 与 RARLAB UnRAR 许可证原文
+├── THIRD-PARTY-LICENSES.txt           # 第三方义务总表 + 许可证原文
 ├── README.md                          # 英文架构与使用文档
 ├── README.zh-CN.md                    # 中文架构与使用文档
-├── DESIGN.md                          # 界面视觉与交互规范设计字典
 ├── package.json                       # 自动化脚本：构建、打包、测试
 ├── pnpm-workspace.yaml                # Monorepo 多包管理配置
 ├── crates/
@@ -149,7 +148,7 @@ MIT 许可**仅**覆盖本项目原创源代码：
 | React 18 + Tailwind 前端 | `apps/smm-desktop/src/` |
 | Tauri v2 原生绑定与 IPC 层 | `apps/smm-desktop/src-tauri/` |
 | 构建、打包、字体子集化脚本与 CI | `scripts/`、`.github/workflows/` |
-| 项目文档 | `README.md`、`README.zh-CN.md`、`DESIGN.md` |
+| 项目文档 | `README.md`、`README.zh-CN.md` |
 
 下列内容**不在**授权范围内，不授予任何权利：
 

@@ -3,22 +3,103 @@ THIRD-PARTY LICENSES
 Sekiro Mod Manager (SMM) — https://github.com/RolinShmily/sekiro-mod-manager
 ================================================================================
 
-This file contains the complete license texts of the third-party components that
-SMM redistributes in binary form. It ships with every release, inside the NSIS
-installer and alongside the portable and CLI artifacts.
+This single file covers every third-party licensing obligation of Sekiro Mod
+Manager. It ships with each release, inside the NSIS installer and alongside the
+portable and CLI artifacts.
 
-SMM's own license is the MIT License, in the separate LICENSE file. The scope of
-that grant, plus attribution for the remaining dependencies, are documented in
-README.md.
+  * SMM's own license is the MIT License — see the separate LICENSE file.
+  * The scope of that MIT grant is documented in README.md.
 
-Verbatim texts included below:
-
-  1. SIL Open Font License 1.1  — Inter, JetBrains Mono, Noto Sans SC
-  2. RARLAB UnRAR license       — UnRAR, statically linked via unrar_sys
+Contents
+  1. Components redistributed in binary form
+  2. Direct runtime dependencies
+  3. Full license text — SIL Open Font License 1.1
+  4. Full license text — RARLAB UnRAR
 
 
 ================================================================================
-1. SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+1. COMPONENTS REDISTRIBUTED IN BINARY FORM
+================================================================================
+
+These are embedded in or statically linked into the shipped binaries, so their
+complete license texts must accompany them. Both are reproduced in full below.
+
+  Inter, JetBrains Mono, Noto Sans SC
+      Subsetted .woff2 fonts embedded in the application.
+      License: SIL Open Font License 1.1            -> section 3
+      Sources: https://github.com/rsms/inter
+               https://github.com/JetBrains/JetBrainsMono
+               https://fonts.google.com/noto/specimen/Noto+Sans+SC
+
+  RARLAB UnRAR (Alexander L. Roshal)
+      Vendored via unrar_sys 0.5.8; statically linked into smm.exe and
+      Sekiro-Mod-Manager.exe.
+      License: UnRAR freeware license (non-OSI)     -> section 4
+
+      Used for READ-ONLY RAR extraction only. Clause 2 of that license forbids
+      using this code to develop a RAR (WinRAR) compatible archiver, so SMM must
+      never implement RAR compression while this dependency is present. Ship .zip
+      archives instead.
+
+
+================================================================================
+2. DIRECT RUNTIME DEPENDENCIES
+================================================================================
+
+Complete upstream texts are available from crates.io and npmjs.com. Transitive
+dependencies pinned in Cargo.lock and pnpm-lock.yaml remain under their own
+licenses. Build-only tooling (vite, typescript, tailwindcss, postcss,
+autoprefixer, subset-font) contributes no code to any released artifact.
+
+Rust — 16 crates
+
+  MIT OR Apache-2.0   serde, serde_json, tempfile, thiserror, clap, windows-sys,
+                      unrar (wrapper only), rfd, open, comfy-table
+  Apache-2.0 OR MIT   tauri, tauri-build
+  Apache-2.0          sevenz-rust
+  Unlicense OR MIT    walkdir
+  MIT                 zip
+  MPL-2.0             colored            (notice below)
+
+Frontend — 6 packages compiled into the webview bundle
+
+  Apache-2.0 OR MIT   @tauri-apps/api
+  MIT                 react, react-dom, clsx, tailwind-merge
+  ISC                 lucide-react       (notice below)
+
+--------------------------------------------------------------------------------
+MPL-2.0 notice — colored
+
+  The only dependency under a file-level copyleft license. SMM consumes it
+  unmodified from crates.io; no MPL-covered file is modified or distributed. If a
+  local patch is ever applied, the modified source of that crate must be published
+  under MPL-2.0. Source: https://crates.io/crates/colored/3.1.1
+--------------------------------------------------------------------------------
+ISC notice — lucide-react
+
+  The icon set used throughout the SMM interface is derived from Lucide, which
+  contains portions of Feather. Required permission notice, reproduced verbatim:
+
+    ISC License
+
+    Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--------------------------------------------------------------------------------
+
+
+================================================================================
+3. FULL LICENSE TEXT — SIL OPEN FONT LICENSE Version 1.1 (26 February 2007)
    Applies to: Inter, JetBrains Mono, Noto Sans SC
 ================================================================================
 
@@ -128,9 +209,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 
 ================================================================================
-2. UnRAR — free utility for RAR archives
+4. FULL LICENSE TEXT — UnRAR
    License for use and distribution of the FREE portable version
-   Applies to: RARLAB UnRAR, statically linked into smm.exe and Sekiro-Mod-Manager.exe
+   Applies to: RARLAB UnRAR, statically linked into smm.exe / Sekiro-Mod-Manager.exe
 ================================================================================
 
 Full license text follows (verbatim):
