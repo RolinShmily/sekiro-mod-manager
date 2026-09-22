@@ -3758,7 +3758,7 @@ checksum = "ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891"
 
 [[package]]
 name = "smm-cli"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "clap",
  "colored",
@@ -3769,7 +3769,7 @@ dependencies = [
 
 [[package]]
 name = "smm-core"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -3784,7 +3784,7 @@ dependencies = [
 
 [[package]]
 name = "smm-desktop"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "open",
  "rfd",

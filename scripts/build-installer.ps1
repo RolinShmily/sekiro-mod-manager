@@ -24,6 +24,26 @@ if (-not $version) { $version = "0.1.0" }
 
 Write-Host "Target Version: v$version`n" -ForegroundColor Magenta
 
+# 0. Compliance guard: third-party license texts must be present before we build anything.
+#    Shipping binaries without them would breach the SIL OFL (bundled subset fonts) and the
+#    RARLAB UnRAR license (statically linked via unrar_sys). Fail fast, before the long build.
+$requiredLicenseFiles = @(
+    "LICENSE",
+    "NOTICE",
+    "licenses\README.md",
+    "licenses\OFL-1.1.txt",
+    "licenses\UnRAR.txt",
+    "licenses\THIRD-PARTY-NOTICES.md"
+)
+$missing = @()
+foreach ($rel in $requiredLicenseFiles) {
+    if (-not (Test-Path (Join-Path $RootDir $rel))) { $missing += $rel }
+}
+if ($missing.Count -gt 0) {
+    throw "Compliance guard failed: missing third-party license file(s): $($missing -join ', ')"
+}
+Write-Host "[0/5] Compliance guard passed: all $($requiredLicenseFiles.Count) license files present.`n" -ForegroundColor Green
+
 # 1. Compile release smm-cli (target/release/smm.exe)
 Write-Host "[1/5] Compiling release smm-cli (smm.exe)..." -ForegroundColor Yellow
 & cargo build -p smm-cli --release
@@ -97,6 +117,19 @@ if (Test-Path $cliCandidate) {
     Copy-Item -Path $cliCandidate -Destination $distCliExe -Force
     Write-Host "      Archived CLI: $distCliExe" -ForegroundColor Green
 }
+
+# 4) License & notice files: shipped alongside the portable exes (Sekiro-Mod-Manager.exe is a
+#    single-file binary with no resource directory of its own) and inside the NSIS installer
+#    (via `bundle.resources` in tauri.conf.json).
+$distLicensesDir = Join-Path $distDir "licenses"
+if (Test-Path $distLicensesDir) { Remove-Item -Path $distLicensesDir -Recurse -Force }
+New-Item -ItemType Directory -Path $distLicensesDir -Force | Out-Null
+
+Copy-Item -Path (Join-Path $RootDir "LICENSE") -Destination (Join-Path $distDir "LICENSE") -Force
+Copy-Item -Path (Join-Path $RootDir "NOTICE") -Destination (Join-Path $distDir "NOTICE") -Force
+Copy-Item -Path (Join-Path $RootDir "licenses\*") -Destination $distLicensesDir -Force
+$distLicenseCount = (Get-ChildItem -Path $distLicensesDir -File).Count
+Write-Host "      Archived LICENSE, NOTICE and $distLicenseCount license file(s) to dist-installer/" -ForegroundColor Green
 
 # Clean up legacy redundant files if present
 $legacySetup = Join-Path $distDir "setup.exe"
