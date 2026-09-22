@@ -113,7 +113,7 @@ jobs:
           Set-Content -Path "RELEASE_NOTES.md" -Value $body -Encoding utf8NoBOM
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.val }}
           name: Sekiro Mod Manager ${{ steps.tag.outputs.val }}
