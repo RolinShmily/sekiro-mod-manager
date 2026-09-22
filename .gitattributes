@@ -6,5 +6,7 @@
 # longer be byte-identical to the upstream texts -- e.g. RARLAB's license, whose
 # clause 2 requires the verbatim text, or the SIL OFL text for the embedded fonts.
 #
-# Pinning eol=lf keeps source, repository and shipped copies identical on every platform.LICENSE                  text eol=lf
-licenses/** text eol=lf
+# Pinning eol=lf keeps source, repository and shipped copies identical on every platform.
+
+LICENSE                  text eol=lf
+licenses/**              text eol=lf

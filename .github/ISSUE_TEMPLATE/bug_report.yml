@@ -1,0 +1,97 @@
+name: Bug report
+description: Something in the desktop app or the smm CLI does not work as expected.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please fill in as much as you can — a reproducible report is far
+        easier to fix. For security issues, use the private channel linked below instead.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am running the latest release.
+          required: true
+        - label: This is not a ModEngine or third-party mod bug (see LICENSING.md).
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: SMM version
+      description: From the app's title bar or `smm --version`.
+      placeholder: v0.1.8
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected component
+      options:
+        - Desktop GUI
+        - smm CLI
+        - Installer / packaging
+        - Import / normalization
+        - Deployment / restore
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior, including the exact error message if any.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a clean state where possible.
+      placeholder: |
+        1. Run `smm import ...`
+        2. Run `smm deploy ...`
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2 (build 26100)
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `smm doctor`
+      description: Run `smm doctor --game-dir "<your Sekiro install>"` and paste the result. This is redacted of nothing sensitive, but check before posting.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, mod archive name/structure, staging tree, `.smm_manifest.json`, logs.
+    validations:
+      required: false

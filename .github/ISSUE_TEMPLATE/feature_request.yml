@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a new capability or an improvement to an existing one.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please check that the request fits SMM's scope: it manages mods for
+        *Sekiro: Shadows Die Twice* and does not bundle ModEngine or game assets.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I searched existing issues and discussions for this idea.
+          required: true
+        - label: This is about SMM itself, not about a third-party mod's content.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the pain point, not the solution — what are you trying to accomplish?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should SMM do instead? Include CLI flags or UI behavior if you have a concrete shape in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds you use today, or other designs you rejected.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where should this live?
+      options:
+        - Desktop GUI
+        - smm CLI
+        - Both
+        - Core engine (`smm-core`) only
+        - Not sure
+    validations:
+      required: true
