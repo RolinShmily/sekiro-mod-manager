@@ -29,7 +29,7 @@ fn setup_test_suite_in(base: &Path) {
   "author": "katalash",
   "description": "Core runtime file injection & DirectX input hook for Sekiro: Shadows Die Twice",
   "category": "loader",
-  "license": "GPL-3.0-or-later",
+  "license": "Proprietary",
   "enabled": true,
   "priority": 0
 }"#,
@@ -159,7 +159,7 @@ fn test_mod_engine_fixture() {
 
     assert_eq!(info.id, "mod-engine-0.1.16");
     assert_eq!(info.author, "katalash");
-    assert_eq!(info.license.as_deref(), Some("GPL-3.0-or-later"));
+    assert_eq!(info.license.as_deref(), Some("Proprietary"));
 
     let rel_paths: Vec<&str> = assets.iter().map(|a| a.relative_path.as_str()).collect();
     assert!(rel_paths.contains(&"dinput8.dll"));

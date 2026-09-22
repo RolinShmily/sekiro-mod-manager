@@ -121,13 +121,15 @@ pub enum Commands {
         staging: Option<PathBuf>,
     },
 
-    /// Automatically deploy and configure Sekiro ModEngine hook and modengine.ini
+    /// Deploy Sekiro ModEngine hook (dinput8.dll) and modengine.ini in the game directory.
+    /// Requires a user-supplied ModEngine payload; SMM does not redistribute it.
     SetupEngine {
         /// Path to Sekiro game root directory containing sekiro.exe
         #[arg(short, long, required = true)]
         game_dir: PathBuf,
 
-        /// Path to mods staging directory or source ModEngine directory (default: auto-detected ./staging)
+        /// Path to mods staging directory, or a folder containing ModEngine's own dinput8.dll
+        /// (default: auto-detected ./staging). SMM ships no ModEngine payload of its own.
         #[arg(short, long)]
         staging: Option<PathBuf>,
     },

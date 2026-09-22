@@ -37,7 +37,7 @@ impl ModLoader {
         Ok((info, norm_result.assets))
     }
 
-    /// Scans a directory containing multiple mods (e.g. `fixtures/mods/` or `staging/`).
+    /// Scans a directory containing multiple mods (e.g. `staging/`).
     pub fn scan_mods_directory(staging_dir: &Path) -> Result<Vec<(ModInfo, Vec<AssetEntry>)>> {
         if !staging_dir.exists() {
             return Err(SmmError::Io(std::io::Error::new(

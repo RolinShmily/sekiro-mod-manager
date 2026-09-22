@@ -411,16 +411,31 @@ export const App: React.FC = () => {
     setIsFixingEngine(true);
     try {
       await setupModEngine(settings.game_dir, settings.staging_dir);
-      // Also provision to staging so it appears in mod list
+
+      // Provisioning into the staging mod list is best-effort: it needs the same
+      // user-supplied ModEngine payload and may legitimately fail on its own, so the
+      // error is reported rather than swallowed.
+      let provisionError: unknown = null;
       try {
         await provisionEngineMod(settings.staging_dir);
         await refreshMods();
-      } catch (_) {}
-      showToast({
-        type: 'success',
-        title: 'ModEngine 装配成功',
-        message: '已自动部署 dinput8.dll 并生成/修复标准 modengine.ini 配置，已同步至模组列表。',
-      });
+      } catch (err) {
+        provisionError = err;
+      }
+
+      if (provisionError) {
+        showToast({
+          type: 'warning',
+          title: 'ModEngine 已装配，但未能同步到模组列表',
+          message: String(provisionError),
+        });
+      } else {
+        showToast({
+          type: 'success',
+          title: 'ModEngine 装配成功',
+          message: '已部署您提供的 dinput8.dll 并生成/修复标准 modengine.ini 配置，已同步至模组列表。',
+        });
+      }
       await refreshHealth();
     } catch (err: any) {
       showToast({
@@ -448,7 +463,7 @@ export const App: React.FC = () => {
       showToast({
         type: 'success',
         title: '已成功装配 Sekiro Mod Engine',
-        message: `官方前置模组 [${info.name}] 已加入暂存库并装配核心补丁，包含 600KB 真实 DirectX 挂钩驱动 dinput8.dll 与标准配置。`,
+        message: `已加入暂存库 [${info.name}] 并写入标准 modengine.ini。dinput8.dll 使用您自行提供的 ModEngine 副本，SMM 不随附该第三方二进制。`,
       });
       await refreshMods();
       await refreshConflicts();

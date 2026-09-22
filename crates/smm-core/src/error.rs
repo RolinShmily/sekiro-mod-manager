@@ -53,6 +53,9 @@ pub enum SmmError {
 
     #[error("Export error: {0}")]
     ExportError(String),
+
+    #[error("ModEngine source unavailable: {0}")]
+    ModEngineSourceMissing(String),
 }
 
 impl From<sevenz_rust::Error> for SmmError {

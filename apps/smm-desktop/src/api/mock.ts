@@ -244,7 +244,7 @@ export const mock = {
       author: 'katalash',
       description: 'DirectX 11 input wrapper and mod loader for Sekiro',
       category: 'loader',
-      license: 'GPL-3.0-or-later',
+      license: null,
       enabled: true,
       priority: 0,
       tags: ['loader', 'core'],

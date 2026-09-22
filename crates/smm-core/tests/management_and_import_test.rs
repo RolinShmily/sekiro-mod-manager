@@ -269,8 +269,12 @@ fn test_doctor_diagnostics_and_setup_engine() {
     let exe_check = report2.items.iter().find(|i| i.name == "sekiro.exe").unwrap();
     assert_eq!(exe_check.status, DiagnosticStatus::Pass);
 
-    // 3. Scenario: Use setup-engine to deploy ModEngine hook and configuration
-    install_mod_engine(&game_dir, None).expect("install_mod_engine failed");
+    // 3. Scenario: Use setup-engine to deploy ModEngine hook and configuration.
+    //    SMM ships no ModEngine payload, so a user-supplied dinput8.dll is required.
+    let engine_src = staging_dir.join("mod-engine");
+    std::fs::create_dir_all(&engine_src).unwrap();
+    std::fs::write(engine_src.join("dinput8.dll"), vec![0u8; 20_000]).unwrap();
+    install_mod_engine(&game_dir, Some(&staging_dir)).expect("install_mod_engine failed");
     assert!(game_dir.join("dinput8.dll").exists());
     assert!(game_dir.join("modengine.ini").exists());
     assert!(game_dir.join("mods").exists());
@@ -296,7 +300,8 @@ fn test_doctor_diagnostics_and_setup_engine() {
     let enabled_check = report4.items.iter().find(|i| i.name == "enabled").unwrap();
     assert_eq!(enabled_check.status, DiagnosticStatus::Fail);
 
-    // 6. Repair via install_mod_engine -> Restores enabled=1
+    // 6. Repair via install_mod_engine -> Restores enabled=1. The already-installed valid
+    //    dinput8.dll is preserved, so no source payload is needed here.
     install_mod_engine(&game_dir, None).expect("repair failed");
     let report5 = diagnose_environment(&game_dir, Some(&staging_dir));
     assert_eq!(report5.overall_status, OverallHealth::Healthy);

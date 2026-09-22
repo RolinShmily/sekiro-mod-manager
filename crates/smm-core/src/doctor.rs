@@ -4,9 +4,60 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::Result;
+use crate::error::{Result, SmmError};
 use crate::types::ModInfo;
 use crate::executor::is_same_volume;
+
+/// Minimum plausible size, in bytes, of a genuine ModEngine `dinput8.dll`.
+///
+/// The real hook library is several hundred kilobytes; anything at or below this
+/// threshold is a stub/placeholder and must never be deployed as a hook.
+const MOD_ENGINE_DLL_MIN_SIZE: u64 = 10_000;
+
+/// Actionable guidance for obtaining ModEngine, used in diagnostics and errors.
+///
+/// SMM deliberately does **not** embed or redistribute ModEngine: upstream publishes no
+/// license (`katalash/ModEngine` has no LICENSE file and GitHub reports `license: null`),
+/// and its own readme states "All rights reserved" while permitting redistribution only of
+/// an *unmodified* copy *bundled with a mod*. SMM is a mod manager, not a mod, so it cannot
+/// rely on that grant — the user must supply ModEngine themselves.
+pub const MOD_ENGINE_SOURCE_HINT: &str =
+    "Sekiro Mod Engine (dinput8.dll) is third-party software by katalash that SMM does not \
+     redistribute. Download it from https://www.nexusmods.com/sekiro/mods/6 (or \
+     https://github.com/katalash/ModEngine), then place a genuine dinput8.dll (>10 KB) in the \
+     ModEngine source folder or in staging/mod-engine/";
+
+/// True when `path` points at a file large enough to be a genuine ModEngine DLL.
+fn is_valid_mod_engine_dll(path: &Path) -> bool {
+    fs::metadata(path)
+        .map(|m| m.is_file() && m.len() > MOD_ENGINE_DLL_MIN_SIZE)
+        .unwrap_or(false)
+}
+
+/// Returns the first candidate holding a genuine, user-supplied ModEngine `dinput8.dll`.
+fn find_valid_mod_engine_dll<I>(candidates: I) -> Option<PathBuf>
+where
+    I: IntoIterator<Item = PathBuf>,
+{
+    candidates.into_iter().find(|c| is_valid_mod_engine_dll(c))
+}
+
+/// Candidate locations for a user-supplied ModEngine `dinput8.dll`.
+fn dinput8_candidates(source_or_staging: Option<&Path>) -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+
+    if let Some(src) = source_or_staging {
+        candidates.push(src.join("dinput8.dll"));
+        candidates.push(src.join("mod-engine").join("dinput8.dll"));
+        candidates.push(src.join("mod-engine-0.1.16").join("dinput8.dll"));
+    }
+
+    candidates.push(PathBuf::from("staging/mod-engine/dinput8.dll"));
+    candidates.push(PathBuf::from("staging/mod-engine-0.1.16/dinput8.dll"));
+    candidates.push(PathBuf::from("dinput8.dll"));
+
+    candidates
+}
 
 /// Diagnostic status for an individual health check.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -332,7 +383,7 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
     let dinput8_path = game_dir.join("dinput8.dll");
     if dinput8_path.exists() && dinput8_path.is_file() {
         let size = fs::metadata(&dinput8_path).map(|m| m.len()).unwrap_or(0);
-        if size > 10000 {
+        if size > MOD_ENGINE_DLL_MIN_SIZE {
             items.push(DiagnosticItem {
                 category: "ModEngine Hook".to_string(),
                 name: "dinput8.dll".to_string(),
@@ -349,9 +400,7 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                 name: "dinput8.dll".to_string(),
                 status: DiagnosticStatus::Warning,
                 message: format!("dinput8.dll is only {} bytes (stub/placeholder).", size),
-                remediation: Some(
-                    "Reinstall official ModEngine by clicking '装配引擎' or running 'smm setup-engine'.".to_string(),
-                ),
+                remediation: Some(MOD_ENGINE_SOURCE_HINT.to_string()),
             });
         }
     } else {
@@ -360,9 +409,7 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
             name: "dinput8.dll".to_string(),
             status: DiagnosticStatus::Fail,
             message: "dinput8.dll hook library is missing from the game directory.".to_string(),
-            remediation: Some(
-                "Run 'smm setup-engine --game-dir <path>' to deploy ModEngine hook.".to_string(),
-            ),
+            remediation: Some(MOD_ENGINE_SOURCE_HINT.to_string()),
         });
     }
 
@@ -568,36 +615,17 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
     }
 }
 
-/// Locates a valid `dinput8.dll` file across candidate directories.
-fn find_source_dinput8(source_or_staging: Option<&Path>) -> Option<PathBuf> {
-    let mut candidates = Vec::new();
-
-    if let Some(src) = source_or_staging {
-        candidates.push(src.join("dinput8.dll"));
-        candidates.push(src.join("mod-engine").join("dinput8.dll"));
-        candidates.push(src.join("mod-engine-0.1.16").join("dinput8.dll"));
-    }
-
-    candidates.push(PathBuf::from("staging/mod-engine/dinput8.dll"));
-    candidates.push(PathBuf::from("staging/mod-engine-0.1.16/dinput8.dll"));
-    candidates.push(PathBuf::from("dinput8.dll"));
-
-    for c in candidates {
-        if c.is_file() {
-            return Some(c);
-        }
-    }
-
-    None
-}
-
 /// Installs or repairs ModEngine in the designated game directory.
 ///
 /// 1. Ensures `game_dir` exists.
-/// 2. Deploys `dinput8.dll` into `game_dir`.
+/// 2. Deploys a **user-supplied** `dinput8.dll` into `game_dir`. A valid DLL already present in
+///    `game_dir` is preserved, so this doubles as a repair path.
 /// 3. Generates or patches `modengine.ini` ensuring `enabled=1`, `modOverrideDirectory="\mods"`,
 ///    and `loadLooseParams=1`.
 /// 4. Ensures the `mods/` directory exists inside `game_dir`.
+///
+/// Returns [`SmmError::ModEngineSourceMissing`] when no genuine ModEngine payload is available;
+/// see [`MOD_ENGINE_SOURCE_HINT`]. SMM never fabricates or embeds a hook DLL.
 pub fn install_mod_engine(
     game_dir: &Path,
     source_files_or_staging: Option<&Path>,
@@ -608,17 +636,14 @@ pub fn install_mod_engine(
     let target_ini = game_dir.join("modengine.ini");
     let target_mods_dir = game_dir.join("mods");
 
-    // 1. Deploy dinput8.dll
-    let embedded_dll = include_bytes!("../assets/dinput8.dll");
-    if let Some(src_dll) = find_source_dinput8(source_files_or_staging) {
-        let src_size = fs::metadata(&src_dll).map(|m| m.len()).unwrap_or(0);
-        if src_size > 10000 {
-            fs::copy(&src_dll, &target_dll)?;
-        } else {
-            fs::write(&target_dll, embedded_dll)?;
+    // 1. Deploy dinput8.dll, sourced only from a user-supplied ModEngine payload.
+    if !is_valid_mod_engine_dll(&target_dll) {
+        match find_valid_mod_engine_dll(dinput8_candidates(source_files_or_staging)) {
+            Some(src_dll) => {
+                fs::copy(&src_dll, &target_dll)?;
+            }
+            None => return Err(SmmError::ModEngineSourceMissing(MOD_ENGINE_SOURCE_HINT.to_string())),
         }
-    } else {
-        fs::write(&target_dll, embedded_dll)?;
     }
 
     // 2. Deploy or patch modengine.ini
@@ -637,8 +662,15 @@ pub fn install_mod_engine(
     Ok(())
 }
 
-/// Provisions or installs Sekiro Mod Engine into the staging directory as a managed Mod.
-/// Creates `staging/mod-engine/` with `dinput8.dll`, `modengine.ini`, and standard `mod.json`.
+/// Provisions Sekiro Mod Engine into the staging directory as a managed Mod.
+///
+/// Creates `staging/mod-engine/` with a user-supplied `dinput8.dll`, an SMM-generated
+/// `modengine.ini`, and standard `mod.json`. No upstream ModEngine file is copied: the DLL must
+/// come from a user-supplied payload, and the INI is generated by
+/// [`patch_or_create_modengine_ini`].
+///
+/// Returns [`SmmError::ModEngineSourceMissing`] when no genuine ModEngine payload is available;
+/// see [`MOD_ENGINE_SOURCE_HINT`].
 pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
     fs::create_dir_all(staging_dir)?;
     let engine_dir = staging_dir.join("mod-engine");
@@ -646,27 +678,24 @@ pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
 
     let dll_path = engine_dir.join("dinput8.dll");
     let ini_path = engine_dir.join("modengine.ini");
-    let readme_path = engine_dir.join("readme.txt");
     let json_path = engine_dir.join("mod.json");
 
-    let embedded_dll = include_bytes!("../assets/dinput8.dll");
-    let needs_dll_update = if dll_path.exists() {
-        fs::metadata(&dll_path).map(|m| m.len() < 10000).unwrap_or(true)
-    } else {
-        true
-    };
-    if needs_dll_update {
-        fs::write(&dll_path, embedded_dll)?;
+    // 1. Materialize dinput8.dll from a user-supplied payload only.
+    if !is_valid_mod_engine_dll(&dll_path) {
+        let candidates = dinput8_candidates(Some(staging_dir))
+            .into_iter()
+            .filter(|c| c != &dll_path);
+        match find_valid_mod_engine_dll(candidates) {
+            Some(src_dll) => {
+                fs::copy(&src_dll, &dll_path)?;
+            }
+            None => return Err(SmmError::ModEngineSourceMissing(MOD_ENGINE_SOURCE_HINT.to_string())),
+        }
     }
 
+    // 2. Generate modengine.ini from SMM's own defaults (never copied from upstream).
     if !ini_path.exists() {
-        let embedded_ini = include_bytes!("../assets/modengine.ini");
-        fs::write(&ini_path, embedded_ini)?;
-    }
-
-    if !readme_path.exists() {
-        let embedded_readme = include_bytes!("../assets/readme.txt");
-        let _ = fs::write(&readme_path, embedded_readme);
+        fs::write(&ini_path, patch_or_create_modengine_ini(None, "\\mods"))?;
     }
 
     let mut info = ModInfo::new(
@@ -680,7 +709,8 @@ pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
     info.priority = 0;
     info.source_url = Some("https://www.nexusmods.com/sekiro/mods/6".to_string());
     info.homepage = Some("https://www.nexusmods.com/sekiro/mods/6".to_string());
-    info.license = Some("GPL-3.0-or-later".to_string());
+    // ModEngine publishes no open-source license; do not assert one on its behalf.
+    info.license = None;
 
     let json_str = serde_json::to_string_pretty(&info)?;
     fs::write(&json_path, json_str)?;
@@ -734,12 +764,70 @@ modOverrideDirectory = "\custom_mods"
         // Scenario 3: Add dummy dinput8.dll
         fs::write(game_dir.join("dinput8.dll"), b"mock dll hook").unwrap();
 
-        // Scenario 4: Install mod engine via install_mod_engine
-        install_mod_engine(&game_dir, None).expect("install_mod_engine should succeed");
+        // Scenario 4: Supply a user-provided ModEngine payload, then install via
+        // install_mod_engine. SMM embeds no DLL, so a source is mandatory here.
+        let engine_src = staging_dir.join("mod-engine");
+        fs::create_dir_all(&engine_src).unwrap();
+        fs::write(engine_src.join("dinput8.dll"), vec![0u8; 20_000]).unwrap();
+        install_mod_engine(&game_dir, Some(&staging_dir)).expect("install_mod_engine should succeed");
 
         let report3 = diagnose_environment(&game_dir, Some(&staging_dir));
         assert_eq!(report3.overall_status, OverallHealth::Healthy);
         assert_eq!(report3.fail_count(), 0);
         assert_eq!(report3.warning_count(), 0);
+    }
+
+    #[test]
+    fn test_install_mod_engine_refuses_without_user_supplied_dll() {
+        let tmp = tempdir().unwrap();
+        let game_dir = tmp.path().join("Sekiro");
+        fs::create_dir_all(&game_dir).unwrap();
+
+        // No ModEngine payload anywhere -> must fail loudly instead of fabricating a hook DLL.
+        let err = install_mod_engine(&game_dir, Some(tmp.path()))
+            .expect_err("must refuse to install ModEngine without a user-supplied payload");
+        assert!(matches!(err, SmmError::ModEngineSourceMissing(_)));
+        assert!(
+            !game_dir.join("dinput8.dll").exists(),
+            "SMM must not fabricate or embed a hook DLL"
+        );
+
+        // A stub below the size threshold must be rejected as well.
+        let engine_src = tmp.path().join("mod-engine");
+        fs::create_dir_all(&engine_src).unwrap();
+        fs::write(engine_src.join("dinput8.dll"), b"stub").unwrap();
+        let err = install_mod_engine(&game_dir, Some(tmp.path()))
+            .expect_err("a stub payload must not satisfy the requirement");
+        assert!(matches!(err, SmmError::ModEngineSourceMissing(_)));
+        assert!(!game_dir.join("dinput8.dll").exists());
+
+        // An installed valid DLL keeps the repair path working without a source.
+        fs::write(game_dir.join("dinput8.dll"), vec![0u8; 20_000]).unwrap();
+        install_mod_engine(&game_dir, None).expect("repair with an installed DLL should succeed");
+        assert!(game_dir.join("modengine.ini").exists());
+    }
+
+    #[test]
+    fn test_provision_mod_engine_requires_user_supplied_dll() {
+        let tmp = tempdir().unwrap();
+        let staging = tmp.path().join("staging");
+        fs::create_dir_all(&staging).unwrap();
+
+        let err = provision_mod_engine(&staging)
+            .expect_err("must refuse to provision ModEngine without a user-supplied payload");
+        assert!(matches!(err, SmmError::ModEngineSourceMissing(_)));
+        assert!(!staging.join("mod-engine/dinput8.dll").exists());
+
+        // With a genuine payload present, provisioning succeeds and records no license.
+        fs::create_dir_all(staging.join("mod-engine")).unwrap();
+        fs::write(staging.join("mod-engine/dinput8.dll"), vec![0u8; 20_000]).unwrap();
+        let info = provision_mod_engine(&staging).expect("provision should succeed");
+        assert_eq!(info.id, "mod-engine");
+        assert_eq!(info.license, None, "ModEngine publishes no license to assert");
+        assert!(staging.join("mod-engine/modengine.ini").exists());
+        assert!(
+            !staging.join("mod-engine/readme.txt").exists(),
+            "must not redistribute upstream documentation"
+        );
     }
 }
