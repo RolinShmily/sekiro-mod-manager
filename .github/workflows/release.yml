@@ -95,7 +95,7 @@ jobs:
           - **Sekiro-Mod-Manager-Setup.exe**: Windows setup installer (Windows 安装向导版).
           - **smm-cli.exe**: Standalone CLI executable for AI-Agents and terminal scripting (命令行工具).
           - **SHA256SUMS.txt**: Cryptographic integrity verification hashes (校验哈希清单).
-          - **LICENSE / licenses/**: MIT license, plus the verbatim upstream texts ``OFL-1.1.txt`` (embedded subset fonts) and ``UnRAR.txt`` (statically linked RARLAB code) (开源许可证与第三方许可证原文). The Setup installer places them in a ``licenses`` folder next to ``smm.exe``.
+          - **LICENSE / licenses/**: MIT license, plus the verbatim upstream texts ``OFL-1.1.txt`` (embedded subset fonts) and ``UnRAR.txt`` (statically linked RARLAB code) (开源许可证与第三方许可证原文). The exact scope of the MIT grant — including why ModEngine is not bundled — is documented in ``LICENSING.md`` in the repository. The Setup installer places the license texts in a ``licenses`` folder next to ``smm.exe``.
 
           ### Core Highlights
           - ⚡ **Win32 NTFS Hard Link Deployment**: Millisecond-level projection into game ``mods/`` directory with zero disk space cost.

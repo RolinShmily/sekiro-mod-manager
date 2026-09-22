@@ -17,6 +17,11 @@ summary; `git log` remains the authoritative record.
   deliberately by hand. GitHub Actions majors are still opened, since that is how those actions
   ship.
 
+### Fixed
+
+- Generated release notes now point at `LICENSING.md` for the scope of the MIT grant, instead of
+  listing only the shipped license texts.
+
 ## [0.2.0] - 2026-09-22
 
 ### Added
