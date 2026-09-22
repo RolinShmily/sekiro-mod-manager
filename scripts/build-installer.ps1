@@ -29,10 +29,9 @@ Write-Host "Target Version: v$version`n" -ForegroundColor Magenta
 #    RARLAB UnRAR license (statically linked via unrar_sys). Fail fast, before the long build.
 $requiredLicenseFiles = @(
     "LICENSE",
-    "licenses\README.md",
+    "README.md",
     "licenses\OFL-1.1.txt",
-    "licenses\UnRAR.txt",
-    "licenses\THIRD-PARTY-NOTICES.md"
+    "licenses\UnRAR.txt"
 )
 $missing = @()
 foreach ($rel in $requiredLicenseFiles) {
@@ -117,18 +116,19 @@ if (Test-Path $cliCandidate) {
     Write-Host "      Archived CLI: $distCliExe" -ForegroundColor Green
 }
 
-# 4) License & notice files: shipped alongside the portable exes (Sekiro-Mod-Manager.exe is a
+# 4) License files: shipped alongside the portable exes (Sekiro-Mod-Manager.exe is a
 #    single-file binary with no resource directory of its own) and inside the NSIS installer
-#    (via `bundle.licenseFile` and `bundle.resources` in tauri.conf.json). LICENSE carries both
-#    the MIT text and the scope declaration (NOTICE), so it is a single file.
+#    (via `bundle.licenseFile` and `bundle.resources` in tauri.conf.json). README.md carries the
+#    MIT scope declaration and the third-party attribution, so it ships with them.
 $distLicensesDir = Join-Path $distDir "licenses"
 if (Test-Path $distLicensesDir) { Remove-Item -Path $distLicensesDir -Recurse -Force }
 New-Item -ItemType Directory -Path $distLicensesDir -Force | Out-Null
 
 Copy-Item -Path (Join-Path $RootDir "LICENSE") -Destination (Join-Path $distDir "LICENSE") -Force
+Copy-Item -Path (Join-Path $RootDir "README.md") -Destination (Join-Path $distDir "README.md") -Force
 Copy-Item -Path (Join-Path $RootDir "licenses\*") -Destination $distLicensesDir -Force
 $distLicenseCount = (Get-ChildItem -Path $distLicensesDir -File).Count
-Write-Host "      Archived LICENSE and $distLicenseCount license file(s) to dist-installer/" -ForegroundColor Green
+Write-Host "      Archived LICENSE, README.md and $distLicenseCount license file(s) to dist-installer/" -ForegroundColor Green
 
 # Clean up legacy redundant files if present
 $legacySetup = Join-Path $distDir "setup.exe"

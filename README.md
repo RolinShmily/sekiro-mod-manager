@@ -33,11 +33,10 @@
 ```text
 sekiro-mods/
 ├── Cargo.toml                         # Workspace root configuration
-├── LICENSE                            # MIT text + NOTICE scope declaration
-├── licenses/                          # Third-party license texts & attribution
+├── LICENSE                            # MIT License
+├── licenses/                          # Verbatim third-party license texts
 │   ├── OFL-1.1.txt                    #   SIL OFL 1.1 (Inter / JetBrains Mono / Noto Sans SC)
-│   ├── UnRAR.txt                      #   RARLAB UnRAR license (via `unrar_sys`)
-│   └── THIRD-PARTY-NOTICES.md         #   Direct runtime dependency attribution
+│   └── UnRAR.txt                      #   RARLAB UnRAR license (via `unrar_sys`)
 ├── README.md                          # English documentation
 ├── README.zh-CN.md                    # Simplified Chinese documentation
 ├── DESIGN.md                          # UI/UX design specifications & design tokens
@@ -134,44 +133,117 @@ smm restore --game-dir "D:\SteamLibrary\steamapps\common\Sekiro"
 
 ---
 
-## Referenced Third-Party Software
-
-SMM interoperates with the following community projects **by name and metadata only**. Nothing in
-this list is redistributed with SMM: the test suite synthesises all of its fixtures at runtime in
-throwaway temp directories (`tempfile::tempdir_in`), so no third-party mod content — and in
-particular no ModEngine binary — is included in this repository or in any release artifact. All
-intellectual property remains with the respective creators.
-
-| Project | Author | Source | Upstream license | How SMM interacts with it |
-| :--- | :--- | :--- | :--- | :--- |
-| **Sekiro Mod Engine** (v0.1.16) | **katalash** | [GitHub](https://github.com/katalash/ModEngine) / [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) | **None published** — proprietary, "all rights reserved" | SMM detects an installed `dinput8.dll` and generates/patches `modengine.ini`. **You must download ModEngine yourself**; SMM never embeds, bundles, or deploys its binary. |
-| **Sekiro: Dream of the Damned** | **Nuffly** | [GitHub](https://github.com/nuffly/DotD) / [NexusMods #793](https://www.nexusmods.com/sekiro/mods/793) | Apache-2.0 | Used as a naming/metadata reference in synthetic conflict-resolution fixtures (`chr/`, `event/`, `map/`, `gameparam`). |
-| **Native PS4 Buttons** | **katalash** | [NexusMods #7](https://www.nexusmods.com/sekiro/mods/7) | Custom Permissive | Used as a naming/metadata reference in synthetic UI-resource fixtures (`menu/`, `font/`). |
-| **Kusabimaru Reaper Weapon & Arm** | **Eyedea** | [NexusMods #350](https://www.nexusmods.com/sekiro/mods/350) | CC-BY-NC-4.0 | Used as a naming/metadata reference in synthetic weapon-slot exclusivity fixtures (`wp_a_0300`, `am_m_9000`). |
-
-*Upstream licenses are listed for reference only and are not asserted on the authors' behalf —
-verify them at the source. The ModEngine license status above was confirmed via the GitHub API
-(`repos/katalash/ModEngine/license` returns HTTP 404).*
-
----
-
-## License
+## License & Third-Party Notices
 
 This project is licensed under the [MIT License](LICENSE).
 
-**Scope of the MIT grant:** the MIT License covers only our own source code (`crates/`, `apps/`,
-`scripts/`). It does **not** extend to third-party components, community mods, game assets, or
-trademarks. The [LICENSE](LICENSE) file carries the MIT text followed by a `NOTICE — SCOPE OF THE
-MIT LICENSE` section spelling that out, and the [licenses/](licenses/) directory holds the upstream
-license texts and attribution:
+### Scope of the MIT grant
 
-- [licenses/OFL-1.1.txt](licenses/OFL-1.1.txt) — Inter, JetBrains Mono, Noto Sans SC (bundled subset fonts)
-- [licenses/UnRAR.txt](licenses/UnRAR.txt) — RARLAB UnRAR (statically linked via `unrar_sys`)
-- [licenses/THIRD-PARTY-NOTICES.md](licenses/THIRD-PARTY-NOTICES.md) — direct runtime dependencies
+The MIT License covers **only our own source code**:
 
-**ModEngine is not bundled.** Sekiro Mod Engine (`dinput8.dll`) is third-party software by katalash
-with no published license, so SMM does not redistribute it in any form. You supply it yourself;
-SMM only detects it and configures `modengine.ini`.
+| Covered | Path |
+| :--- | :--- |
+| Core engine (normalization, conflicts, hard-link deployment, import/export) | `crates/smm-core/` |
+| Headless CLI (`smm`) | `crates/smm-cli/` |
+| React 18 + Tailwind frontend | `apps/smm-desktop/src/` |
+| Tauri v2 native bindings and IPC layer | `apps/smm-desktop/src-tauri/` |
+| Build, packaging and font-subsetting scripts, CI | `scripts/`, `.github/workflows/` |
+| Documentation | `README.md`, `README.zh-CN.md`, `DESIGN.md` |
+
+It does **not** extend to any of the following, and grants no rights to them:
+
+- **Third-party components** — see [Third-party licenses](#third-party-licenses) below.
+- **Sekiro Mod Engine (ModEngine)** — not redistributed at all; see [below](#modengine-is-not-bundled).
+- **Community mods** — `staging/`, and anything you import at runtime, remains the property of its
+  respective authors under its own license (e.g. `CC-BY-NC-4.0`, `Custom Permissive`). SMM is a
+  management tool and does not relicense, sublicense, or grant any rights to mod content. Community
+  mod names such as *Dream of the Damned*, *Native PS4 Buttons* and *Kusabimaru Reaper* appear in
+  the test suite only as realistic metadata: every fixture is synthesised at runtime in a throwaway
+  temp directory (`tempfile::tempdir_in`), so **no** third-party mod content is redistributed.
+- **Game assets and trademarks** — *Sekiro: Shadows Die Twice* and everything in it are trademarks
+  and copyright of FromSoftware, Inc. and Activision. SMM ships no game assets and is not
+  affiliated with, endorsed by, or sponsored by them.
+- **Branding artwork** — `apps/smm-desktop/public/sekiro-logo.svg` uses a 隻狼-inspired seal motif
+  referencing the game's trademark, and is provided only to identify this unofficial community tool.
+- **Release binaries** — artifacts in `dist-installer/` statically link the components below, so
+  their distribution is governed by those upstream licenses in addition to the MIT License.
+
+### ModEngine is not bundled
+
+Sekiro Mod Engine (`dinput8.dll`) by **katalash** is proprietary third-party software with **no
+published license**: its repository contains no `LICENSE` file and the GitHub API reports
+`license: null` (`/license` returns HTTP 404), while the readme bundled with the DLL states
+"All rights reserved" and permits redistribution only of an *unmodified* copy shipped *with a mod*.
+SMM is a mod manager rather than a mod, so that grant does not cover it. SMM therefore never embeds,
+bundles, ships, or deploys any ModEngine binary — it only detects an installed `dinput8.dll` and
+generates/patches `modengine.ini`.
+
+Download ModEngine yourself from [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) or
+[github.com/katalash/ModEngine](https://github.com/katalash/ModEngine), then supply its `dinput8.dll`
+(see `smm setup-engine` in the [CLI reference](#cli-reference-for-ai-agents--power-users)).
+
+### Third-party licenses
+
+Two components are redistributed in binary form, and their **full license texts ship with every
+release** in [`licenses/`](licenses/):
+
+| Component | License | Full text |
+| :--- | :--- | :--- |
+| Inter, JetBrains Mono, Noto Sans SC — subset `.woff2` fonts embedded in the app | SIL Open Font License 1.1 | [`licenses/OFL-1.1.txt`](licenses/OFL-1.1.txt) |
+| RARLAB UnRAR — vendored via `unrar_sys 0.5.8`, statically linked into `smm.exe` and `Sekiro-Mod-Manager.exe` | UnRAR freeware license (non-OSI) | [`licenses/UnRAR.txt`](licenses/UnRAR.txt) |
+
+> **UnRAR constraint:** clause 2 of that license forbids using the code to build a RAR (WinRAR)
+> compatible archiver. SMM uses it for **read-only RAR extraction only**; RAR compression must never
+> be implemented while this dependency is present — distribute `.zip` instead.
+
+Direct runtime dependencies (16 Rust crates, 6 npm packages). Full upstream texts are available from
+[crates.io](https://crates.io) and [npmjs.com](https://www.npmjs.com); transitive dependencies pinned
+in `Cargo.lock` and `pnpm-lock.yaml` remain under their own licenses. Build-only tooling
+(`vite`, `typescript`, `tailwindcss`, `postcss`, `autoprefixer`, `subset-font`) ships no artifact.
+
+| Ecosystem | Dependencies | License |
+| :--- | :--- | :--- |
+| Rust | `serde`, `serde_json`, `tempfile`, `thiserror`, `clap`, `windows-sys`, `unrar` (wrapper only), `rfd`, `open`, `comfy-table` | MIT OR Apache-2.0 |
+| Rust | `walkdir` | Unlicense OR MIT |
+| Rust | `zip` | MIT |
+| Rust | `sevenz-rust` | Apache-2.0 |
+| Rust | `tauri`, `tauri-build` | Apache-2.0 OR MIT |
+| Rust | `colored` | **MPL-2.0** — file-level copyleft; consumed unmodified from crates.io, no MPL-covered file is modified or distributed |
+| Frontend | `@tauri-apps/api` | Apache-2.0 OR MIT |
+| Frontend | `react`, `react-dom`, `clsx`, `tailwind-merge` | MIT |
+| Frontend | `lucide-react` | ISC |
+
+<details>
+<summary>ISC notice required by <code>lucide-react</code></summary>
+
+```text
+ISC License
+
+Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of
+Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice and
+this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+```
+
+</details>
+
+The two bundled texts in `licenses/` are verbatim copies. When bumping `@fontsource/*` or `unrar_sys`,
+re-check them: `licenses/UnRAR.txt` mirrors `unrar_sys-<version>/vendor/unrar/license.txt` in the Cargo
+registry, and the OFL body in `licenses/OFL-1.1.txt` comes from `node_modules/@fontsource/inter/LICENSE`.
+The packaging pipeline aborts if either file is missing.
+
+*Upstream licenses for the community projects referenced above are listed for convenience only and
+are not asserted on their authors' behalf — verify them at the source. ModEngine's license status
+was confirmed via the GitHub API (`repos/katalash/ModEngine/license` → HTTP 404).*
 
 Sekiro: Shadows Die Twice is a registered trademark of FromSoftware, Inc. and Activision. This
 project is an unofficial community tool.

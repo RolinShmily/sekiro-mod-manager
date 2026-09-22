@@ -36,11 +36,10 @@
 ```text
 sekiro-mods/
 ├── Cargo.toml                         # Workspace 根配置
-├── LICENSE                            # MIT 正文 + NOTICE 授权范围声明
-├── licenses/                          # 第三方许可证全文与归属声明
+├── LICENSE                            # MIT 开源许可证
+├── licenses/                          # 第三方许可证原文
 │   ├── OFL-1.1.txt                    #   SIL OFL 1.1（Inter / JetBrains Mono / Noto Sans SC）
-│   ├── UnRAR.txt                      #   RARLAB UnRAR 许可证（经 `unrar_sys` 引入）
-│   └── THIRD-PARTY-NOTICES.md         #   直接运行时依赖归属清单
+│   └── UnRAR.txt                      #   RARLAB UnRAR 许可证（经 `unrar_sys` 引入）
 ├── README.md                          # 英文架构与使用文档
 ├── README.zh-CN.md                    # 中文架构与使用文档
 ├── DESIGN.md                          # 界面视觉与交互规范设计字典
@@ -137,38 +136,107 @@ smm restore --game-dir "D:\SteamLibrary\steamapps\common\Sekiro"
 
 ---
 
-## 引用的第三方项目 (Referenced Third-Party Software)
-
-SMM 仅在**名称与元数据层面**与下列社区项目发生关联。**本列表中的任何内容都未被 SMM 再分发**：
-测试套件在运行时于临时目录（`tempfile::tempdir_in`）动态合成全部夹具，因此没有任何第三方 Mod 内容
-——尤其是任何 ModEngine 二进制——被包含在本仓库或任何发布产物中。全部知识产权归各原作者所有。
-
-| 项目 | 作者 | 来源 | Upstream 协议 | SMM 与其交互的方式 |
-| :--- | :--- | :--- | :--- | :--- |
-| **Sekiro Mod Engine** (v0.1.16) | **katalash** | [GitHub](https://github.com/katalash/ModEngine) / [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) | **未公开任何许可证**——专有，"all rights reserved" | SMM 仅检测已安装的 `dinput8.dll` 并生成/修正 `modengine.ini`。**须由您自行下载 ModEngine**；SMM 从不内嵌、捆绑或代其部署二进制。 |
-| **Sekiro: Dream of the Damned** | **Nuffly** | [GitHub](https://github.com/nuffly/DotD) / [NexusMods #793](https://www.nexusmods.com/sekiro/mods/793) | Apache-2.0 | 作为合成冲突检测夹具（`chr/`、`event/`、`map/`、`gameparam`）的命名与元数据参照。 |
-| **Native PS4 Buttons** | **katalash** | [NexusMods #7](https://www.nexusmods.com/sekiro/mods/7) | Custom Permissive | 作为合成 UI 资源夹具（`menu/`、`font/`）的命名与元数据参照。 |
-| **Kusabimaru Reaper Weapon & Arm** | **Eyedea** | [NexusMods #350](https://www.nexusmods.com/sekiro/mods/350) | CC-BY-NC-4.0 | 作为合成武器专属槽位夹具（`wp_a_0300`、`am_m_9000`）的命名与元数据参照。 |
-
-*Upstream 协议仅供参照，不代表我们代原作者做出声明，请以原始出处为准。上表中 ModEngine 的许可状态已
-经 GitHub API 核实（`repos/katalash/ModEngine/license` 返回 HTTP 404）。*
-
----
-
-## 开源协议
+## 开源协议与第三方声明 (License & Third-Party Notices)
 
 本项目采用 [MIT 开源许可证](LICENSE)。
 
-**MIT 授权范围：** 仅覆盖本项目原创源代码（`crates/`、`apps/`、`scripts/`），**不**涵盖第三方组件、
-社区模组、游戏资源与商标。[LICENSE](LICENSE) 文件为 MIT 正文 + 其后的 `NOTICE — SCOPE OF THE MIT
-LICENSE` 范围声明；upstream 许可证全文与归属声明见 [licenses/](licenses/) 目录：
+### MIT 授权范围
 
-- [licenses/OFL-1.1.txt](licenses/OFL-1.1.txt) — Inter、JetBrains Mono、Noto Sans SC（内嵌子集字体）
-- [licenses/UnRAR.txt](licenses/UnRAR.txt) — RARLAB UnRAR（经 `unrar_sys` 静态链接）
-- [licenses/THIRD-PARTY-NOTICES.md](licenses/THIRD-PARTY-NOTICES.md) — 直接运行时依赖
+MIT 许可**仅**覆盖本项目原创源代码：
 
-**ModEngine 未被捆绑。** Sekiro Mod Engine（`dinput8.dll`）是 katalash 的第三方软件，未公开任何许可证，
-因此 SMM 不以任何形式再分发它。需由您自行提供；SMM 仅做检测并生成 `modengine.ini`。
+| 覆盖部分 | 路径 |
+| :--- | :--- |
+| 核心引擎（归一化、冲突分析、硬链接部署、导入导出） | `crates/smm-core/` |
+| 无头 CLI（`smm`） | `crates/smm-cli/` |
+| React 18 + Tailwind 前端 | `apps/smm-desktop/src/` |
+| Tauri v2 原生绑定与 IPC 层 | `apps/smm-desktop/src-tauri/` |
+| 构建、打包、字体子集化脚本与 CI | `scripts/`、`.github/workflows/` |
+| 项目文档 | `README.md`、`README.zh-CN.md`、`DESIGN.md` |
+
+下列内容**不在**授权范围内，不授予任何权利：
+
+- **第三方组件** —— 见下方[第三方许可证](#第三方许可证)。
+- **Sekiro Mod Engine (ModEngine)** —— 完全未被再分发，见[下方说明](#modengine-未被捆绑)。
+- **社区模组** —— `staging/` 目录及您运行时导入的模组，版权与许可归其各自作者所有（如
+  `CC-BY-NC-4.0`、`Custom Permissive`）。SMM 仅为管理工具，不对模组内容进行再授权。测试套件中出现
+  的社区模组名称（*Dream of the Damned*、*Native PS4 Buttons*、*Kusabimaru Reaper* 等）仅作为
+  真实感的元数据使用：全部夹具均于运行时在临时目录（`tempfile::tempdir_in`）动态合成，
+  **没有任何**第三方模组内容被再分发。
+- **游戏资源与商标** —— 《只狼：影逝二度》及其全部内容均为 FromSoftware, Inc. 与 Activision 之商标
+  与版权。本项目不包含任何游戏本体资源，与二者无隶属、背书或赞助关系。
+- **品牌美术资源** —— `apps/smm-desktop/public/sekiro-logo.svg` 中的「隻狼」篆刻元素涉及游戏商标，
+  仅用于标识本非官方社区工具。
+- **发布二进制** —— `dist-installer/` 中的产物静态链接了下方第三方组件，故其分发除 MIT 外还同时受
+  相应 upstream 许可证约束。
+
+### ModEngine 未被捆绑
+
+Sekiro Mod Engine（`dinput8.dll`，作者 **katalash**）属于无任何公开许可证的第三方专有软件：仓库内无
+`LICENSE` 文件，GitHub API 返回 `license: null`（`/license` 端点 HTTP 404），而随 DLL 提供的 readme
+声明 "All rights reserved"，仅允许再分发**未经修改**、且**与某个 mod 捆绑**用于启用该 mod 的副本。
+SMM 是 mod 管理器而非 mod，因此不适用该授权。SMM **不内嵌、不捆绑、不随附、不代部署**任何 ModEngine
+二进制，仅做检测与 `modengine.ini` 的生成/修正。
+
+请自行从 [NexusMods #6](https://www.nexusmods.com/sekiro/mods/6) 或
+[github.com/katalash/ModEngine](https://github.com/katalash/ModEngine) 下载 ModEngine，并提供其
+`dinput8.dll`（参见上方 CLI 指南中的 `smm setup-engine`）。
+
+### 第三方许可证
+
+有两个组件以二进制形式再分发，其**许可证全文随每一次发布一并提供**，位于 [`licenses/`](licenses/)：
+
+| 组件 | 许可证 | 全文 |
+| :--- | :--- | :--- |
+| Inter、JetBrains Mono、Noto Sans SC —— 内嵌于应用的子集化 `.woff2` 字体 | SIL Open Font License 1.1 | [`licenses/OFL-1.1.txt`](licenses/OFL-1.1.txt) |
+| RARLAB UnRAR —— 经 `unrar_sys 0.5.8` 引入，静态链接进 `smm.exe` 与 `Sekiro-Mod-Manager.exe` | UnRAR freeware license（非 OSI） | [`licenses/UnRAR.txt`](licenses/UnRAR.txt) |
+
+> **UnRAR 限制：** 该许可证第 2 条禁止用其代码开发 RAR (WinRAR) 兼容压缩器。SMM 仅将其用于
+> **只读 RAR 解压**；只要该依赖存在，就绝不能实现 RAR 压缩功能——需要打包请用 `.zip`。
+
+直接运行时依赖（16 个 Rust crate、6 个 npm 包）如下。完整 upstream 文本可从
+[crates.io](https://crates.io) 与 [npmjs.com](https://www.npmjs.com) 获取；`Cargo.lock` 与
+`pnpm-lock.yaml` 中锁定的传递依赖各自沿用其原始许可。仅参与构建的工具链
+（`vite`、`typescript`、`tailwindcss`、`postcss`、`autoprefixer`、`subset-font`）不产生任何发布产物。
+
+| 生态 | 依赖 | 许可证 |
+| :--- | :--- | :--- |
+| Rust | `serde`、`serde_json`、`tempfile`、`thiserror`、`clap`、`windows-sys`、`unrar`（仅 wrapper）、`rfd`、`open`、`comfy-table` | MIT OR Apache-2.0 |
+| Rust | `walkdir` | Unlicense OR MIT |
+| Rust | `zip` | MIT |
+| Rust | `sevenz-rust` | Apache-2.0 |
+| Rust | `tauri`、`tauri-build` | Apache-2.0 OR MIT |
+| Rust | `colored` | **MPL-2.0** —— file-level copyleft；自 crates.io 未经修改地使用，未修改也未分发任何受 MPL 覆盖的文件 |
+| 前端 | `@tauri-apps/api` | Apache-2.0 OR MIT |
+| 前端 | `react`、`react-dom`、`clsx`、`tailwind-merge` | MIT |
+| 前端 | `lucide-react` | ISC |
+
+<details>
+<summary><code>lucide-react</code> 要求随附的 ISC 声明</summary>
+
+```text
+ISC License
+
+Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of
+Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice and
+this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+```
+
+</details>
+
+`licenses/` 中的两份文本均为逐字原文。升级 `@fontsource/*` 或 `unrar_sys` 时请重新核对：
+`licenses/UnRAR.txt` 对应 Cargo registry 中的 `unrar_sys-<版本>/vendor/unrar/license.txt`，
+`licenses/OFL-1.1.txt` 的 OFL 正文来自 `node_modules/@fontsource/inter/LICENSE`。
+任一文件缺失时打包流水线会直接中止。
 
 《只狼：影逝二度》（Sekiro: Shadows Die Twice）系 FromSoftware, Inc. 与 Activision 之注册商标，
 本项目为社区非官方开源工具。
