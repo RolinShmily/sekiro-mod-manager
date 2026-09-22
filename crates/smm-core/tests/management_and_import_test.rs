@@ -43,8 +43,8 @@ fn test_end_to_end_zip_import_and_lifecycle() {
     zip.finish().expect("Failed to finish zip");
 
     // 2. Import mod into staging
-    let imported = import_mod(&zip_path, &staging_dir, &ImportOptions::default())
-        .expect("Import failed");
+    let imported =
+        import_mod(&zip_path, &staging_dir, &ImportOptions::default()).expect("Import failed");
 
     assert_eq!(imported.id, "mortalblade-fire-v3-0");
     assert_eq!(imported.version, "3.0");
@@ -74,8 +74,7 @@ fn test_end_to_end_zip_import_and_lifecycle() {
         .expect("Failed to update priority");
     assert_eq!(updated_pri.priority, 15);
 
-    let reloaded_info =
-        ModLoader::load_mod_info(&mod_dir).expect("Failed to reload mod.json");
+    let reloaded_info = ModLoader::load_mod_info(&mod_dir).expect("Failed to reload mod.json");
     assert_eq!(reloaded_info.priority, 15);
 
     // 5. Test state mutation: toggle enabled / disabled
@@ -83,13 +82,11 @@ fn test_end_to_end_zip_import_and_lifecycle() {
         .expect("Failed to disable mod");
     assert!(!disabled.enabled);
 
-    let reloaded_info2 =
-        ModLoader::load_mod_info(&mod_dir).expect("Failed to reload mod.json");
+    let reloaded_info2 = ModLoader::load_mod_info(&mod_dir).expect("Failed to reload mod.json");
     assert!(!reloaded_info2.enabled);
 
     // 6. Test deployment planner honors disabled status
-    let staged_mods =
-        ModLoader::scan_mods_directory(&staging_dir).expect("Failed to scan staging");
+    let staged_mods = ModLoader::scan_mods_directory(&staging_dir).expect("Failed to scan staging");
     let plan_disabled =
         DeploymentPlanner::build_plan("test_profile", &staged_mods).expect("Build plan failed");
     assert!(
@@ -266,7 +263,11 @@ fn test_doctor_diagnostics_and_setup_engine() {
     std::fs::write(game_dir.join("sekiro.exe"), b"mock binary").unwrap();
     let report2 = diagnose_environment(&game_dir, Some(&staging_dir));
     assert_eq!(report2.overall_status, OverallHealth::ActionRequired);
-    let exe_check = report2.items.iter().find(|i| i.name == "sekiro.exe").unwrap();
+    let exe_check = report2
+        .items
+        .iter()
+        .find(|i| i.name == "sekiro.exe")
+        .unwrap();
     assert_eq!(exe_check.status, DiagnosticStatus::Pass);
 
     // 3. Scenario: Use setup-engine to deploy ModEngine hook and configuration.
@@ -319,7 +320,8 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
         let file = File::create(&isshin_zip).unwrap();
         let mut zip = ZipWriter::new(file);
         let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-        zip.start_file("Custom Isshin/c5409.texbnd.dcx", opt).unwrap();
+        zip.start_file("Custom Isshin/c5409.texbnd.dcx", opt)
+            .unwrap();
         zip.write_all(b"MOCK_ISSHIN_TEXTURE").unwrap();
         zip.finish().unwrap();
     }
@@ -336,9 +338,11 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
         let file = File::create(&blue_effect_zip).unwrap();
         let mut zip = ZipWriter::new(file);
         let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-        zip.start_file("Blue Flame/sfx/sfxbnd_commoneffects.ffxbnd.dcx", opt).unwrap();
+        zip.start_file("Blue Flame/sfx/sfxbnd_commoneffects.ffxbnd.dcx", opt)
+            .unwrap();
         zip.write_all(b"MOCK_SFX_BUNDLE").unwrap();
-        zip.start_file("Blue Flame/Fxr files/f000300235.fxr", opt).unwrap();
+        zip.start_file("Blue Flame/Fxr files/f000300235.fxr", opt)
+            .unwrap();
         zip.write_all(b"MOCK_FXR").unwrap();
         zip.finish().unwrap();
     }
@@ -346,7 +350,9 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
         .expect("Failed to import sfx mod");
     assert_eq!(imported_blue.category, "vfx");
     let (_, blue_assets) = ModLoader::scan_mod(&staging_dir.join(&imported_blue.id)).unwrap();
-    assert!(blue_assets.iter().any(|a| a.relative_path == "sfx/sfxbnd_commoneffects.ffxbnd.dcx"));
+    assert!(blue_assets
+        .iter()
+        .any(|a| a.relative_path == "sfx/sfxbnd_commoneffects.ffxbnd.dcx"));
 
     // 3. Test Nested archive with integration zip (e.g. Lamia #1715)
     let nested_outer_zip = base.join("LamiaBundle_v1.1.zip");
@@ -356,7 +362,8 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
         {
             let file = File::create(&inner_int_path).unwrap();
             let mut zip = ZipWriter::new(file);
-            let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+            let opt =
+                SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
             zip.start_file("am_m_9000.partsbnd.dcx", opt).unwrap();
             zip.write_all(b"ARM").unwrap();
             zip.start_file("wp_a_0310.partsbnd.dcx", opt).unwrap();
@@ -369,7 +376,8 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
         {
             let file = File::create(&inner_char_path).unwrap();
             let mut zip = ZipWriter::new(file);
-            let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+            let opt =
+                SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
             zip.start_file("am_m_9000.partsbnd.dcx", opt).unwrap();
             zip.write_all(b"ARM_ONLY").unwrap();
             zip.finish().unwrap();
@@ -380,9 +388,11 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
         let mut zip = ZipWriter::new(file);
         let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
         zip.start_file("Lamia(integration).zip", opt).unwrap();
-        zip.write_all(&std::fs::read(&inner_int_path).unwrap()).unwrap();
+        zip.write_all(&std::fs::read(&inner_int_path).unwrap())
+            .unwrap();
         zip.start_file("Lamia(character).zip", opt).unwrap();
-        zip.write_all(&std::fs::read(&inner_char_path).unwrap()).unwrap();
+        zip.write_all(&std::fs::read(&inner_char_path).unwrap())
+            .unwrap();
         zip.finish().unwrap();
     }
 
@@ -390,8 +400,12 @@ fn test_nested_archive_and_sfx_and_loose_texbnd_import() {
         .expect("Failed to import nested archive mod");
     let (_, lamia_assets) = ModLoader::scan_mod(&staging_dir.join(&imported_lamia.id)).unwrap();
     assert_eq!(lamia_assets.len(), 2);
-    assert!(lamia_assets.iter().any(|a| a.relative_path == "parts/am_m_9000.partsbnd.dcx"));
-    assert!(lamia_assets.iter().any(|a| a.relative_path == "parts/wp_a_0310.partsbnd.dcx"));
+    assert!(lamia_assets
+        .iter()
+        .any(|a| a.relative_path == "parts/am_m_9000.partsbnd.dcx"));
+    assert!(lamia_assets
+        .iter()
+        .any(|a| a.relative_path == "parts/wp_a_0310.partsbnd.dcx"));
 }
 
 #[test]
@@ -436,12 +450,22 @@ fn test_import_multiple_files_merged_bundle() {
 
     let (_, assets) = ModLoader::scan_mod(&staging_dir.join(&imported.id)).unwrap();
     assert_eq!(assets.len(), 2);
-    assert!(assets.iter().any(|a| a.relative_path == "chr/c0100.chrbnd.dcx"));
-    assert!(assets.iter().any(|a| a.relative_path == "chr/c0200.chrbnd.dcx"));
+    assert!(assets
+        .iter()
+        .any(|a| a.relative_path == "chr/c0100.chrbnd.dcx"));
+    assert!(assets
+        .iter()
+        .any(|a| a.relative_path == "chr/c0200.chrbnd.dcx"));
 
     // Check backup source archives
-    assert!(staging_dir.join(&imported.id).join(".smm_source/EmmaCloth_v1.0.zip").exists());
-    assert!(staging_dir.join(&imported.id).join(".smm_source/KuroCloth_v1.0.zip").exists());
+    assert!(staging_dir
+        .join(&imported.id)
+        .join(".smm_source/EmmaCloth_v1.0.zip")
+        .exists());
+    assert!(staging_dir
+        .join(&imported.id)
+        .join(".smm_source/KuroCloth_v1.0.zip")
+        .exists());
 }
 
 #[test]
@@ -458,17 +482,24 @@ fn test_ui_theme_normalization_and_yabber_artifacts_exclusion() {
         let opt = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
         // Loose GFX file
-        zip.start_file("BlackDragonTheme/05_001_title_logo.gfx", opt).unwrap();
+        zip.start_file("BlackDragonTheme/05_001_title_logo.gfx", opt)
+            .unwrap();
         zip.write_all(b"GFX_DATA").unwrap();
 
         // High-res packed TPF
-        zip.start_file("BlackDragonTheme/hi/01_common.tpf.dcx", opt).unwrap();
+        zip.start_file("BlackDragonTheme/hi/01_common.tpf.dcx", opt)
+            .unwrap();
         zip.write_all(b"TPF_DATA").unwrap();
 
         // Unpacked Yabber artifacts (must be ignored!)
-        zip.start_file("BlackDragonTheme/hi/01_common-tpf-dcx/MENU_BG_Base1.dds", opt).unwrap();
+        zip.start_file(
+            "BlackDragonTheme/hi/01_common-tpf-dcx/MENU_BG_Base1.dds",
+            opt,
+        )
+        .unwrap();
         zip.write_all(b"RAW_DDS").unwrap();
-        zip.start_file("BlackDragonTheme/hi/01_common-tpf-dcx/_yabber-tpf.xml", opt).unwrap();
+        zip.start_file("BlackDragonTheme/hi/01_common-tpf-dcx/_yabber-tpf.xml", opt)
+            .unwrap();
         zip.write_all(b"<xml></xml>").unwrap();
 
         zip.finish().unwrap();
@@ -479,9 +510,15 @@ fn test_ui_theme_normalization_and_yabber_artifacts_exclusion() {
 
     let (_, assets) = ModLoader::scan_mod(&staging_dir.join(&imported.id)).unwrap();
     assert_eq!(assets.len(), 2);
-    assert!(assets.iter().any(|a| a.relative_path == "menu/hi/01_common.tpf.dcx"));
-    assert!(assets.iter().any(|a| a.relative_path == "menu/font/05_001_title_logo.gfx"));
-    assert!(!assets.iter().any(|a| a.relative_path.contains("01_common-tpf-dcx")));
+    assert!(assets
+        .iter()
+        .any(|a| a.relative_path == "menu/hi/01_common.tpf.dcx"));
+    assert!(assets
+        .iter()
+        .any(|a| a.relative_path == "menu/font/05_001_title_logo.gfx"));
+    assert!(!assets
+        .iter()
+        .any(|a| a.relative_path.contains("01_common-tpf-dcx")));
 }
 
 #[test]
@@ -515,9 +552,11 @@ fn test_import_obj_mod_sculptor_idol() {
 
     let (_info, assets) = ModLoader::scan_mod(&staging_dir.join(&imported.id)).unwrap();
     assert_eq!(assets.len(), 2);
-    assert!(assets.iter().any(|a| a.relative_path == "obj/o005000.objbnd.dcx"));
-    assert!(assets.iter().any(|a| a.relative_path == "obj/o005500.objbnd.dcx"));
+    assert!(assets
+        .iter()
+        .any(|a| a.relative_path == "obj/o005000.objbnd.dcx"));
+    assert!(assets
+        .iter()
+        .any(|a| a.relative_path == "obj/o005500.objbnd.dcx"));
     assert_eq!(assets[0].category, AssetCategory::Obj);
 }
-
-

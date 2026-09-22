@@ -70,7 +70,9 @@ pub struct RestoreResult {
 fn validate_target_dir(target_dir: &Path) -> Result<()> {
     let p = target_dir.to_str().unwrap_or("");
     if p.trim().is_empty() {
-        return Err(SmmError::DeployError("Target directory path cannot be empty".into()));
+        return Err(SmmError::DeployError(
+            "Target directory path cannot be empty".into(),
+        ));
     }
 
     // Reject filesystem root directories (e.g. "/" or "C:\")
@@ -93,7 +95,6 @@ fn validate_target_dir(target_dir: &Path) -> Result<()> {
     }
 
     Ok(())
-
 }
 
 /// Extracts a string representation of the volume/drive prefix for path comparison on Windows.
@@ -116,7 +117,9 @@ fn get_volume_prefix(p: &Path) -> Option<String> {
 #[cfg(windows)]
 pub fn get_file_volume_serial_number(path: &Path) -> Option<u32> {
     use std::os::windows::io::AsRawHandle;
-    use windows_sys::Win32::Storage::FileSystem::{GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION};
+    use windows_sys::Win32::Storage::FileSystem::{
+        GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
+    };
 
     let file = fs::File::open(path).ok()?;
     let handle = file.as_raw_handle() as windows_sys::Win32::Foundation::HANDLE;
@@ -134,7 +137,9 @@ pub fn get_file_volume_serial_number(path: &Path) -> Option<u32> {
 #[cfg(windows)]
 pub fn get_file_hard_link_count(path: &Path) -> Option<u32> {
     use std::os::windows::io::AsRawHandle;
-    use windows_sys::Win32::Storage::FileSystem::{GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION};
+    use windows_sys::Win32::Storage::FileSystem::{
+        GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
+    };
 
     let file = fs::File::open(path).ok()?;
     let handle = file.as_raw_handle() as windows_sys::Win32::Foundation::HANDLE;
@@ -217,19 +222,14 @@ pub fn create_hard_link(source: &Path, target: &Path) -> std::io::Result<()> {
         source_wide.push(0);
 
         let res = unsafe {
-            CreateHardLinkW(
-                target_wide.as_ptr(),
-                source_wide.as_ptr(),
-                std::ptr::null(),
-            )
+            CreateHardLinkW(target_wide.as_ptr(), source_wide.as_ptr(), std::ptr::null())
         };
 
         if res == 0 {
             let err_code = unsafe { GetLastError() };
             // Fall back to standard library hard_link if path normalization/prefix differs
-            std::fs::hard_link(source, target).map_err(|_| {
-                std::io::Error::from_raw_os_error(err_code as i32)
-            })
+            std::fs::hard_link(source, target)
+                .map_err(|_| std::io::Error::from_raw_os_error(err_code as i32))
         } else {
             Ok(())
         }
@@ -271,21 +271,23 @@ fn remove_empty_subdirs(dir: &Path) -> usize {
 
     // Collect all directories
     let mut dirs = Vec::new();
-    for entry in walkdir::WalkDir::new(dir).min_depth(1).into_iter().filter_map(|e| e.ok()) {
+    for entry in walkdir::WalkDir::new(dir)
+        .min_depth(1)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if entry.file_type().is_dir() {
             dirs.push(entry.into_path());
         }
     }
 
     // Sort by depth descending (longest paths first)
-    dirs.sort_by(|a, b| b.components().count().cmp(&a.components().count()));
+    dirs.sort_by_key(|d| std::cmp::Reverse(d.components().count()));
 
     for d in dirs {
         if let Ok(mut read) = fs::read_dir(&d) {
-            if read.next().is_none() {
-                if fs::remove_dir(&d).is_ok() {
-                    removed += 1;
-                }
+            if read.next().is_none() && fs::remove_dir(&d).is_ok() {
+                removed += 1;
             }
         }
     }
@@ -302,7 +304,10 @@ fn remove_empty_subdirs(dir: &Path) -> usize {
 /// - Automatically creates parent directory structures.
 /// - Saves `.smm_manifest.json` for deterministic tracking and fast zero-residual restoration.
 /// - Returns a structured deployment report.
-pub fn execute_deploy(plan: &DeployPlan, target_mods_dir: impl AsRef<Path>) -> Result<DeployResult> {
+pub fn execute_deploy(
+    plan: &DeployPlan,
+    target_mods_dir: impl AsRef<Path>,
+) -> Result<DeployResult> {
     let target_dir = target_mods_dir.as_ref();
     validate_target_dir(target_dir)?;
 
@@ -346,14 +351,19 @@ pub fn execute_deploy(plan: &DeployPlan, target_mods_dir: impl AsRef<Path>) -> R
         let dest_path = resolve_destination_path(target_dir, &mapping.target_relative_path);
 
         if !mapping.source_path.exists() {
-            let msg = format!("Source file does not exist: {}", mapping.source_path.display());
+            let msg = format!(
+                "Source file does not exist: {}",
+                mapping.source_path.display()
+            );
             warnings.push(msg.clone());
             errors.push((mapping.target_relative_path.clone(), msg));
             failed_files += 1;
             continue;
         }
 
-        let file_size = fs::metadata(&mapping.source_path).map(|m| m.len()).unwrap_or(0);
+        let file_size = fs::metadata(&mapping.source_path)
+            .map(|m| m.len())
+            .unwrap_or(0);
         let same_volume = is_same_volume(&mapping.source_path, target_dir).unwrap_or(true);
 
         if same_volume {
@@ -384,7 +394,8 @@ pub fn execute_deploy(plan: &DeployPlan, target_mods_dir: impl AsRef<Path>) -> R
                             successfully_deployed_files.push(mapping.target_relative_path.clone());
                         }
                         Err(copy_err) => {
-                            errors.push((mapping.target_relative_path.clone(), copy_err.to_string()));
+                            errors
+                                .push((mapping.target_relative_path.clone(), copy_err.to_string()));
                             failed_files += 1;
                         }
                     }
@@ -487,10 +498,10 @@ pub fn restore_deploy(target_mods_dir: impl AsRef<Path>) -> Result<RestoreResult
             if let Ok(manifest) = serde_json::from_str::<DeployManifest>(&content) {
                 for file_rel in manifest.files {
                     let file_path = resolve_destination_path(target_dir, &file_rel);
-                    if file_path.exists() || file_path.symlink_metadata().is_ok() {
-                        if fs::remove_file(&file_path).is_ok() {
-                            removed_files += 1;
-                        }
+                    if (file_path.exists() || file_path.symlink_metadata().is_ok())
+                        && fs::remove_file(&file_path).is_ok()
+                    {
+                        removed_files += 1;
                     }
                 }
             } else {
@@ -508,7 +519,11 @@ pub fn restore_deploy(target_mods_dir: impl AsRef<Path>) -> Result<RestoreResult
     {
         if entry.file_type().is_file() || entry.file_type().is_symlink() {
             let path = entry.path();
-            if path.file_name().map(|n| n == ".smm_manifest.json").unwrap_or(false) {
+            if path
+                .file_name()
+                .map(|n| n == ".smm_manifest.json")
+                .unwrap_or(false)
+            {
                 let _ = fs::remove_file(path);
                 continue;
             }
@@ -536,8 +551,8 @@ pub fn restore_deploy(target_mods_dir: impl AsRef<Path>) -> Result<RestoreResult
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{AssetCategory, AssetEntry, DeployMapping, ModInfo};
     use crate::deploy::DeploymentPlanner;
+    use crate::types::{AssetCategory, AssetEntry, DeployMapping, ModInfo};
 
     #[test]
     fn test_is_same_volume_on_tempdir() {
@@ -571,13 +586,7 @@ mod tests {
         fs::create_dir_all(wp_source.parent().unwrap()).unwrap();
         fs::write(&wp_source, b"Initial Katana Mesh Data v1.0").unwrap();
 
-        let mod_info = ModInfo::new(
-            "kusabimaru",
-            "Kusabimaru",
-            "1.0.0",
-            "Author",
-            "weapon_skin",
-        );
+        let mod_info = ModInfo::new("kusabimaru", "Kusabimaru", "1.0.0", "Author", "weapon_skin");
         let assets = vec![AssetEntry::new(
             "parts/wp_a_0300.partsbnd.dcx",
             &wp_source,
@@ -593,7 +602,10 @@ mod tests {
         assert_eq!(deploy_res.total_files, 1);
         assert_eq!(deploy_res.hard_links_created, 1);
         assert_eq!(deploy_res.failed_files, 0);
-        assert_eq!(deploy_res.bytes_saved, b"Initial Katana Mesh Data v1.0".len() as u64);
+        assert_eq!(
+            deploy_res.bytes_saved,
+            b"Initial Katana Mesh Data v1.0".len() as u64
+        );
 
         let deployed_file = target_dir.join("parts/wp_a_0300.partsbnd.dcx");
         assert!(deployed_file.exists());

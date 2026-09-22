@@ -139,8 +139,7 @@ pub fn import_mod(
         .and_then(|s| s.to_str())
         .unwrap_or("mod");
 
-    let existing_mod_info =
-        find_existing_mod_json(&unpack_dir, &norm_result.canonical_root);
+    let existing_mod_info = find_existing_mod_json(&unpack_dir, &norm_result.canonical_root);
 
     let mut mod_info = if let Some(mut existing) = existing_mod_info {
         if let Some(id) = &options.custom_id {
@@ -158,10 +157,7 @@ pub fn import_mod(
         existing
     } else {
         // Smart automatic metadata generation
-        let id = options
-            .custom_id
-            .clone()
-            .unwrap_or_else(|| slugify(stem));
+        let id = options.custom_id.clone().unwrap_or_else(|| slugify(stem));
 
         let name = options
             .custom_name
@@ -192,10 +188,8 @@ pub fn import_mod(
 
     // Step 4: Verify target existence in staging
     let target_dir = staging_dir.join(&mod_info.id);
-    if target_dir.exists() {
-        if !options.overwrite {
-            return Err(SmmError::ModAlreadyExists(mod_info.id.clone()));
-        }
+    if target_dir.exists() && !options.overwrite {
+        return Err(SmmError::ModAlreadyExists(mod_info.id.clone()));
     }
 
     // Step 5: Build normalized target layout in a clean staging subfolder
@@ -423,7 +417,6 @@ pub fn extract_zip_archive(zip_path: &Path, extract_to: &Path) -> Result<()> {
     crate::extractor::extract_zip(zip_path, extract_to)
 }
 
-
 /// Recursively copies a directory tree from `src` to `dst`.
 fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
     std::fs::create_dir_all(dst)?;
@@ -561,7 +554,7 @@ pub fn strip_archive_extension(name: &str) -> &str {
 pub fn humanize_name(input: &str) -> String {
     let clean = strip_archive_extension(input);
     let words: Vec<String> = clean
-        .split(|c: char| c == '_' || c == '-' || c == '.' || c == ' ')
+        .split(['_', '-', '.', ' '])
         .filter(|w| !w.is_empty())
         .map(|w| {
             let mut chars = w.chars();
@@ -582,7 +575,7 @@ pub fn humanize_name(input: &str) -> String {
 /// Heuristically extracts a semantic or numeric version string from a filename.
 pub fn extract_version(text: &str) -> Option<String> {
     let clean_text = strip_archive_extension(text);
-    for part in clean_text.split(|c: char| c == '_' || c == '-' || c == ' ') {
+    for part in clean_text.split(['_', '-', ' ']) {
         let trimmed = part
             .strip_prefix('v')
             .or_else(|| part.strip_prefix('V'))
@@ -685,14 +678,31 @@ pub fn pick_primary_nested_archive(archives: &[PathBuf]) -> Option<PathBuf> {
     }
 
     let keywords = [
-        "integration", "integrate", "aio", "all-in-one", "all in one",
-        "full", "complete", "main", "base", "default",
-        "整合", "完整", "全套", "主体", "基础", "默认",
+        "integration",
+        "integrate",
+        "aio",
+        "all-in-one",
+        "all in one",
+        "full",
+        "complete",
+        "main",
+        "base",
+        "default",
+        "整合",
+        "完整",
+        "全套",
+        "主体",
+        "基础",
+        "默认",
     ];
 
     for keyword in &keywords {
         if let Some(found) = archives.iter().find(|p| {
-            let name = p.file_name().unwrap_or_default().to_string_lossy().to_ascii_lowercase();
+            let name = p
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_ascii_lowercase();
             name.contains(keyword)
         }) {
             return Some(found.clone());
@@ -716,7 +726,10 @@ mod tests {
 
     #[test]
     fn test_slugify_and_helpers() {
-        assert_eq!(slugify("Kusabimaru_Reaper_v1.2.0"), "kusabimaru-reaper-v1-2-0");
+        assert_eq!(
+            slugify("Kusabimaru_Reaper_v1.2.0"),
+            "kusabimaru-reaper-v1-2-0"
+        );
         assert_eq!(slugify("My   Awesome  Mod!!"), "my-awesome-mod");
         assert_eq!(humanize_name("kusabimaru-reaper"), "Kusabimaru Reaper");
         assert_eq!(
@@ -736,25 +749,34 @@ mod tests {
         // 1. Pack a messy, unnormalized ZIP file dynamically in memory/tempfile
         let file = std::fs::File::create(&zip_path).unwrap();
         let mut zip = ZipWriter::new(file);
-        let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let options =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
         // Nested canonical Sekiro assets
-        zip.start_file("MessyMod_v2.5/Sekiro_Patch/mods/parts/wp_a_0300.partsbnd.dcx", options)
-            .unwrap();
+        zip.start_file(
+            "MessyMod_v2.5/Sekiro_Patch/mods/parts/wp_a_0300.partsbnd.dcx",
+            options,
+        )
+        .unwrap();
         zip.write_all(b"mock katana parts data").unwrap();
 
-        zip.start_file("MessyMod_v2.5/Sekiro_Patch/mods/parts/bd_m_9000.partsbnd.dcx", options)
-            .unwrap();
+        zip.start_file(
+            "MessyMod_v2.5/Sekiro_Patch/mods/parts/bd_m_9000.partsbnd.dcx",
+            options,
+        )
+        .unwrap();
         zip.write_all(b"mock body parts data").unwrap();
 
         // Extra documentation files at root and nested
         zip.start_file("MessyMod_v2.5/README.md", options).unwrap();
-        zip.write_all(b"# Messy Mod\nComprehensive weapon overhaul.").unwrap();
+        zip.write_all(b"# Messy Mod\nComprehensive weapon overhaul.")
+            .unwrap();
 
         zip.start_file("MessyMod_v2.5/LICENSE", options).unwrap();
         zip.write_all(b"MIT License").unwrap();
 
-        zip.start_file("MessyMod_v2.5/HowToInstall.txt", options).unwrap();
+        zip.start_file("MessyMod_v2.5/HowToInstall.txt", options)
+            .unwrap();
         zip.write_all(b"Copy into mods directory.").unwrap();
 
         zip.finish().unwrap();
@@ -836,8 +858,10 @@ mod tests {
         {
             let file = std::fs::File::create(&zip_path).unwrap();
             let mut zip = ZipWriter::new(file);
-            let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-            zip.start_file("parts/wp_a_0300.partsbnd.dcx", options).unwrap();
+            let options =
+                SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+            zip.start_file("parts/wp_a_0300.partsbnd.dcx", options)
+                .unwrap();
             zip.write_all(b"katana raw bytes").unwrap();
             zip.finish().unwrap();
         }
@@ -871,13 +895,20 @@ mod tests {
         // Verify .smm_mod.json and mod.json contain source_url
         let smm_json = staged_mod_dir.join(".smm_mod.json");
         assert!(smm_json.exists());
-        let info: ModInfo = serde_json::from_str(&std::fs::read_to_string(&smm_json).unwrap()).unwrap();
-        assert_eq!(info.source_url.as_deref(), Some("https://www.nexusmods.com/sekiro/mods/555"));
+        let info: ModInfo =
+            serde_json::from_str(&std::fs::read_to_string(&smm_json).unwrap()).unwrap();
+        assert_eq!(
+            info.source_url.as_deref(),
+            Some("https://www.nexusmods.com/sekiro/mods/555")
+        );
 
         // Verify scan_mod does NOT treat .smm_source/ as a game asset
         let (scanned_info, scanned_assets) = ModLoader::scan_mod(&staged_mod_dir).unwrap();
         assert_eq!(scanned_info.id, "cool-weapon");
         assert_eq!(scanned_assets.len(), 1);
-        assert_eq!(scanned_assets[0].relative_path, "parts/wp_a_0300.partsbnd.dcx");
+        assert_eq!(
+            scanned_assets[0].relative_path,
+            "parts/wp_a_0300.partsbnd.dcx"
+        );
     }
 }

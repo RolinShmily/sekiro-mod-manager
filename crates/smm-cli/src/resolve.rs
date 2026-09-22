@@ -6,8 +6,13 @@ use std::path::{Path, PathBuf};
 pub fn resolve_staging_dir(staging_arg: Option<&Path>, create: bool) -> Result<PathBuf, String> {
     if let Some(path) = staging_arg {
         if create {
-            std::fs::create_dir_all(path)
-                .map_err(|e| format!("Failed to create staging directory {}: {}", path.display(), e))?;
+            std::fs::create_dir_all(path).map_err(|e| {
+                format!(
+                    "Failed to create staging directory {}: {}",
+                    path.display(),
+                    e
+                )
+            })?;
         } else if !path.exists() {
             return Err(format!(
                 "Specified staging directory does not exist: {}",

@@ -36,8 +36,8 @@ pub fn run_deploy(target: &Path, staging_arg: Option<&Path>, profile: &str) -> R
         profile.bold()
     );
 
-    let res = execute_deploy(&plan, target)
-        .map_err(|e| format!("Deployment execution failed: {}", e))?;
+    let res =
+        execute_deploy(&plan, target).map_err(|e| format!("Deployment execution failed: {}", e))?;
 
     println!(
         "\n{}",
@@ -121,8 +121,7 @@ pub fn run_restore(target: &Path) -> Result<(), String> {
         target.display().to_string().bold()
     );
 
-    let res = restore_deploy(target)
-        .map_err(|e| format!("Restore operation failed: {}", e))?;
+    let res = restore_deploy(target).map_err(|e| format!("Restore operation failed: {}", e))?;
 
     let mut table = kv_table();
     table.add_row(vec![

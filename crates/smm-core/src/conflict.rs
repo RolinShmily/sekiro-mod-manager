@@ -11,9 +11,7 @@ pub struct ConflictEngine;
 impl ConflictEngine {
     /// Evaluates conflicts across a list of enabled mods and their associated asset entries.
     /// Mods should preferably have priorities assigned (lower priority number = higher precedence).
-    pub fn scan_conflicts<'a>(
-        mods: &'a [(ModInfo, Vec<AssetEntry>)],
-    ) -> ConflictReport {
+    pub fn scan_conflicts(mods: &[(ModInfo, Vec<AssetEntry>)]) -> ConflictReport {
         // Filter enabled mods and sort by priority (ascending: 1 beats 2)
         let mut enabled_mods: Vec<&(ModInfo, Vec<AssetEntry>)> =
             mods.iter().filter(|(info, _)| info.enabled).collect();
@@ -135,8 +133,18 @@ mod tests {
             root_path: None,
         };
         let assets_a = vec![
-            AssetEntry::new("parts/wp_a_0300.partsbnd.dcx", PathBuf::from("a/wp.dcx"), 100, AssetCategory::Parts),
-            AssetEntry::new("param/gameparam/gameparam.parambnd.dcx", PathBuf::from("a/param.dcx"), 500, AssetCategory::Param),
+            AssetEntry::new(
+                "parts/wp_a_0300.partsbnd.dcx",
+                PathBuf::from("a/wp.dcx"),
+                100,
+                AssetCategory::Parts,
+            ),
+            AssetEntry::new(
+                "param/gameparam/gameparam.parambnd.dcx",
+                PathBuf::from("a/param.dcx"),
+                500,
+                AssetCategory::Param,
+            ),
         ];
 
         let mod_b = ModInfo {
@@ -155,9 +163,24 @@ mod tests {
             root_path: None,
         };
         let assets_b = vec![
-            AssetEntry::new("parts/wp_a_0300.partsbnd.dcx", PathBuf::from("b/wp.dcx"), 120, AssetCategory::Parts),
-            AssetEntry::new("param/gameparam/gameparam.parambnd.dcx", PathBuf::from("b/param.dcx"), 600, AssetCategory::Param),
-            AssetEntry::new("chr/c5110.chrbnd.dcx", PathBuf::from("b/c5110.dcx"), 300, AssetCategory::Chr),
+            AssetEntry::new(
+                "parts/wp_a_0300.partsbnd.dcx",
+                PathBuf::from("b/wp.dcx"),
+                120,
+                AssetCategory::Parts,
+            ),
+            AssetEntry::new(
+                "param/gameparam/gameparam.parambnd.dcx",
+                PathBuf::from("b/param.dcx"),
+                600,
+                AssetCategory::Param,
+            ),
+            AssetEntry::new(
+                "chr/c5110.chrbnd.dcx",
+                PathBuf::from("b/c5110.dcx"),
+                300,
+                AssetCategory::Chr,
+            ),
         ];
 
         let mods = vec![(mod_a, assets_a), (mod_b, assets_b)];
@@ -168,16 +191,23 @@ mod tests {
         assert!(report.has_warning_conflict);
 
         // Find critical record (param)
-        let param_rec = report.records.iter().find(|r| r.relative_path == "param/gameparam/gameparam.parambnd.dcx").unwrap();
+        let param_rec = report
+            .records
+            .iter()
+            .find(|r| r.relative_path == "param/gameparam/gameparam.parambnd.dcx")
+            .unwrap();
         assert_eq!(param_rec.severity, ConflictSeverity::Critical);
         assert_eq!(param_rec.winner_mod_id, "mod_a");
         assert_eq!(param_rec.shadowed_mod_ids, vec!["mod_b".to_string()]);
 
         // Find warning record (weapon slot 0300)
-        let wp_rec = report.records.iter().find(|r| r.relative_path == "parts/wp_a_0300.partsbnd.dcx").unwrap();
+        let wp_rec = report
+            .records
+            .iter()
+            .find(|r| r.relative_path == "parts/wp_a_0300.partsbnd.dcx")
+            .unwrap();
         assert_eq!(wp_rec.severity, ConflictSeverity::Warning);
         assert_eq!(wp_rec.winner_mod_id, "mod_a");
         assert_eq!(wp_rec.shadowed_mod_ids, vec!["mod_b".to_string()]);
     }
 }
-

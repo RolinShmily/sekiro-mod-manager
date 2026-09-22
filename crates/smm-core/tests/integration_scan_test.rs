@@ -1,9 +1,9 @@
-use std::fs;
-use std::path::Path;
 use smm_core::{
     execute_deploy, restore_deploy, AssetCategory, ConflictEngine, ConflictSeverity,
     DeploymentPlanner, ModLoader,
 };
+use std::fs;
+use std::path::Path;
 
 fn create_file(path: &Path, content: &[u8]) {
     if let Some(parent) = path.parent() {
@@ -37,7 +37,10 @@ fn setup_test_suite_in(base: &Path) {
 
     // 2. dream-of-the-damned
     let dotd = base.join("dream-of-the-damned");
-    create_file(&dotd.join("param/gameparam/gameparam.parambnd.dcx"), b"DCX_PARAM_DATA");
+    create_file(
+        &dotd.join("param/gameparam/gameparam.parambnd.dcx"),
+        b"DCX_PARAM_DATA",
+    );
     create_file(&dotd.join("chr/c5110.chrbnd.dcx"), b"DCX_CHR_5110_DATA");
     create_file(&dotd.join("chr/c0000.chrbnd.dcx"), b"DCX_CHR_0000_DATA");
     create_file(&dotd.join("event/common.emevd.dcx"), b"DCX_EMEVD_DATA");
@@ -81,8 +84,14 @@ fn setup_test_suite_in(base: &Path) {
 
     // 4. kusabimaru-reaper
     let kr = base.join("kusabimaru-reaper");
-    create_file(&kr.join("parts/wp_a_0300.partsbnd.dcx"), b"DCX_REAPER_SWORD_DATA");
-    create_file(&kr.join("parts/am_m_9000.partsbnd.dcx"), b"DCX_PROSTHETIC_ARM_DATA");
+    create_file(
+        &kr.join("parts/wp_a_0300.partsbnd.dcx"),
+        b"DCX_REAPER_SWORD_DATA",
+    );
+    create_file(
+        &kr.join("parts/am_m_9000.partsbnd.dcx"),
+        b"DCX_PROSTHETIC_ARM_DATA",
+    );
     create_file(
         &kr.join("mod.json"),
         br#"{
@@ -137,8 +146,8 @@ fn test_scan_all_fixtures() {
     let temp = tempfile::tempdir_in(std::env::current_dir().unwrap()).unwrap();
     setup_test_suite_in(temp.path());
 
-    let loaded_mods = ModLoader::scan_mods_directory(temp.path())
-        .expect("Failed to scan test directory");
+    let loaded_mods =
+        ModLoader::scan_mods_directory(temp.path()).expect("Failed to scan test directory");
 
     assert_eq!(loaded_mods.len(), 5, "Expected exactly 5 mods");
 
@@ -277,7 +286,10 @@ fn test_cross_fixture_conflicts_and_deploy_plan() {
     assert_eq!(conflict.relative_path, "parts/wp_a_0300.partsbnd.dcx");
     assert_eq!(conflict.severity, ConflictSeverity::Warning);
     assert_eq!(conflict.winner_mod_id, "kusabimaru-reaper");
-    assert_eq!(conflict.shadowed_mod_ids, vec!["unnormalized-nested-sample"]);
+    assert_eq!(
+        conflict.shadowed_mod_ids,
+        vec!["unnormalized-nested-sample"]
+    );
 
     // 2. Deployment planner
     let plan = DeploymentPlanner::build_plan("fixtures_profile", &loaded_mods).unwrap();
@@ -310,15 +322,24 @@ fn test_deploy_and_restore_fixtures() {
 
     assert!(deploy_res.is_success());
     assert_eq!(deploy_res.total_files, plan.mappings.len());
-    assert_eq!(deploy_res.hard_links_created + deploy_res.copied_files, plan.mappings.len());
+    assert_eq!(
+        deploy_res.hard_links_created + deploy_res.copied_files,
+        plan.mappings.len()
+    );
     assert_eq!(deploy_res.failed_files, 0);
     assert!(deploy_res.bytes_saved > 0 || deploy_res.copied_files > 0);
 
     // Verify key deployed files exist in target
     assert!(temp_target.path().join("dinput8.dll").exists());
     assert!(temp_target.path().join("modengine.ini").exists());
-    assert!(temp_target.path().join("parts/wp_a_0300.partsbnd.dcx").exists());
-    assert!(temp_target.path().join("param/gameparam/gameparam.parambnd.dcx").exists());
+    assert!(temp_target
+        .path()
+        .join("parts/wp_a_0300.partsbnd.dcx")
+        .exists());
+    assert!(temp_target
+        .path()
+        .join("param/gameparam/gameparam.parambnd.dcx")
+        .exists());
 
     // Verify manifest
     assert!(temp_target.path().join(".smm_manifest.json").exists());
@@ -328,5 +349,8 @@ fn test_deploy_and_restore_fixtures() {
     assert_eq!(restore_res.removed_files, plan.mappings.len());
     assert!(!temp_target.path().join(".smm_manifest.json").exists());
     assert!(!temp_target.path().join("dinput8.dll").exists());
-    assert!(!temp_target.path().join("parts/wp_a_0300.partsbnd.dcx").exists());
+    assert!(!temp_target
+        .path()
+        .join("parts/wp_a_0300.partsbnd.dcx")
+        .exists());
 }

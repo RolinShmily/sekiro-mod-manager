@@ -260,4 +260,3 @@ pub struct ModPreset {
     /// List of mods enabled in this preset with their respective deployment priorities
     pub mods: Vec<ModPresetEntry>,
 }
-

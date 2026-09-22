@@ -46,13 +46,15 @@ impl DeploymentPlanner {
 
         let mappings: Vec<DeployMapping> = target_map
             .into_iter()
-            .map(|(path, (asset, owner_id, priority, shadowed))| DeployMapping {
-                target_relative_path: path,
-                source_path: asset.source_path,
-                owner_mod_id: owner_id,
-                priority,
-                shadowed_mods: shadowed,
-            })
+            .map(
+                |(path, (asset, owner_id, priority, shadowed))| DeployMapping {
+                    target_relative_path: path,
+                    source_path: asset.source_path,
+                    owner_mod_id: owner_id,
+                    priority,
+                    shadowed_mods: shadowed,
+                },
+            )
             .collect();
 
         let timestamp = SystemTime::now()
@@ -92,9 +94,12 @@ mod tests {
             tags: vec![],
             root_path: None,
         };
-        let assets_1 = vec![
-            AssetEntry::new("parts/wp_a_0300.partsbnd.dcx", PathBuf::from("src1/wp.dcx"), 50, AssetCategory::Parts),
-        ];
+        let assets_1 = vec![AssetEntry::new(
+            "parts/wp_a_0300.partsbnd.dcx",
+            PathBuf::from("src1/wp.dcx"),
+            50,
+            AssetCategory::Parts,
+        )];
 
         let mod_2 = ModInfo {
             id: "mod_second".to_string(),
@@ -112,23 +117,42 @@ mod tests {
             root_path: None,
         };
         let assets_2 = vec![
-            AssetEntry::new("parts/wp_a_0300.partsbnd.dcx", PathBuf::from("src2/wp.dcx"), 60, AssetCategory::Parts),
-            AssetEntry::new("parts/bd_m_9000.partsbnd.dcx", PathBuf::from("src2/bd.dcx"), 80, AssetCategory::Parts),
+            AssetEntry::new(
+                "parts/wp_a_0300.partsbnd.dcx",
+                PathBuf::from("src2/wp.dcx"),
+                60,
+                AssetCategory::Parts,
+            ),
+            AssetEntry::new(
+                "parts/bd_m_9000.partsbnd.dcx",
+                PathBuf::from("src2/bd.dcx"),
+                80,
+                AssetCategory::Parts,
+            ),
         ];
 
-        let plan = DeploymentPlanner::build_plan("default", &[(mod_1, assets_1), (mod_2, assets_2)]).unwrap();
+        let plan =
+            DeploymentPlanner::build_plan("default", &[(mod_1, assets_1), (mod_2, assets_2)])
+                .unwrap();
 
         assert_eq!(plan.mappings.len(), 2);
 
         // wp_a_0300 should belong to mod_first
-        let wp_map = plan.mappings.iter().find(|m| m.target_relative_path == "parts/wp_a_0300.partsbnd.dcx").unwrap();
+        let wp_map = plan
+            .mappings
+            .iter()
+            .find(|m| m.target_relative_path == "parts/wp_a_0300.partsbnd.dcx")
+            .unwrap();
         assert_eq!(wp_map.owner_mod_id, "mod_first");
         assert_eq!(wp_map.shadowed_mods, vec!["mod_second".to_string()]);
 
         // bd_m_9000 should belong to mod_second
-        let bd_map = plan.mappings.iter().find(|m| m.target_relative_path == "parts/bd_m_9000.partsbnd.dcx").unwrap();
+        let bd_map = plan
+            .mappings
+            .iter()
+            .find(|m| m.target_relative_path == "parts/bd_m_9000.partsbnd.dcx")
+            .unwrap();
         assert_eq!(bd_map.owner_mod_id, "mod_second");
         assert!(bd_map.shadowed_mods.is_empty());
     }
 }
-

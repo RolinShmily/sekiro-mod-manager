@@ -24,10 +24,7 @@ pub struct ModDetailsPayload {
 fn require_staging(staging_dir: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(staging_dir);
     if !path.exists() {
-        return Err(format!(
-            "Staging directory does not exist: {}",
-            staging_dir
-        ));
+        return Err(format!("Staging directory does not exist: {}", staging_dir));
     }
     Ok(path)
 }
@@ -51,10 +48,7 @@ pub fn list_mods(staging_dir: String) -> Result<Vec<ModSummary>, String> {
 
 /// Retrieves details and normalized asset entries for a specific mod.
 #[tauri::command]
-pub fn get_mod_details(
-    staging_dir: String,
-    mod_id: String,
-) -> Result<ModDetailsPayload, String> {
+pub fn get_mod_details(staging_dir: String, mod_id: String) -> Result<ModDetailsPayload, String> {
     let path = PathBuf::from(&staging_dir);
     let (info, assets) = ModManager::get_details(&path, &mod_id)
         .map_err(|e| format!("Failed to load mod '{}' details: {}", mod_id, e))?;

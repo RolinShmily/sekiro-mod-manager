@@ -171,23 +171,47 @@ mod tests {
             ("scan", &["scan"]),
             (
                 "deploy",
-                &["deploy", "--target", "game_mods", "--staging", "staging", "--profile", "custom"],
+                &[
+                    "deploy",
+                    "--target",
+                    "game_mods",
+                    "--staging",
+                    "staging",
+                    "--profile",
+                    "custom",
+                ],
             ),
             ("restore", &["restore", "--target", "game_mods"]),
-            ("enable", &["enable", "kusabimaru-reaper", "--staging", "staging"]),
+            (
+                "enable",
+                &["enable", "kusabimaru-reaper", "--staging", "staging"],
+            ),
             ("disable", &["disable", "kusabimaru-reaper"]),
             ("priority", &["priority", "kusabimaru-reaper", "15"]),
             (
                 "import",
                 &[
-                    "import", "pkg.zip", "--id", "my-custom-id", "--name", "My Mod",
-                    "--priority", "42", "--overwrite",
+                    "import",
+                    "pkg.zip",
+                    "--id",
+                    "my-custom-id",
+                    "--name",
+                    "My Mod",
+                    "--priority",
+                    "42",
+                    "--overwrite",
                 ],
             ),
             ("info", &["info", "kusabimaru-reaper"]),
             ("remove", &["remove", "kusabimaru-reaper", "--yes"]),
-            ("doctor", &["doctor", "--game-dir", "C:\\Sekiro", "--staging", "staging"]),
-            ("setup-engine", &["setup-engine", "--game-dir", "C:\\Sekiro"]),
+            (
+                "doctor",
+                &["doctor", "--game-dir", "C:\\Sekiro", "--staging", "staging"],
+            ),
+            (
+                "setup-engine",
+                &["setup-engine", "--game-dir", "C:\\Sekiro"],
+            ),
         ];
 
         for (name, args) in cases {
@@ -195,7 +219,21 @@ mod tests {
             let cli = Cli::try_parse_from(&argv)
                 .unwrap_or_else(|e| panic!("command '{name}' failed to parse: {e}"));
             assert!(
-                matches!(cli.command, Commands::List { .. } | Commands::Scan { .. } | Commands::Deploy { .. } | Commands::Restore { .. } | Commands::Enable { .. } | Commands::Disable { .. } | Commands::Priority { .. } | Commands::Import { .. } | Commands::Info { .. } | Commands::Remove { .. } | Commands::Doctor { .. } | Commands::SetupEngine { .. }),
+                matches!(
+                    cli.command,
+                    Commands::List { .. }
+                        | Commands::Scan { .. }
+                        | Commands::Deploy { .. }
+                        | Commands::Restore { .. }
+                        | Commands::Enable { .. }
+                        | Commands::Disable { .. }
+                        | Commands::Priority { .. }
+                        | Commands::Import { .. }
+                        | Commands::Info { .. }
+                        | Commands::Remove { .. }
+                        | Commands::Doctor { .. }
+                        | Commands::SetupEngine { .. }
+                ),
                 "command '{name}' resolved to an unexpected variant"
             );
         }
@@ -204,11 +242,22 @@ mod tests {
     #[test]
     fn test_cli_flags_are_hoisted_correctly() {
         let cli = Cli::try_parse_from([
-            "smm", "deploy", "--target", "game_mods", "--staging", "staging", "--profile", "custom",
+            "smm",
+            "deploy",
+            "--target",
+            "game_mods",
+            "--staging",
+            "staging",
+            "--profile",
+            "custom",
         ])
         .unwrap();
         match cli.command {
-            Commands::Deploy { target, staging, profile } => {
+            Commands::Deploy {
+                target,
+                staging,
+                profile,
+            } => {
                 assert_eq!(target, PathBuf::from("game_mods"));
                 assert_eq!(staging, Some(PathBuf::from("staging")));
                 assert_eq!(profile, "custom");

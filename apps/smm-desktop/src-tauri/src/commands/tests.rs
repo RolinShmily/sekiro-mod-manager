@@ -26,7 +26,11 @@ fn create_test_staging(dir: &Path) {
         source_url: None,
         homepage: None,
     };
-    std::fs::write(kr.join("mod.json"), serde_json::to_string(&kr_info).unwrap()).unwrap();
+    std::fs::write(
+        kr.join("mod.json"),
+        serde_json::to_string(&kr_info).unwrap(),
+    )
+    .unwrap();
 
     let ps4 = dir.join("native-ps4-buttons");
     let btn = ps4.join("menu/menu.menubnd.dcx");
@@ -47,7 +51,11 @@ fn create_test_staging(dir: &Path) {
         source_url: None,
         homepage: None,
     };
-    std::fs::write(ps4.join("mod.json"), serde_json::to_string(&ps4_info).unwrap()).unwrap();
+    std::fs::write(
+        ps4.join("mod.json"),
+        serde_json::to_string(&ps4_info).unwrap(),
+    )
+    .unwrap();
 
     // Conflict mod for scan_conflicts test
     let conflict = dir.join("conflict-reaper");
@@ -69,7 +77,11 @@ fn create_test_staging(dir: &Path) {
         source_url: None,
         homepage: None,
     };
-    std::fs::write(conflict.join("mod.json"), serde_json::to_string(&c_info).unwrap()).unwrap();
+    std::fs::write(
+        conflict.join("mod.json"),
+        serde_json::to_string(&c_info).unwrap(),
+    )
+    .unwrap();
 }
 
 #[test]
@@ -197,7 +209,10 @@ fn test_export_and_import_modpack_ipc() {
     create_test_staging(&staging_src);
 
     // 1. Single mod export IPC
-    let single_zip = out_dir.join("single_reaper.zip").to_string_lossy().to_string();
+    let single_zip = out_dir
+        .join("single_reaper.zip")
+        .to_string_lossy()
+        .to_string();
     let exported_zip = export_single_mod(
         staging_src.to_string_lossy().to_string(),
         "kusabimaru-reaper".to_string(),
@@ -208,10 +223,16 @@ fn test_export_and_import_modpack_ipc() {
     assert!(PathBuf::from(&exported_zip).exists());
 
     // 2. Modpack export IPC
-    let pack_path = out_dir.join("test_pack.smmpack").to_string_lossy().to_string();
+    let pack_path = out_dir
+        .join("test_pack.smmpack")
+        .to_string_lossy()
+        .to_string();
     let exported_pack = export_modpack(
         staging_src.to_string_lossy().to_string(),
-        vec!["kusabimaru-reaper".to_string(), "native-ps4-buttons".to_string()],
+        vec![
+            "kusabimaru-reaper".to_string(),
+            "native-ps4-buttons".to_string(),
+        ],
         "Test Pack".to_string(),
         "1.0.0".to_string(),
         Some("Author".to_string()),

@@ -86,12 +86,7 @@ pub fn run_info(mod_id: &str, staging_arg: Option<&Path>) -> Result<(), String> 
     ]);
     meta_table.add_row(vec![
         Cell::new("Status"),
-        Cell::new(if info.enabled {
-            "Enabled"
-        } else {
-            "Disabled"
-        })
-        .fg(if info.enabled {
+        Cell::new(if info.enabled { "Enabled" } else { "Disabled" }).fg(if info.enabled {
             Color::Green
         } else {
             Color::DarkGrey
@@ -125,9 +120,8 @@ pub fn run_info(mod_id: &str, staging_arg: Option<&Path>) -> Result<(), String> 
         format_bytes(total_size).bold()
     );
 
-    let mut asset_table = crate::output::new_table(&[
-        "Subsystem", "Normalized Relative Path", "Size", "Flags",
-    ]);
+    let mut asset_table =
+        crate::output::new_table(&["Subsystem", "Normalized Relative Path", "Size", "Flags"]);
 
     for asset in &assets {
         let flags = if asset.is_critical {

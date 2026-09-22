@@ -25,12 +25,11 @@ impl PresetManager {
         }
 
         let content = std::fs::read_to_string(&path)?;
-        let presets: Vec<ModPreset> = serde_json::from_str(&content).map_err(|e| {
-            SmmError::InvalidMetadata {
+        let presets: Vec<ModPreset> =
+            serde_json::from_str(&content).map_err(|e| SmmError::InvalidMetadata {
                 path: path.clone(),
                 message: format!("Failed to parse {}: {}", PRESETS_FILE_NAME, e),
-            }
-        })?;
+            })?;
 
         Ok(presets)
     }
@@ -171,11 +170,7 @@ mod tests {
     fn create_mock_mod(staging_dir: &Path, id: &str, name: &str, priority: u32, enabled: bool) {
         let mod_dir = staging_dir.join(id);
         std::fs::create_dir_all(mod_dir.join("parts")).unwrap();
-        std::fs::write(
-            mod_dir.join("parts/wp_a_0300.partsbnd.dcx"),
-            b"mock_weapon",
-        )
-        .unwrap();
+        std::fs::write(mod_dir.join("parts/wp_a_0300.partsbnd.dcx"), b"mock_weapon").unwrap();
 
         let mut info = ModInfo::new(id, name, "1.0.0", "Community", "weapon_skin");
         info.priority = priority;

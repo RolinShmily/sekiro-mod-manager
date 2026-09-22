@@ -9,7 +9,7 @@ pub fn new_table(headers: &[&str]) -> Table {
         .load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(headers.iter().map(|h| Cell::new(h)));
+        .set_header(headers.iter().map(Cell::new));
     table
 }
 

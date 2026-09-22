@@ -20,7 +20,11 @@ fn build_dialog(title: Option<String>, default_path: Option<String>) -> AsyncFil
 }
 
 /// Applies the optional filter (name + extensions) to a dialog.
-fn apply_filter(dialog: AsyncFileDialog, filter_name: Option<String>, extensions: Option<Vec<String>>) -> AsyncFileDialog {
+fn apply_filter(
+    dialog: AsyncFileDialog,
+    filter_name: Option<String>,
+    extensions: Option<Vec<String>>,
+) -> AsyncFileDialog {
     if let (Some(name), Some(exts)) = (filter_name, extensions) {
         let ext_refs: Vec<&str> = exts.iter().map(|s| s.as_str()).collect();
         dialog.add_filter(&name, &ext_refs)

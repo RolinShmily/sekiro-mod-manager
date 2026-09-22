@@ -13,10 +13,7 @@ use crate::commands::util::target_mods_dir;
 pub fn scan_conflicts(staging_dir: String) -> Result<ConflictReport, String> {
     let path = PathBuf::from(&staging_dir);
     if !path.exists() {
-        return Err(format!(
-            "Staging directory does not exist: {}",
-            staging_dir
-        ));
+        return Err(format!("Staging directory does not exist: {}", staging_dir));
     }
 
     let mods = ModLoader::scan_mods_directory(&path)
@@ -32,10 +29,7 @@ pub fn deploy_mods(game_dir: String, staging_dir: String) -> Result<DeployResult
     let s_path = PathBuf::from(&staging_dir);
 
     if !s_path.exists() {
-        return Err(format!(
-            "Staging directory does not exist: {}",
-            staging_dir
-        ));
+        return Err(format!("Staging directory does not exist: {}", staging_dir));
     }
 
     let mods = ModLoader::scan_mods_directory(&s_path)
@@ -48,7 +42,7 @@ pub fn deploy_mods(game_dir: String, staging_dir: String) -> Result<DeployResult
     let plan = DeploymentPlanner::build_plan("default", &mods)
         .map_err(|e| format!("Failed to build deployment plan: {}", e))?;
 
-    execute_deploy(&plan, &target_mods_dir(&g_path))
+    execute_deploy(&plan, target_mods_dir(&g_path))
         .map_err(|e| format!("Deployment execution failed: {}", e))
 }
 
@@ -56,8 +50,7 @@ pub fn deploy_mods(game_dir: String, staging_dir: String) -> Result<DeployResult
 #[tauri::command]
 pub fn restore_mods(game_dir: String) -> Result<RestoreResult, String> {
     let g_path = PathBuf::from(&game_dir);
-    restore_deploy(&target_mods_dir(&g_path))
-        .map_err(|e| format!("Restore execution failed: {}", e))
+    restore_deploy(target_mods_dir(&g_path)).map_err(|e| format!("Restore execution failed: {}", e))
 }
 
 /// Performs multi-dimensional health check on the Sekiro game directory and ModEngine setup.

@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Result, SmmError};
-use crate::types::ModInfo;
 use crate::executor::is_same_volume;
+use crate::types::ModInfo;
 
 /// Minimum plausible size, in bytes, of a genuine ModEngine `dinput8.dll`.
 ///
@@ -153,10 +153,7 @@ pub fn parse_modengine_ini(content: &str) -> ModEngineConfig {
 
         if trimmed.starts_with('[') && trimmed.ends_with(']') {
             current_section = trimmed[1..trimmed.len() - 1].trim().to_ascii_lowercase();
-            config
-                .sections
-                .entry(current_section.clone())
-                .or_default();
+            config.sections.entry(current_section.clone()).or_default();
             continue;
         }
 
@@ -191,19 +188,23 @@ pub fn parse_modengine_ini(content: &str) -> ModEngineConfig {
             if current_section == "files" {
                 match key.to_ascii_lowercase().as_str() {
                     "enabled" => {
-                        config.enabled = Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
+                        config.enabled =
+                            Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
                     }
                     "loaduxmfiles" => {
-                        config.load_uxm_files = Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
+                        config.load_uxm_files =
+                            Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
                     }
                     "cachepaths" => {
-                        config.cache_paths = Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
+                        config.cache_paths =
+                            Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
                     }
                     "modoverridedirectory" => {
                         config.mod_override_directory = Some(cleaned_val.to_string());
                     }
                     "loadlooseparams" => {
-                        config.load_loose_params = Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
+                        config.load_loose_params =
+                            Some(cleaned_val == "1" || cleaned_val.eq_ignore_ascii_case("true"));
                     }
                     _ => {}
                 }
@@ -422,7 +423,8 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                     category: "ModEngine Config".to_string(),
                     name: "modengine.ini".to_string(),
                     status: DiagnosticStatus::Pass,
-                    message: "ModEngine configuration file (modengine.ini) found and valid.".to_string(),
+                    message: "ModEngine configuration file (modengine.ini) found and valid."
+                        .to_string(),
                     remediation: None,
                 });
 
@@ -453,8 +455,12 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                             category: "ModEngine Config".to_string(),
                             name: "enabled".to_string(),
                             status: DiagnosticStatus::Warning,
-                            message: "'enabled' setting is missing under [files]. Defaults may apply.".to_string(),
-                            remediation: Some("Add 'enabled=1' under [files] in modengine.ini.".to_string()),
+                            message:
+                                "'enabled' setting is missing under [files]. Defaults may apply."
+                                    .to_string(),
+                            remediation: Some(
+                                "Add 'enabled=1' under [files] in modengine.ini.".to_string(),
+                            ),
                         });
                     }
                 }
@@ -462,7 +468,10 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                 // 3b. modOverrideDirectory
                 match &config.mod_override_directory {
                     Some(override_dir) if !override_dir.trim().is_empty() => {
-                        let clean_sub = override_dir.trim().trim_start_matches('\\').trim_start_matches('/');
+                        let clean_sub = override_dir
+                            .trim()
+                            .trim_start_matches('\\')
+                            .trim_start_matches('/');
                         let target_sub_dir = game_dir.join(clean_sub);
 
                         if target_sub_dir.exists() {
@@ -485,9 +494,10 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                                     "Override directory is set to '{}', but folder does not exist yet.",
                                     override_dir
                                 ),
-                                remediation: Some(format!(
+                                remediation: Some(
                                     "Folder will be created automatically on first mod deployment via 'smm deploy'."
-                                )),
+                                        .to_string(),
+                                ),
                             });
                         }
                     }
@@ -496,8 +506,11 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                             category: "ModEngine Config".to_string(),
                             name: "modOverrideDirectory".to_string(),
                             status: DiagnosticStatus::Fail,
-                            message: "'modOverrideDirectory' is missing or empty in modengine.ini.".to_string(),
-                            remediation: Some("Set modOverrideDirectory=\"\\mods\" in modengine.ini.".to_string()),
+                            message: "'modOverrideDirectory' is missing or empty in modengine.ini."
+                                .to_string(),
+                            remediation: Some(
+                                "Set modOverrideDirectory=\"\\mods\" in modengine.ini.".to_string(),
+                            ),
                         });
                     }
                 }
@@ -509,7 +522,8 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                             category: "ModEngine Config".to_string(),
                             name: "loadLooseParams".to_string(),
                             status: DiagnosticStatus::Pass,
-                            message: "Loose parameter override is enabled (loadLooseParams=1).".to_string(),
+                            message: "Loose parameter override is enabled (loadLooseParams=1)."
+                                .to_string(),
                             remediation: None,
                         });
                     }
@@ -530,7 +544,9 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                     name: "modengine.ini".to_string(),
                     status: DiagnosticStatus::Fail,
                     message: format!("Failed to read modengine.ini: {}", e),
-                    remediation: Some("Verify file read permissions for modengine.ini.".to_string()),
+                    remediation: Some(
+                        "Verify file read permissions for modengine.ini.".to_string(),
+                    ),
                 });
             }
         }
@@ -540,7 +556,10 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
             name: "modengine.ini".to_string(),
             status: DiagnosticStatus::Fail,
             message: "modengine.ini configuration file is missing from game directory.".to_string(),
-            remediation: Some("Run 'smm setup-engine --game-dir <path>' to generate standard configuration.".to_string()),
+            remediation: Some(
+                "Run 'smm setup-engine --game-dir <path>' to generate standard configuration."
+                    .to_string(),
+            ),
         });
     }
 
@@ -584,7 +603,10 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
                 category: "Filesystem".to_string(),
                 name: "Staging Directory".to_string(),
                 status: DiagnosticStatus::Warning,
-                message: format!("Specified staging directory does not exist: {}", staging.display()),
+                message: format!(
+                    "Specified staging directory does not exist: {}",
+                    staging.display()
+                ),
                 remediation: Some("Initialize staging directory or run 'smm import'.".to_string()),
             });
         }
@@ -593,8 +615,11 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
             category: "Filesystem".to_string(),
             name: "Staging Directory".to_string(),
             status: DiagnosticStatus::Warning,
-            message: "No staging directory specified for volume compatibility analysis.".to_string(),
-            remediation: Some("Specify --staging <path> to verify NTFS hard link compatibility.".to_string()),
+            message: "No staging directory specified for volume compatibility analysis."
+                .to_string(),
+            remediation: Some(
+                "Specify --staging <path> to verify NTFS hard link compatibility.".to_string(),
+            ),
         });
     }
 
@@ -626,10 +651,7 @@ pub fn diagnose_environment(game_dir: &Path, staging_dir: Option<&Path>) -> Heal
 ///
 /// Returns [`SmmError::ModEngineSourceMissing`] when no genuine ModEngine payload is available;
 /// see [`MOD_ENGINE_SOURCE_HINT`]. SMM never fabricates or embeds a hook DLL.
-pub fn install_mod_engine(
-    game_dir: &Path,
-    source_files_or_staging: Option<&Path>,
-) -> Result<()> {
+pub fn install_mod_engine(game_dir: &Path, source_files_or_staging: Option<&Path>) -> Result<()> {
     fs::create_dir_all(game_dir)?;
 
     let target_dll = game_dir.join("dinput8.dll");
@@ -642,7 +664,11 @@ pub fn install_mod_engine(
             Some(src_dll) => {
                 fs::copy(&src_dll, &target_dll)?;
             }
-            None => return Err(SmmError::ModEngineSourceMissing(MOD_ENGINE_SOURCE_HINT.to_string())),
+            None => {
+                return Err(SmmError::ModEngineSourceMissing(
+                    MOD_ENGINE_SOURCE_HINT.to_string(),
+                ))
+            }
         }
     }
 
@@ -689,7 +715,11 @@ pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
             Some(src_dll) => {
                 fs::copy(&src_dll, &dll_path)?;
             }
-            None => return Err(SmmError::ModEngineSourceMissing(MOD_ENGINE_SOURCE_HINT.to_string())),
+            None => {
+                return Err(SmmError::ModEngineSourceMissing(
+                    MOD_ENGINE_SOURCE_HINT.to_string(),
+                ))
+            }
         }
     }
 
@@ -705,7 +735,10 @@ pub fn provision_mod_engine(staging_dir: &Path) -> Result<ModInfo> {
         "katalash",
         "loader",
     );
-    info.description = Some("Official runtime file injection & DirectX input hook for Sekiro: Shadows Die Twice".to_string());
+    info.description = Some(
+        "Official runtime file injection & DirectX input hook for Sekiro: Shadows Die Twice"
+            .to_string(),
+    );
     info.priority = 0;
     info.source_url = Some("https://www.nexusmods.com/sekiro/mods/6".to_string());
     info.homepage = Some("https://www.nexusmods.com/sekiro/mods/6".to_string());
@@ -732,13 +765,19 @@ modOverrideDirectory = "\custom_mods"
 "#;
         let config = parse_modengine_ini(raw);
         assert_eq!(config.enabled, Some(false));
-        assert_eq!(config.mod_override_directory, Some(r"\custom_mods".to_string()));
+        assert_eq!(
+            config.mod_override_directory,
+            Some(r"\custom_mods".to_string())
+        );
         assert_eq!(config.load_loose_params, None);
 
         let patched = patch_or_create_modengine_ini(Some(raw), "\\mods");
         let patched_config = parse_modengine_ini(&patched);
         assert_eq!(patched_config.enabled, Some(true));
-        assert_eq!(patched_config.mod_override_directory, Some(r"\mods".to_string()));
+        assert_eq!(
+            patched_config.mod_override_directory,
+            Some(r"\mods".to_string())
+        );
         assert_eq!(patched_config.load_loose_params, Some(true));
     }
 
@@ -759,7 +798,10 @@ modOverrideDirectory = "\custom_mods"
         fs::write(game_dir.join("sekiro.exe"), b"mock exe binary").unwrap();
         let report2 = diagnose_environment(&game_dir, Some(&staging_dir));
         assert_eq!(report2.overall_status, OverallHealth::ActionRequired);
-        assert!(report2.items.iter().any(|i| i.name == "sekiro.exe" && i.status.is_pass()));
+        assert!(report2
+            .items
+            .iter()
+            .any(|i| i.name == "sekiro.exe" && i.status.is_pass()));
 
         // Scenario 3: Add dummy dinput8.dll
         fs::write(game_dir.join("dinput8.dll"), b"mock dll hook").unwrap();
@@ -769,7 +811,8 @@ modOverrideDirectory = "\custom_mods"
         let engine_src = staging_dir.join("mod-engine");
         fs::create_dir_all(&engine_src).unwrap();
         fs::write(engine_src.join("dinput8.dll"), vec![0u8; 20_000]).unwrap();
-        install_mod_engine(&game_dir, Some(&staging_dir)).expect("install_mod_engine should succeed");
+        install_mod_engine(&game_dir, Some(&staging_dir))
+            .expect("install_mod_engine should succeed");
 
         let report3 = diagnose_environment(&game_dir, Some(&staging_dir));
         assert_eq!(report3.overall_status, OverallHealth::Healthy);
@@ -823,7 +866,10 @@ modOverrideDirectory = "\custom_mods"
         fs::write(staging.join("mod-engine/dinput8.dll"), vec![0u8; 20_000]).unwrap();
         let info = provision_mod_engine(&staging).expect("provision should succeed");
         assert_eq!(info.id, "mod-engine");
-        assert_eq!(info.license, None, "ModEngine publishes no license to assert");
+        assert_eq!(
+            info.license, None,
+            "ModEngine publishes no license to assert"
+        );
         assert!(staging.join("mod-engine/modengine.ini").exists());
         assert!(
             !staging.join("mod-engine/readme.txt").exists(),

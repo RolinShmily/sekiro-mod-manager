@@ -90,8 +90,7 @@ pub fn get_settings() -> Result<AppSettings, String> {
 #[tauri::command]
 pub fn save_settings(settings: AppSettings) -> Result<AppSettings, String> {
     let path = settings_file_path();
-    let json =
-        serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+    let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     fs::write(&path, json)
         .map_err(|e| format!("Failed to write settings to {}: {}", path.display(), e))?;
     Ok(settings)

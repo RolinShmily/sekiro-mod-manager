@@ -82,7 +82,10 @@ impl Normalizer {
         let mut assets = Vec::new();
         let mut ignored_files = Vec::new();
 
-        for entry in WalkDir::new(&canonical_root).into_iter().filter_map(|e| e.ok()) {
+        for entry in WalkDir::new(&canonical_root)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
             let path = entry.path();
             if path.is_dir() {
                 continue;
@@ -119,9 +122,7 @@ impl Normalizer {
                 normalized_rel_str = format!("menu/{normalized_rel_str}");
             } else if lower.starts_with("sounds/") {
                 normalized_rel_str = format!("sound/{}", &normalized_rel_str[7..]);
-            } else if lower.starts_with("audio/") {
-                normalized_rel_str = format!("sound/{}", &normalized_rel_str[6..]);
-            } else if lower.starts_with("voice/") {
+            } else if lower.starts_with("audio/") || lower.starts_with("voice/") {
                 normalized_rel_str = format!("sound/{}", &normalized_rel_str[6..]);
             } else if lower.starts_with("voices/") {
                 normalized_rel_str = format!("sound/{}", &normalized_rel_str[7..]);
@@ -163,17 +164,34 @@ impl Normalizer {
                     }
                 }
                 if !mapped {
-                    if (lower.starts_with("wp_") || lower.starts_with("am_") || lower.starts_with("bd_") || lower.starts_with("fc_") || lower.starts_with("lg_"))
-                        && (lower.ends_with(".dcx") || lower.ends_with(".partsbnd") || lower.ends_with(".tpf")) {
+                    if (lower.starts_with("wp_")
+                        || lower.starts_with("am_")
+                        || lower.starts_with("bd_")
+                        || lower.starts_with("fc_")
+                        || lower.starts_with("lg_"))
+                        && (lower.ends_with(".dcx")
+                            || lower.ends_with(".partsbnd")
+                            || lower.ends_with(".tpf"))
+                    {
                         normalized_rel_str = format!("parts/{normalized_rel_str}");
-                    } else if lower.starts_with('c') && lower.chars().skip(1).take(4).all(|c| c.is_ascii_digit())
-                        && (lower.ends_with(".dcx") || lower.ends_with(".chrbnd") || lower.ends_with(".texbnd") || lower.ends_with(".anibnd")) {
+                    } else if lower.starts_with('c')
+                        && lower.chars().skip(1).take(4).all(|c| c.is_ascii_digit())
+                        && (lower.ends_with(".dcx")
+                            || lower.ends_with(".chrbnd")
+                            || lower.ends_with(".texbnd")
+                            || lower.ends_with(".anibnd"))
+                    {
                         normalized_rel_str = format!("chr/{normalized_rel_str}");
                     } else if (lower.starts_with("sfx") || lower.starts_with("f000"))
-                        && (lower.ends_with(".dcx") || lower.ends_with(".ffxbnd") || lower.ends_with(".fxr")) {
+                        && (lower.ends_with(".dcx")
+                            || lower.ends_with(".ffxbnd")
+                            || lower.ends_with(".fxr"))
+                    {
                         normalized_rel_str = format!("sfx/{normalized_rel_str}");
-                    } else if lower.starts_with('o') && lower.chars().skip(1).take(6).all(|c| c.is_ascii_digit())
-                        && (lower.ends_with(".dcx") || lower.ends_with(".objbnd")) {
+                    } else if lower.starts_with('o')
+                        && lower.chars().skip(1).take(6).all(|c| c.is_ascii_digit())
+                        && (lower.ends_with(".dcx") || lower.ends_with(".objbnd"))
+                    {
                         normalized_rel_str = format!("obj/{normalized_rel_str}");
                     }
                 }
@@ -262,8 +280,9 @@ impl Normalizer {
 
         Err(SmmError::NormalizationError {
             path: base_path.to_path_buf(),
-            message: "No canonical Sekiro directories (parts/, chr/, etc.) or signature files found"
-                .to_string(),
+            message:
+                "No canonical Sekiro directories (parts/, chr/, etc.) or signature files found"
+                    .to_string(),
         })
     }
 
@@ -310,23 +329,43 @@ impl Normalizer {
         for item in entries.filter_map(|e| e.ok()) {
             if item.file_type().map(|t| t.is_file()).unwrap_or(false) {
                 let name = item.file_name().to_string_lossy().to_ascii_lowercase();
-                if FILE_SIGNATURES.iter().any(|(sig, _, _)| name.ends_with(sig)) {
+                if FILE_SIGNATURES
+                    .iter()
+                    .any(|(sig, _, _)| name.ends_with(sig))
+                {
                     return true;
                 }
-                if (name.starts_with("wp_") || name.starts_with("am_") || name.starts_with("bd_") || name.starts_with("fc_") || name.starts_with("lg_"))
-                    && (name.ends_with(".dcx") || name.ends_with(".partsbnd") || name.ends_with(".tpf")) {
+                if (name.starts_with("wp_")
+                    || name.starts_with("am_")
+                    || name.starts_with("bd_")
+                    || name.starts_with("fc_")
+                    || name.starts_with("lg_"))
+                    && (name.ends_with(".dcx")
+                        || name.ends_with(".partsbnd")
+                        || name.ends_with(".tpf"))
+                {
                     return true;
                 }
-                if name.starts_with('c') && name.chars().skip(1).take(4).all(|c| c.is_ascii_digit())
-                    && (name.ends_with(".dcx") || name.ends_with(".chrbnd") || name.ends_with(".texbnd") || name.ends_with(".anibnd")) {
+                if name.starts_with('c')
+                    && name.chars().skip(1).take(4).all(|c| c.is_ascii_digit())
+                    && (name.ends_with(".dcx")
+                        || name.ends_with(".chrbnd")
+                        || name.ends_with(".texbnd")
+                        || name.ends_with(".anibnd"))
+                {
                     return true;
                 }
                 if (name.starts_with("sfx") || name.starts_with("f000"))
-                    && (name.ends_with(".dcx") || name.ends_with(".ffxbnd") || name.ends_with(".fxr")) {
+                    && (name.ends_with(".dcx")
+                        || name.ends_with(".ffxbnd")
+                        || name.ends_with(".fxr"))
+                {
                     return true;
                 }
-                if name.starts_with('o') && name.chars().skip(1).take(6).all(|c| c.is_ascii_digit())
-                    && (name.ends_with(".dcx") || name.ends_with(".objbnd")) {
+                if name.starts_with('o')
+                    && name.chars().skip(1).take(6).all(|c| c.is_ascii_digit())
+                    && (name.ends_with(".dcx") || name.ends_with(".objbnd"))
+                {
                     return true;
                 }
             }
@@ -488,15 +527,42 @@ mod tests {
 
     #[test]
     fn test_classify_asset() {
-        assert_eq!(Normalizer::classify_asset("parts/wp_a_0300.partsbnd.dcx"), AssetCategory::Parts);
-        assert_eq!(Normalizer::classify_asset("chr/c5110.chrbnd.dcx"), AssetCategory::Chr);
-        assert_eq!(Normalizer::classify_asset("param/gameparam/gameparam.parambnd.dcx"), AssetCategory::Param);
-        assert_eq!(Normalizer::classify_asset("sound/fdp_main.fsb"), AssetCategory::Sound);
-        assert_eq!(Normalizer::classify_asset("msg/engus/item.msgbnd.dcx"), AssetCategory::Msg);
-        assert_eq!(Normalizer::classify_asset("menu/hi/01_common.tpf.dcx"), AssetCategory::Menu);
-        assert_eq!(Normalizer::classify_asset("font/font_ps4.gfx"), AssetCategory::Font);
-        assert_eq!(Normalizer::classify_asset("dinput8.dll"), AssetCategory::Loader);
-        assert_eq!(Normalizer::classify_asset("modengine.ini"), AssetCategory::Loader);
+        assert_eq!(
+            Normalizer::classify_asset("parts/wp_a_0300.partsbnd.dcx"),
+            AssetCategory::Parts
+        );
+        assert_eq!(
+            Normalizer::classify_asset("chr/c5110.chrbnd.dcx"),
+            AssetCategory::Chr
+        );
+        assert_eq!(
+            Normalizer::classify_asset("param/gameparam/gameparam.parambnd.dcx"),
+            AssetCategory::Param
+        );
+        assert_eq!(
+            Normalizer::classify_asset("sound/fdp_main.fsb"),
+            AssetCategory::Sound
+        );
+        assert_eq!(
+            Normalizer::classify_asset("msg/engus/item.msgbnd.dcx"),
+            AssetCategory::Msg
+        );
+        assert_eq!(
+            Normalizer::classify_asset("menu/hi/01_common.tpf.dcx"),
+            AssetCategory::Menu
+        );
+        assert_eq!(
+            Normalizer::classify_asset("font/font_ps4.gfx"),
+            AssetCategory::Font
+        );
+        assert_eq!(
+            Normalizer::classify_asset("dinput8.dll"),
+            AssetCategory::Loader
+        );
+        assert_eq!(
+            Normalizer::classify_asset("modengine.ini"),
+            AssetCategory::Loader
+        );
     }
 
     #[test]
@@ -505,7 +571,11 @@ mod tests {
         let base = tmp.path();
 
         // Create a messy nested folder: base/NestedMod_v1/Sekiro/mods/parts/wp_a_0300.partsbnd.dcx
-        let nested_parts = base.join("NestedMod_v1").join("Sekiro").join("mods").join("parts");
+        let nested_parts = base
+            .join("NestedMod_v1")
+            .join("Sekiro")
+            .join("mods")
+            .join("parts");
         create_dir_all(&nested_parts).unwrap();
         File::create(nested_parts.join("wp_a_0300.partsbnd.dcx"))
             .unwrap()
@@ -527,4 +597,3 @@ mod tests {
         assert!(norm.assets[0].is_exclusive_slot);
     }
 }
-

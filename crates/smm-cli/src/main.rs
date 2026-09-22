@@ -36,14 +36,7 @@ fn main() -> ExitCode {
             priority,
             overwrite,
             staging,
-        } => commands::run_import(
-            &source,
-            id,
-            name,
-            priority,
-            overwrite,
-            staging.as_deref(),
-        ),
+        } => commands::run_import(&source, id, name, priority, overwrite, staging.as_deref()),
         Commands::Info { mod_id, staging } => commands::run_info(&mod_id, staging.as_deref()),
         Commands::Remove {
             mod_id,

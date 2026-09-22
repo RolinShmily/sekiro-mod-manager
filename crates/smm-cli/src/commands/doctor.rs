@@ -5,9 +5,7 @@ use std::path::Path;
 use colored::Colorize;
 use comfy_table::{Attribute, Cell, Color};
 
-use smm_core::{
-    diagnose_environment, install_mod_engine, DiagnosticStatus, OverallHealth,
-};
+use smm_core::{diagnose_environment, install_mod_engine, DiagnosticStatus, OverallHealth};
 
 use crate::output::new_table;
 use crate::resolve::{resolve_game_dir, resolve_staging_dir};
@@ -20,25 +18,33 @@ pub fn run_doctor(game_dir_arg: Option<&Path>, staging_arg: Option<&Path>) -> Re
 
     println!(
         "\n{} {}",
-        "Diagnosing Sekiro Game Environment & ModEngine Setup...".bold().cyan(),
+        "Diagnosing Sekiro Game Environment & ModEngine Setup..."
+            .bold()
+            .cyan(),
         format!("(Target: {})", game_dir.display()).dimmed()
     );
 
     let report = diagnose_environment(&game_dir, staging_path.as_deref());
 
     let mut table = new_table(&[
-        "Category", "Item", "Status", "Details", "Remediation / Suggestion",
+        "Category",
+        "Item",
+        "Status",
+        "Details",
+        "Remediation / Suggestion",
     ]);
 
     for item in &report.items {
         let status_cell = match item.status {
-            DiagnosticStatus::Pass => {
-                Cell::new("PASS").fg(Color::Green).add_attribute(Attribute::Bold)
-            }
-            DiagnosticStatus::Warning => {
-                Cell::new("WARN").fg(Color::Yellow).add_attribute(Attribute::Bold)
-            }
-            DiagnosticStatus::Fail => Cell::new("FAIL").fg(Color::Red).add_attribute(Attribute::Bold),
+            DiagnosticStatus::Pass => Cell::new("PASS")
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold),
+            DiagnosticStatus::Warning => Cell::new("WARN")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold),
+            DiagnosticStatus::Fail => Cell::new("FAIL")
+                .fg(Color::Red)
+                .add_attribute(Attribute::Bold),
         };
 
         let rem_text = item.remediation.as_deref().unwrap_or("-");

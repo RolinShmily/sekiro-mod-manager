@@ -13,16 +13,10 @@ pub enum SmmError {
     MetadataNotFound(PathBuf),
 
     #[error("Invalid mod metadata at {path}: {message}")]
-    InvalidMetadata {
-        path: PathBuf,
-        message: String,
-    },
+    InvalidMetadata { path: PathBuf, message: String },
 
     #[error("Normalization failed for {path}: {message}")]
-    NormalizationError {
-        path: PathBuf,
-        message: String,
-    },
+    NormalizationError { path: PathBuf, message: String },
 
     #[error("No valid Sekiro game assets found in {0}")]
     NoAssetsFound(PathBuf),
@@ -63,6 +57,5 @@ impl From<sevenz_rust::Error> for SmmError {
         SmmError::SevenZ(err.to_string())
     }
 }
-
 
 pub type Result<T> = std::result::Result<T, SmmError>;

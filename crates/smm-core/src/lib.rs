@@ -34,8 +34,8 @@ pub use exporter::{
     export_modpack, export_single_mod, import_modpack, ModPackItem, ModPackManifest,
 };
 pub use extractor::{
-    detect_archive_format, extract_7z, extract_archive, extract_rar, extract_zip,
-    find_external_7z, find_external_unrar, is_supported_archive, ArchiveFormat,
+    detect_archive_format, extract_7z, extract_archive, extract_rar, extract_zip, find_external_7z,
+    find_external_unrar, is_supported_archive, ArchiveFormat,
 };
 pub use importer::{
     default_priority_for_category, extract_version, humanize_name, import_mod,
@@ -55,5 +55,3 @@ pub use types::{
     is_critical_asset, is_slot_asset, AssetCategory, AssetEntry, ConflictRecord, ConflictReport,
     ConflictSeverity, DeployMapping, DeployPlan, ModCategory, ModInfo, ModPreset, ModPresetEntry,
 };
-
-

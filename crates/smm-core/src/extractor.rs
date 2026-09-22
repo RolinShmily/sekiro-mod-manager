@@ -177,34 +177,39 @@ pub fn extract_zip(zip_path: &Path, dest_dir: &Path) -> Result<()> {
 
 /// Pure-Rust decompression of `.7z` archive using `sevenz-rust` with path traversal guards.
 pub fn extract_7z_native(archive_path: &Path, dest_dir: &Path) -> Result<()> {
-    sevenz_rust::decompress_file_with_extract_fn(archive_path, dest_dir, |entry, reader, _dest| {
-        let entry_name = entry.name();
+    sevenz_rust::decompress_file_with_extract_fn(
+        archive_path,
+        dest_dir,
+        |entry, reader, _dest| {
+            let entry_name = entry.name();
 
-        // Prevent path traversal attacks (leading slash or '..')
-        let clean_path = Path::new(entry_name);
-        if clean_path.is_absolute()
-            || clean_path
-                .components()
-                .any(|c| matches!(c, std::path::Component::ParentDir))
-        {
-            return Ok(true);
-        }
+            // Prevent path traversal attacks (leading slash or '..')
+            let clean_path = Path::new(entry_name);
+            if clean_path.is_absolute()
+                || clean_path
+                    .components()
+                    .any(|c| matches!(c, std::path::Component::ParentDir))
+            {
+                return Ok(true);
+            }
 
-        let target_path = dest_dir.join(clean_path);
-        if entry.is_directory() {
-            std::fs::create_dir_all(&target_path).map_err(sevenz_rust::Error::io)?;
-        } else {
-            if let Some(parent) = target_path.parent() {
-                std::fs::create_dir_all(parent).map_err(sevenz_rust::Error::io)?;
+            let target_path = dest_dir.join(clean_path);
+            if entry.is_directory() {
+                std::fs::create_dir_all(&target_path).map_err(sevenz_rust::Error::io)?;
+            } else {
+                if let Some(parent) = target_path.parent() {
+                    std::fs::create_dir_all(parent).map_err(sevenz_rust::Error::io)?;
+                }
+                let mut file = std::fs::File::create(&target_path).map_err(|e| {
+                    sevenz_rust::Error::io_msg(e, target_path.to_string_lossy().to_string())
+                })?;
+                if entry.size() > 0 {
+                    std::io::copy(reader, &mut file).map_err(sevenz_rust::Error::io)?;
+                }
             }
-            let mut file = std::fs::File::create(&target_path)
-                .map_err(|e| sevenz_rust::Error::io_msg(e, target_path.to_string_lossy().to_string()))?;
-            if entry.size() > 0 {
-                std::io::copy(reader, &mut file).map_err(sevenz_rust::Error::io)?;
-            }
-        }
-        Ok(true)
-    })?;
+            Ok(true)
+        },
+    )?;
 
     Ok(())
 }
@@ -285,7 +290,10 @@ pub fn extract_rar(archive_path: &Path, dest_dir: &Path) -> Result<()> {
                                     extracted_any = true;
                                 }
                                 Err(e) => {
-                                    process_result = Err(SmmError::ExtractionError(format!("RAR extraction failed: {}", e)));
+                                    process_result = Err(SmmError::ExtractionError(format!(
+                                        "RAR extraction failed: {}",
+                                        e
+                                    )));
                                     break;
                                 }
                             }
@@ -295,7 +303,10 @@ pub fn extract_rar(archive_path: &Path, dest_dir: &Path) -> Result<()> {
                                     archive = next_archive;
                                 }
                                 Err(e) => {
-                                    process_result = Err(SmmError::ExtractionError(format!("RAR skip error: {}", e)));
+                                    process_result = Err(SmmError::ExtractionError(format!(
+                                        "RAR skip error: {}",
+                                        e
+                                    )));
                                     break;
                                 }
                             }
@@ -303,7 +314,8 @@ pub fn extract_rar(archive_path: &Path, dest_dir: &Path) -> Result<()> {
                     }
                     Ok(None) => break,
                     Err(e) => {
-                        process_result = Err(SmmError::ExtractionError(format!("RAR read error: {}", e)));
+                        process_result =
+                            Err(SmmError::ExtractionError(format!("RAR read error: {}", e)));
                         break;
                     }
                 }
@@ -363,9 +375,8 @@ pub fn extract_archive(archive_path: &Path, dest_dir: &Path) -> Result<()> {
         )));
     }
 
-    let format = detect_archive_format(archive_path).ok_or_else(|| {
-        SmmError::UnsupportedArchive(archive_path.to_path_buf())
-    })?;
+    let format = detect_archive_format(archive_path)
+        .ok_or_else(|| SmmError::UnsupportedArchive(archive_path.to_path_buf()))?;
 
     std::fs::create_dir_all(dest_dir)?;
 
@@ -383,10 +394,22 @@ mod tests {
 
     #[test]
     fn test_detect_archive_format() {
-        assert_eq!(detect_archive_format(Path::new("mod.zip")), Some(ArchiveFormat::Zip));
-        assert_eq!(detect_archive_format(Path::new("MOD.ZIP")), Some(ArchiveFormat::Zip));
-        assert_eq!(detect_archive_format(Path::new("mod.7z")), Some(ArchiveFormat::SevenZip));
-        assert_eq!(detect_archive_format(Path::new("mod.rar")), Some(ArchiveFormat::Rar));
+        assert_eq!(
+            detect_archive_format(Path::new("mod.zip")),
+            Some(ArchiveFormat::Zip)
+        );
+        assert_eq!(
+            detect_archive_format(Path::new("MOD.ZIP")),
+            Some(ArchiveFormat::Zip)
+        );
+        assert_eq!(
+            detect_archive_format(Path::new("mod.7z")),
+            Some(ArchiveFormat::SevenZip)
+        );
+        assert_eq!(
+            detect_archive_format(Path::new("mod.rar")),
+            Some(ArchiveFormat::Rar)
+        );
         assert_eq!(detect_archive_format(Path::new("mod.tar.gz")), None);
         assert_eq!(detect_archive_format(Path::new("mod.txt")), None);
     }
@@ -396,7 +419,11 @@ mod tests {
         let tmp = tempdir().unwrap();
         let src_dir = tmp.path().join("source");
         std::fs::create_dir_all(src_dir.join("parts")).unwrap();
-        std::fs::write(src_dir.join("parts").join("wp_a_0300.partsbnd.dcx"), b"katana 7z data").unwrap();
+        std::fs::write(
+            src_dir.join("parts").join("wp_a_0300.partsbnd.dcx"),
+            b"katana 7z data",
+        )
+        .unwrap();
         std::fs::write(src_dir.join("README.md"), b"# 7z Mod Readme").unwrap();
 
         let archive_7z = tmp.path().join("test_mod.7z");
@@ -416,7 +443,10 @@ mod tests {
 
         let extracted_readme = dest_dir.join("README.md");
         assert!(extracted_readme.exists());
-        assert_eq!(std::fs::read(&extracted_readme).unwrap(), b"# 7z Mod Readme");
+        assert_eq!(
+            std::fs::read(&extracted_readme).unwrap(),
+            b"# 7z Mod Readme"
+        );
     }
 
     #[test]
@@ -430,13 +460,17 @@ mod tests {
 
     #[test]
     fn test_extract_real_rar() {
-        let real_rar = Path::new("D:/game-mods-saves/sekiro/mods/zips/Emma's Injury Sounds-537-1-0-1581425534.rar");
+        let real_rar = Path::new(
+            "D:/game-mods-saves/sekiro/mods/zips/Emma's Injury Sounds-537-1-0-1581425534.rar",
+        );
         if !real_rar.exists() {
             return;
         }
         let tmp = tempdir().unwrap();
         let dest = tmp.path().join("unpacked");
         extract_rar(real_rar, &dest).expect("Failed to extract RAR");
-        assert!(dest.join("sound").join("main.fsb").exists() || dest.join("sound/main.fsb").exists());
+        assert!(
+            dest.join("sound").join("main.fsb").exists() || dest.join("sound/main.fsb").exists()
+        );
     }
 }

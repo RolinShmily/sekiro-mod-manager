@@ -6,8 +6,7 @@ use smm_core::{ModPreset, PresetManager};
 #[tauri::command]
 pub fn list_presets(staging_dir: String) -> Result<Vec<ModPreset>, String> {
     let stg = PathBuf::from(&staging_dir);
-    PresetManager::list_presets(&stg)
-        .map_err(|e| format!("Failed to list presets: {}", e))
+    PresetManager::list_presets(&stg).map_err(|e| format!("Failed to list presets: {}", e))
 }
 
 /// Creates a new preset capturing current enabled mods and their priorities.
@@ -26,8 +25,7 @@ pub fn create_preset_from_current(
 #[tauri::command]
 pub fn save_preset(staging_dir: String, preset: ModPreset) -> Result<ModPreset, String> {
     let stg = PathBuf::from(&staging_dir);
-    PresetManager::save_preset(&stg, preset)
-        .map_err(|e| format!("Failed to save preset: {}", e))
+    PresetManager::save_preset(&stg, preset).map_err(|e| format!("Failed to save preset: {}", e))
 }
 
 /// Applies a preset: enables matching mods with priorities, disables non-matching mods.

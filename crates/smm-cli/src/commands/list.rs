@@ -32,7 +32,14 @@ pub fn run_list(staging_arg: Option<&Path>) -> Result<(), String> {
     }
 
     let mut table = new_table(&[
-        "Pri", "Mod ID", "Display Name", "Version", "Author", "Category", "Status", "Assets",
+        "Pri",
+        "Mod ID",
+        "Display Name",
+        "Version",
+        "Author",
+        "Category",
+        "Status",
+        "Assets",
     ]);
 
     for (info, assets) in &mods {
@@ -89,7 +96,11 @@ pub fn run_scan(staging_arg: Option<&Path>) -> Result<(), String> {
     }
 
     let mut table = new_table(&[
-        "Severity", "Asset Path", "Winner (Priority)", "Shadowed Mod(s)", "Conflict Guidance",
+        "Severity",
+        "Asset Path",
+        "Winner (Priority)",
+        "Shadowed Mod(s)",
+        "Conflict Guidance",
     ]);
 
     for record in &report.records {

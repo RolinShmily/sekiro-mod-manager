@@ -19,12 +19,11 @@ impl ModLoader {
         };
 
         let content = std::fs::read_to_string(&meta_path)?;
-        let mut info: ModInfo = serde_json::from_str(&content).map_err(|e| {
-            SmmError::InvalidMetadata {
+        let mut info: ModInfo =
+            serde_json::from_str(&content).map_err(|e| SmmError::InvalidMetadata {
                 path: meta_path.clone(),
                 message: e.to_string(),
-            }
-        })?;
+            })?;
 
         info.root_path = Some(mod_dir.to_path_buf());
         Ok(info)

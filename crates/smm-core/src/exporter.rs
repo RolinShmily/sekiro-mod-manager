@@ -174,9 +174,15 @@ pub fn export_single_mod(
         if include_source {
             let source_dir = mod_dir.join(".smm_source");
             if source_dir.is_dir() {
-                for entry in walkdir::WalkDir::new(&source_dir).into_iter().filter_map(|e| e.ok()) {
+                for entry in walkdir::WalkDir::new(&source_dir)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                {
                     if entry.file_type().is_file() {
-                        let rel = entry.path().strip_prefix(&source_dir).unwrap_or(entry.path());
+                        let rel = entry
+                            .path()
+                            .strip_prefix(&source_dir)
+                            .unwrap_or(entry.path());
                         let rel_str = rel.to_string_lossy().replace('\\', "/");
                         let zip_path = format!(".smm_source/{}", rel_str);
                         zip.start_file(zip_path, zip_opts)?;
@@ -324,9 +330,15 @@ pub fn export_modpack(
             if include_source {
                 let source_dir = mod_dir.join(".smm_source");
                 if source_dir.is_dir() {
-                    for entry in walkdir::WalkDir::new(&source_dir).into_iter().filter_map(|e| e.ok()) {
+                    for entry in walkdir::WalkDir::new(&source_dir)
+                        .into_iter()
+                        .filter_map(|e| e.ok())
+                    {
                         if entry.file_type().is_file() {
-                            let rel = entry.path().strip_prefix(&source_dir).unwrap_or(entry.path());
+                            let rel = entry
+                                .path()
+                                .strip_prefix(&source_dir)
+                                .unwrap_or(entry.path());
                             let rel_str = rel.to_string_lossy().replace('\\', "/");
                             let entry_path = format!("{}/.smm_source/{}", mod_id, rel_str);
                             zip.start_file(&entry_path, zip_opts)?;
@@ -389,12 +401,11 @@ pub fn import_modpack(
     };
 
     let manifest_content = std::fs::read_to_string(&manifest_path)?;
-    let manifest: ModPackManifest = serde_json::from_str(&manifest_content).map_err(|e| {
-        SmmError::InvalidMetadata {
+    let manifest: ModPackManifest =
+        serde_json::from_str(&manifest_content).map_err(|e| SmmError::InvalidMetadata {
             path: manifest_path.clone(),
             message: format!("Invalid smm_pack.json: {}", e),
-        }
-    })?;
+        })?;
 
     if manifest.mods.is_empty() {
         return Err(SmmError::InvalidMetadata {
@@ -483,11 +494,17 @@ fn locate_mod_folder(base: &Path, mod_id: &str) -> Result<PathBuf> {
 
 /// Helper to recursively find a specific file by name.
 fn find_file_recursive(base: &Path, file_name: &str) -> Option<PathBuf> {
-    for entry in walkdir::WalkDir::new(base).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            if entry.file_name().to_string_lossy().eq_ignore_ascii_case(file_name) {
-                return Some(entry.path().to_path_buf());
-            }
+    for entry in walkdir::WalkDir::new(base)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        if entry.file_type().is_file()
+            && entry
+                .file_name()
+                .to_string_lossy()
+                .eq_ignore_ascii_case(file_name)
+        {
+            return Some(entry.path().to_path_buf());
         }
     }
     None
@@ -498,20 +515,39 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
-    fn setup_mock_mod(staging: &Path, id: &str, name: &str, priority: u32, enabled: bool, source_url: Option<&str>) {
+    fn setup_mock_mod(
+        staging: &Path,
+        id: &str,
+        name: &str,
+        priority: u32,
+        enabled: bool,
+        source_url: Option<&str>,
+    ) {
         let mod_dir = staging.join(id);
         let parts_dir = mod_dir.join("parts");
         std::fs::create_dir_all(&parts_dir).unwrap();
-        std::fs::write(parts_dir.join(format!("{id}.partsbnd.dcx")), b"asset payload").unwrap();
+        std::fs::write(
+            parts_dir.join(format!("{id}.partsbnd.dcx")),
+            b"asset payload",
+        )
+        .unwrap();
 
         // Documentation
-        std::fs::write(mod_dir.join("README.md"), format!("# {name}\nDocumentation")).unwrap();
+        std::fs::write(
+            mod_dir.join("README.md"),
+            format!("# {name}\nDocumentation"),
+        )
+        .unwrap();
         std::fs::write(mod_dir.join("LICENSE"), "MIT License").unwrap();
 
         // Source archive backup
         let source_dir = mod_dir.join(".smm_source");
         std::fs::create_dir_all(&source_dir).unwrap();
-        std::fs::write(source_dir.join(format!("{id}_original.zip")), b"mock original zip").unwrap();
+        std::fs::write(
+            source_dir.join(format!("{id}_original.zip")),
+            b"mock original zip",
+        )
+        .unwrap();
 
         let info = ModInfo {
             id: id.to_string(),
@@ -551,7 +587,8 @@ mod tests {
 
         // 1. Export without source
         let out_no_source = exports.join("katana_no_source.zip");
-        let exported_path = export_single_mod(&staging, "katana-test", &out_no_source, false).unwrap();
+        let exported_path =
+            export_single_mod(&staging, "katana-test", &out_no_source, false).unwrap();
         assert_eq!(exported_path, out_no_source);
 
         let inspect_dir = tmp.path().join("inspect_no_source");
@@ -564,14 +601,19 @@ mod tests {
 
         // 2. Export with source
         let out_with_source = exports.join("katana_with_source.zip");
-        let exported_with_source = export_single_mod(&staging, "katana-test", &out_with_source, true).unwrap();
+        let exported_with_source =
+            export_single_mod(&staging, "katana-test", &out_with_source, true).unwrap();
         assert_eq!(exported_with_source, out_with_source);
 
         let inspect_source_dir = tmp.path().join("inspect_with_source");
         extract_zip(&out_with_source, &inspect_source_dir).unwrap();
-        assert!(inspect_source_dir.join("parts/katana-test.partsbnd.dcx").exists());
+        assert!(inspect_source_dir
+            .join("parts/katana-test.partsbnd.dcx")
+            .exists());
         assert!(inspect_source_dir.join(".smm_mod.json").exists());
-        assert!(inspect_source_dir.join(".smm_source/katana-test_original.zip").exists());
+        assert!(inspect_source_dir
+            .join(".smm_source/katana-test_original.zip")
+            .exists());
     }
 
     #[test]
@@ -603,7 +645,8 @@ mod tests {
         manifest.description = Some("A curated collection of quality mods".to_string());
 
         let mod_ids = vec!["mod-alpha".to_string(), "mod-beta".to_string()];
-        let pack_path = export_modpack(&staging_src, &mod_ids, manifest, &pack_output, true).unwrap();
+        let pack_path =
+            export_modpack(&staging_src, &mod_ids, manifest, &pack_output, true).unwrap();
         assert!(pack_path.exists());
 
         // Import into clean staging_dst
@@ -619,9 +662,14 @@ mod tests {
         assert_eq!(alpha_info.id, "mod-alpha");
         assert_eq!(alpha_info.priority, 5);
         assert!(alpha_info.enabled);
-        assert_eq!(alpha_info.source_url.as_deref(), Some("https://nexusmods.com/sekiro/mods/1"));
+        assert_eq!(
+            alpha_info.source_url.as_deref(),
+            Some("https://nexusmods.com/sekiro/mods/1")
+        );
         assert_eq!(alpha_assets.len(), 1);
-        assert!(alpha_dir.join(".smm_source/mod-alpha_original.zip").exists());
+        assert!(alpha_dir
+            .join(".smm_source/mod-alpha_original.zip")
+            .exists());
 
         // Verify mod-beta
         let beta_dir = staging_dst.join("mod-beta");
@@ -630,7 +678,10 @@ mod tests {
         assert_eq!(beta_info.id, "mod-beta");
         assert_eq!(beta_info.priority, 25);
         assert!(!beta_info.enabled); // Preserved disabled state!
-        assert_eq!(beta_info.source_url.as_deref(), Some("https://nexusmods.com/sekiro/mods/2"));
+        assert_eq!(
+            beta_info.source_url.as_deref(),
+            Some("https://nexusmods.com/sekiro/mods/2")
+        );
         assert_eq!(beta_assets.len(), 1);
         assert!(beta_dir.join(".smm_source/mod-beta_original.zip").exists());
 
@@ -650,16 +701,30 @@ mod tests {
         std::fs::create_dir_all(&staging).unwrap();
 
         // 1. Export non-existent mod
-        let err = export_single_mod(&staging, "does-not-exist", &tmp.path().join("out.zip"), false).unwrap_err();
+        let err = export_single_mod(
+            &staging,
+            "does-not-exist",
+            &tmp.path().join("out.zip"),
+            false,
+        )
+        .unwrap_err();
         assert!(matches!(err, SmmError::ModNotFound(_)));
 
         // 2. Export empty modpack
         let manifest = ModPackManifest::new("Empty", "1.0");
-        let empty_err = export_modpack(&staging, &[], manifest, &tmp.path().join("empty.smmpack"), false).unwrap_err();
+        let empty_err = export_modpack(
+            &staging,
+            &[],
+            manifest,
+            &tmp.path().join("empty.smmpack"),
+            false,
+        )
+        .unwrap_err();
         assert!(matches!(empty_err, SmmError::ExportError(_)));
 
         // 3. Import non-existent modpack
-        let not_found_err = import_modpack(&tmp.path().join("non_existent.smmpack"), &staging, false).unwrap_err();
+        let not_found_err =
+            import_modpack(&tmp.path().join("non_existent.smmpack"), &staging, false).unwrap_err();
         assert!(matches!(not_found_err, SmmError::Io(_)));
 
         // 4. Import invalid archive (corrupted file)

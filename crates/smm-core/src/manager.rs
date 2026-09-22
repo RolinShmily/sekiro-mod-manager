@@ -44,7 +44,10 @@ pub fn find_mod_dir(staging_dir: &Path, mod_id: &str) -> Result<PathBuf> {
     if !staging_dir.exists() {
         return Err(SmmError::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("Staging directory does not exist: {}", staging_dir.display()),
+            format!(
+                "Staging directory does not exist: {}",
+                staging_dir.display()
+            ),
         )));
     }
 
@@ -294,7 +297,10 @@ mod tests {
         assert_eq!(updated.version, "2.0.1");
         assert_eq!(updated.author, "New Author");
         assert_eq!(updated.homepage.as_deref(), Some("https://example.com/mod"));
-        assert_eq!(updated.source_url.as_deref(), Some("https://nexusmods.com/sekiro/mods/888"));
+        assert_eq!(
+            updated.source_url.as_deref(),
+            Some("https://nexusmods.com/sekiro/mods/888")
+        );
         assert_eq!(updated.description.as_deref(), Some("Updated description"));
         assert_eq!(updated.priority, 10);
         assert_eq!(updated.tags, vec!["tag1", "tag2"]);
@@ -308,7 +314,13 @@ mod tests {
         let raw_content = std::fs::read_to_string(&smm_json).unwrap();
         let reloaded: ModInfo = serde_json::from_str(&raw_content).unwrap();
         assert_eq!(reloaded.name, "Updated Mod Name");
-        assert_eq!(reloaded.source_url.as_deref(), Some("https://nexusmods.com/sekiro/mods/888"));
-        assert_eq!(reloaded.homepage.as_deref(), Some("https://example.com/mod"));
+        assert_eq!(
+            reloaded.source_url.as_deref(),
+            Some("https://nexusmods.com/sekiro/mods/888")
+        );
+        assert_eq!(
+            reloaded.homepage.as_deref(),
+            Some("https://example.com/mod")
+        );
     }
 }

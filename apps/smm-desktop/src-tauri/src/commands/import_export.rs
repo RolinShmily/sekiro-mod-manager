@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use smm_core::{import_mod, import_multiple_files_as_mod, ModInfo, ImportOptions};
+use smm_core::{import_mod, import_multiple_files_as_mod, ImportOptions, ModInfo};
 
 /// Imports a mod package (zip, 7z, or folder) into staging.
 #[tauri::command]
@@ -18,10 +18,7 @@ pub fn import_mod_file(
     let stg = PathBuf::from(&staging_dir);
 
     if !src.exists() {
-        return Err(format!(
-            "Source mod path does not exist: {}",
-            clean_source
-        ));
+        return Err(format!("Source mod path does not exist: {}", clean_source));
     }
 
     import_mod(
@@ -82,6 +79,11 @@ pub fn export_single_mod(
 }
 
 /// Exports multiple mods into an .smmpack archive.
+///
+/// The flat parameter list mirrors Tauri's IPC contract (each name is an `invoke` argument);
+/// grouping them into a struct would change the frontend call shape, so the arg-count lint is
+/// allowed here on purpose.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn export_modpack(
     staging_dir: String,
