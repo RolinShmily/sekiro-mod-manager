@@ -15,7 +15,7 @@ path = "src/main.rs"
 smm-core = { path = "../smm-core" }
 clap = { version = "4", features = ["derive"] }
 colored = "3"
-comfy-table = "7"
+comfy-table = "8"
 
 [dev-dependencies]
 tempfile = "3"
