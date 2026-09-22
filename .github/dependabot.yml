@@ -5,7 +5,11 @@ updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
+      # Pinned so that editing this file cannot start a second, overlapping batch.
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Asia/Shanghai
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
@@ -27,7 +31,11 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
+      # See the cargo entry: a pinned slot keeps runs predictable.
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Asia/Shanghai
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
@@ -49,6 +57,10 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
+      # See the cargo entry: a pinned slot keeps runs predictable.
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Asia/Shanghai
     commit-message:
       prefix: "chore(ci)"
