@@ -24,6 +24,8 @@ dist-ssr/
 # Tauri v2 build artifacts
 *.wixpdb
 *.msi
+# Generated ACL/capability schemas (recreated by tauri-build; ignored by the upstream template)
+**/src-tauri/gen/schemas/
 
 # SMM Runtime state & test outputs
 .smm_settings.json
@@ -44,7 +46,7 @@ exports/
 **/.smm_source/
 dist-installer/*.exe
 # License files are copied into dist-installer/ by scripts/build-installer.ps1.
-# They are build outputs; the single source of truth is the repo root LICENSE/NOTICE and licenses/.
+# They are build outputs; the single source of truth is the repo root LICENSE and licenses/.
 dist-installer/licenses/
 
 # Screenshots & Visual Test Captures

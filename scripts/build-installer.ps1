@@ -171,5 +171,5 @@ foreach ($line in $checksumLines) {
 
 Write-Host "`n=================================================================" -ForegroundColor Cyan
 Write-Host " All packaging tasks completed successfully!" -ForegroundColor Green
-Write-Host " Installer ready at: $setupExe" -ForegroundColor Green
+Write-Host " Installer ready at: $distSetupExe" -ForegroundColor Green
 Write-Host "=================================================================" -ForegroundColor Cyan
