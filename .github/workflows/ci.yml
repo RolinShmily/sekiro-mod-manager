@@ -12,9 +12,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   test:
-    name: Workspace Tests & Frontend Build
+    name: Lint, Test & Frontend Build
     runs-on: windows-latest
 
     steps:
@@ -23,6 +26,8 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
@@ -39,7 +44,13 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Lint Rust with Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
       - name: Build frontend bundle
         run: pnpm --filter smm-desktop build
@@ -54,4 +65,4 @@ jobs:
           echo "All 9 subset font artifacts present in dist/fonts."
 
       - name: Run workspace tests
-        run: cargo test --workspace --verbose
+        run: cargo test --workspace --locked --verbose
