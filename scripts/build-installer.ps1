@@ -29,7 +29,6 @@ Write-Host "Target Version: v$version`n" -ForegroundColor Magenta
 #    RARLAB UnRAR license (statically linked via unrar_sys). Fail fast, before the long build.
 $requiredLicenseFiles = @(
     "LICENSE",
-    "NOTICE",
     "licenses\README.md",
     "licenses\OFL-1.1.txt",
     "licenses\UnRAR.txt",
@@ -120,16 +119,16 @@ if (Test-Path $cliCandidate) {
 
 # 4) License & notice files: shipped alongside the portable exes (Sekiro-Mod-Manager.exe is a
 #    single-file binary with no resource directory of its own) and inside the NSIS installer
-#    (via `bundle.resources` in tauri.conf.json).
+#    (via `bundle.licenseFile` and `bundle.resources` in tauri.conf.json). LICENSE carries both
+#    the MIT text and the scope declaration (NOTICE), so it is a single file.
 $distLicensesDir = Join-Path $distDir "licenses"
 if (Test-Path $distLicensesDir) { Remove-Item -Path $distLicensesDir -Recurse -Force }
 New-Item -ItemType Directory -Path $distLicensesDir -Force | Out-Null
 
 Copy-Item -Path (Join-Path $RootDir "LICENSE") -Destination (Join-Path $distDir "LICENSE") -Force
-Copy-Item -Path (Join-Path $RootDir "NOTICE") -Destination (Join-Path $distDir "NOTICE") -Force
 Copy-Item -Path (Join-Path $RootDir "licenses\*") -Destination $distLicensesDir -Force
 $distLicenseCount = (Get-ChildItem -Path $distLicensesDir -File).Count
-Write-Host "      Archived LICENSE, NOTICE and $distLicenseCount license file(s) to dist-installer/" -ForegroundColor Green
+Write-Host "      Archived LICENSE and $distLicenseCount license file(s) to dist-installer/" -ForegroundColor Green
 
 # Clean up legacy redundant files if present
 $legacySetup = Join-Path $distDir "setup.exe"

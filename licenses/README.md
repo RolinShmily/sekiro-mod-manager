@@ -16,7 +16,16 @@ runtime dependencies.
 | [`OFL-1.1.txt`](OFL-1.1.txt) | Inter, JetBrains Mono, Noto Sans SC | SIL Open Font License 1.1 | Subsetted `.woff2` files are committed to `apps/smm-desktop/public/fonts/` and embedded in every release binary. The OFL requires the license text to accompany any redistribution of the font software. |
 | [`UnRAR.txt`](UnRAR.txt) | RARLAB UnRAR (Alexander L. Roshal) | UnRAR freeware license (non-OSI, restrictive) | `unrar_sys` vendors the UnRAR C++ sources and compiles them into `smm-core`, so RARLAB code is statically linked into `smm.exe` and `Sekiro-Mod-Manager.exe`. Clause 2 mandates verbatim inclusion of its terms, and forbids using this code to build a RAR *compressor*. |
 | [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) | Direct runtime dependencies (Rust + npm) | MIT / Apache-2.0 / ISC / MPL-2.0 / Unlicense | Statically linked or bundled into distributable artifacts; requires attribution. |
-| [`../NOTICE`](../NOTICE) | SMM's own scope declaration | — | States exactly which parts of this repository the MIT license covers. |
+| [`LICENSE`](../LICENSE) | SMM's own license **and** scope declaration | MIT | One file: the verbatim MIT text followed by the NOTICE section stating exactly which parts of this repository the grant covers. |
+
+> **There is no separate `NOTICE` file.** The scope declaration is appended to the root
+> [`LICENSE`](../LICENSE) under a `NOTICE — SCOPE OF THE MIT LICENSE` heading, so the MIT text and the
+> scope statement always travel together as one file. Any reference to "`NOTICE` §2.2" in this
+> directory means that section of `LICENSE`.
+>
+> **本目录没有单独的 `NOTICE` 文件。** 范围声明附在仓库根目录 [`LICENSE`](../LICENSE) 的 MIT 正文
+> 下方，以 `NOTICE — SCOPE OF THE MIT LICENSE` 为标题，使协议正文与范围声明始终作为一个文件分发。
+> 本目录中引用的「`NOTICE` 第 2.2 节」均指 `LICENSE` 中的该节。
 
 ### Deliberately absent: Sekiro Mod Engine / 刻意未收录：Sekiro Mod Engine
 
@@ -26,10 +35,10 @@ LICENSE file and the GitHub API reports `license: null` (`/license` → HTTP 404
 readme declares "All rights reserved" and permits redistribution only of an *unmodified* copy
 shipped *with a mod*. As a mod manager, SMM does not qualify for that grant, so it never embeds,
 bundles or deploys `dinput8.dll`; users supply ModEngine themselves. See [§2 of the
-notices](THIRD-PARTY-NOTICES.md) and [`../NOTICE`](../NOTICE) §2.2.
+notices](THIRD-PARTY-NOTICES.md) and [`../LICENSE`](../LICENSE) §2.2.
 
 此处**刻意没有** ModEngine 的许可证文件，因为 ModEngine 未被以任何形式再分发。详见
-[`../NOTICE`](../NOTICE) 第 2.2 节。
+[`LICENSE`](../LICENSE) 中 NOTICE 部分的第 2.2 节。
 
 ---
 
@@ -64,8 +73,8 @@ These files are not documentation-only — they are wired into the release pipel
 
 | Where | Mechanism | Result |
 | :--- | :--- | :--- |
-| **NSIS installer** | `bundle.licenseFile` + `bundle.resources` in `apps/smm-desktop/src-tauri/tauri.conf.json` | Installs `<install dir>\licenses\` containing `LICENSE`, `NOTICE` and every file in this directory, next to the bundled `smm.exe`. |
-| **Portable / CLI artifacts** | `scripts/build-installer.ps1` copies `LICENSE`, `NOTICE` and `licenses/*` into `dist-installer/` | The single-file `Sekiro-Mod-Manager.exe` and `smm-cli.exe` are published alongside these files, and `release.yml` attaches them to every GitHub Release. |
+| **NSIS installer** | `bundle.licenseFile` + `bundle.resources` in `apps/smm-desktop/src-tauri/tauri.conf.json` | Installs `<install dir>\licenses\` containing `LICENSE` and every file in this directory, next to the bundled `smm.exe`. |
+| **Portable / CLI artifacts** | `scripts/build-installer.ps1` copies `LICENSE` and `licenses/*` into `dist-installer/` | The single-file `Sekiro-Mod-Manager.exe` and `smm-cli.exe` are published alongside these files, and `release.yml` attaches them to every GitHub Release. |
 | **Build guard** | Step `[0/5] Compliance guard` in `scripts/build-installer.ps1` | The packaging pipeline **aborts before compiling** if any required license file is missing, so a release cannot ship without them. |
 
 Because `tauri.conf.json` maps the directory with the glob `licenses/**/*` (flat destination), **any new

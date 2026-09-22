@@ -46,7 +46,6 @@ dist-installer/*.exe
 # License files are copied into dist-installer/ by scripts/build-installer.ps1.
 # They are build outputs; the single source of truth is the repo root LICENSE/NOTICE and licenses/.
 dist-installer/LICENSE
-dist-installer/NOTICE
 dist-installer/licenses/
 
 # Screenshots & Visual Test Captures

@@ -175,4 +175,5 @@ Nothing below is licensed under SMM's MIT license, and no rights are granted to 
 - Community mods (including the samples under `staging/`) — each retains its own license, e.g.
   `CC-BY-NC-4.0` (Eyedea, Kusabimaru Reaper) and `Custom Permissive` (katalash, Native PS4 Buttons).
 - The FromSoftware-derived branding in `apps/smm-desktop/public/sekiro-logo.svg` (the 隻狼 seal
-  motif) is trademark-adjacent artwork explicitly excluded from the MIT grant. See [`../NOTICE`](../NOTICE).
+  motif) is trademark-adjacent artwork explicitly excluded from the MIT grant. See the NOTICE
+  section of [`../LICENSE`](../LICENSE).

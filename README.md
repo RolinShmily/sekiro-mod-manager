@@ -33,8 +33,7 @@
 ```text
 sekiro-mods/
 ├── Cargo.toml                         # Workspace root configuration
-├── LICENSE                            # MIT License
-├── NOTICE                             # Scope declaration: what the MIT grant covers
+├── LICENSE                            # MIT text + NOTICE scope declaration
 ├── licenses/                          # Third-party license texts & attribution
 │   ├── OFL-1.1.txt                    #   SIL OFL 1.1 (Inter / JetBrains Mono / Noto Sans SC)
 │   ├── UnRAR.txt                      #   RARLAB UnRAR license (via `unrar_sys`)
@@ -162,8 +161,9 @@ This project is licensed under the [MIT License](LICENSE).
 
 **Scope of the MIT grant:** the MIT License covers only our own source code (`crates/`, `apps/`,
 `scripts/`). It does **not** extend to third-party components, community mods, game assets, or
-trademarks. See [NOTICE](NOTICE) for the full scope declaration and the [licenses/](licenses/)
-directory for upstream license texts and attribution:
+trademarks. The [LICENSE](LICENSE) file carries the MIT text followed by a `NOTICE — SCOPE OF THE
+MIT LICENSE` section spelling that out, and the [licenses/](licenses/) directory holds the upstream
+license texts and attribution:
 
 - [licenses/OFL-1.1.txt](licenses/OFL-1.1.txt) — Inter, JetBrains Mono, Noto Sans SC (bundled subset fonts)
 - [licenses/UnRAR.txt](licenses/UnRAR.txt) — RARLAB UnRAR (statically linked via `unrar_sys`)

@@ -36,8 +36,7 @@
 ```text
 sekiro-mods/
 ├── Cargo.toml                         # Workspace 根配置
-├── LICENSE                            # MIT 开源许可证
-├── NOTICE                             # MIT 授权范围声明（哪些部分才适用 MIT）
+├── LICENSE                            # MIT 正文 + NOTICE 授权范围声明
 ├── licenses/                          # 第三方许可证全文与归属声明
 │   ├── OFL-1.1.txt                    #   SIL OFL 1.1（Inter / JetBrains Mono / Noto Sans SC）
 │   ├── UnRAR.txt                      #   RARLAB UnRAR 许可证（经 `unrar_sys` 引入）
@@ -161,8 +160,8 @@ SMM 仅在**名称与元数据层面**与下列社区项目发生关联。**本�
 本项目采用 [MIT 开源许可证](LICENSE)。
 
 **MIT 授权范围：** 仅覆盖本项目原创源代码（`crates/`、`apps/`、`scripts/`），**不**涵盖第三方组件、
-社区模组、游戏资源与商标。完整范围声明见 [NOTICE](NOTICE)，upstream 许可证全文与归属声明见
-[licenses/](licenses/) 目录：
+社区模组、游戏资源与商标。[LICENSE](LICENSE) 文件为 MIT 正文 + 其后的 `NOTICE — SCOPE OF THE MIT
+LICENSE` 范围声明；upstream 许可证全文与归属声明见 [licenses/](licenses/) 目录：
 
 - [licenses/OFL-1.1.txt](licenses/OFL-1.1.txt) — Inter、JetBrains Mono、Noto Sans SC（内嵌子集字体）
 - [licenses/UnRAR.txt](licenses/UnRAR.txt) — RARLAB UnRAR（经 `unrar_sys` 静态链接）

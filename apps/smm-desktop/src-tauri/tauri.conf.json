@@ -45,7 +45,6 @@
     "resources": {
       "../../../target/release/smm.exe": "smm.exe",
       "../../../LICENSE": "licenses/LICENSE",
-      "../../../NOTICE": "licenses/NOTICE",
       "../../../licenses/**/*": "licenses/"
     },
     "windows": {
