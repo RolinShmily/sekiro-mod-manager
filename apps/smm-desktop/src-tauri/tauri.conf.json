@@ -44,9 +44,8 @@
     ],
     "resources": {
       "../../../target/release/smm.exe": "smm.exe",
-      "../../../LICENSE": "licenses/LICENSE",
-      "../../../README.md": "licenses/README.md",
-      "../../../licenses/**/*": "licenses/"
+      "../../../LICENSE": "LICENSE",
+      "../../../THIRD-PARTY-LICENSES.txt": "THIRD-PARTY-LICENSES.txt"
     },
     "windows": {
       "nsis": {

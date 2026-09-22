@@ -37,9 +37,7 @@
 sekiro-mods/
 ├── Cargo.toml                         # Workspace 根配置
 ├── LICENSE                            # MIT 开源许可证
-├── licenses/                          # 第三方许可证原文
-│   ├── OFL-1.1.txt                    #   SIL OFL 1.1（Inter / JetBrains Mono / Noto Sans SC）
-│   └── UnRAR.txt                      #   RARLAB UnRAR 许可证（经 `unrar_sys` 引入）
+├── THIRD-PARTY-LICENSES.txt           # OFL 1.1 与 RARLAB UnRAR 许可证原文
 ├── README.md                          # 英文架构与使用文档
 ├── README.zh-CN.md                    # 中文架构与使用文档
 ├── DESIGN.md                          # 界面视觉与交互规范设计字典
@@ -183,12 +181,13 @@ SMM 是 mod 管理器而非 mod，因此不适用该授权。SMM **不内嵌、�
 
 ### 第三方许可证
 
-有两个组件以二进制形式再分发，其**许可证全文随每一次发布一并提供**，位于 [`licenses/`](licenses/)：
+有两个组件以二进制形式再分发，其**许可证全文随每一次发布一并提供**，位于
+[`THIRD-PARTY-LICENSES.txt`](THIRD-PARTY-LICENSES.txt)：
 
-| 组件 | 许可证 | 全文 |
-| :--- | :--- | :--- |
-| Inter、JetBrains Mono、Noto Sans SC —— 内嵌于应用的子集化 `.woff2` 字体 | SIL Open Font License 1.1 | [`licenses/OFL-1.1.txt`](licenses/OFL-1.1.txt) |
-| RARLAB UnRAR —— 经 `unrar_sys 0.5.8` 引入，静态链接进 `smm.exe` 与 `Sekiro-Mod-Manager.exe` | UnRAR freeware license（非 OSI） | [`licenses/UnRAR.txt`](licenses/UnRAR.txt) |
+| 组件 | 许可证 |
+| :--- | :--- |
+| Inter、JetBrains Mono、Noto Sans SC —— 内嵌于应用的子集化 `.woff2` 字体 | SIL Open Font License 1.1 |
+| RARLAB UnRAR —— 经 `unrar_sys 0.5.8` 引入，静态链接进 `smm.exe` 与 `Sekiro-Mod-Manager.exe` | UnRAR freeware license（非 OSI） |
 
 > **UnRAR 限制：** 该许可证第 2 条禁止用其代码开发 RAR (WinRAR) 兼容压缩器。SMM 仅将其用于
 > **只读 RAR 解压**；只要该依赖存在，就绝不能实现 RAR 压缩功能——需要打包请用 `.zip`。
@@ -233,10 +232,9 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 </details>
 
-`licenses/` 中的两份文本均为逐字原文。升级 `@fontsource/*` 或 `unrar_sys` 时请重新核对：
-`licenses/UnRAR.txt` 对应 Cargo registry 中的 `unrar_sys-<版本>/vendor/unrar/license.txt`，
-`licenses/OFL-1.1.txt` 的 OFL 正文来自 `node_modules/@fontsource/inter/LICENSE`。
-任一文件缺失时打包流水线会直接中止。
+`THIRD-PARTY-LICENSES.txt` 中的两段文本均为逐字原文。升级 `@fontsource/*` 或 `unrar_sys` 时请重新
+核对：UnRAR 段对应 Cargo registry 中的 `unrar_sys-<版本>/vendor/unrar/license.txt`，OFL 正文来自
+`node_modules/@fontsource/inter/LICENSE`。该文件缺失时打包流水线会直接中止。
 
 《只狼：影逝二度》（Sekiro: Shadows Die Twice）系 FromSoftware, Inc. 与 Activision 之注册商标，
 本项目为社区非官方开源工具。

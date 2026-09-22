@@ -34,9 +34,7 @@
 sekiro-mods/
 ├── Cargo.toml                         # Workspace root configuration
 ├── LICENSE                            # MIT License
-├── licenses/                          # Verbatim third-party license texts
-│   ├── OFL-1.1.txt                    #   SIL OFL 1.1 (Inter / JetBrains Mono / Noto Sans SC)
-│   └── UnRAR.txt                      #   RARLAB UnRAR license (via `unrar_sys`)
+├── THIRD-PARTY-LICENSES.txt           # Verbatim OFL 1.1 + RARLAB UnRAR texts
 ├── README.md                          # English documentation
 ├── README.zh-CN.md                    # Simplified Chinese documentation
 ├── DESIGN.md                          # UI/UX design specifications & design tokens
@@ -185,12 +183,12 @@ Download ModEngine yourself from [NexusMods #6](https://www.nexusmods.com/sekiro
 ### Third-party licenses
 
 Two components are redistributed in binary form, and their **full license texts ship with every
-release** in [`licenses/`](licenses/):
+release** in [`THIRD-PARTY-LICENSES.txt`](THIRD-PARTY-LICENSES.txt):
 
-| Component | License | Full text |
-| :--- | :--- | :--- |
-| Inter, JetBrains Mono, Noto Sans SC — subset `.woff2` fonts embedded in the app | SIL Open Font License 1.1 | [`licenses/OFL-1.1.txt`](licenses/OFL-1.1.txt) |
-| RARLAB UnRAR — vendored via `unrar_sys 0.5.8`, statically linked into `smm.exe` and `Sekiro-Mod-Manager.exe` | UnRAR freeware license (non-OSI) | [`licenses/UnRAR.txt`](licenses/UnRAR.txt) |
+| Component | License |
+| :--- | :--- |
+| Inter, JetBrains Mono, Noto Sans SC — subset `.woff2` fonts embedded in the app | SIL Open Font License 1.1 |
+| RARLAB UnRAR — vendored via `unrar_sys 0.5.8`, statically linked into `smm.exe` and `Sekiro-Mod-Manager.exe` | UnRAR freeware license (non-OSI) |
 
 > **UnRAR constraint:** clause 2 of that license forbids using the code to build a RAR (WinRAR)
 > compatible archiver. SMM uses it for **read-only RAR extraction only**; RAR compression must never
@@ -236,10 +234,10 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 </details>
 
-The two bundled texts in `licenses/` are verbatim copies. When bumping `@fontsource/*` or `unrar_sys`,
-re-check them: `licenses/UnRAR.txt` mirrors `unrar_sys-<version>/vendor/unrar/license.txt` in the Cargo
-registry, and the OFL body in `licenses/OFL-1.1.txt` comes from `node_modules/@fontsource/inter/LICENSE`.
-The packaging pipeline aborts if either file is missing.
+The texts in `THIRD-PARTY-LICENSES.txt` are verbatim copies. When bumping `@fontsource/*` or
+`unrar_sys`, re-check them: the UnRAR section mirrors
+`unrar_sys-<version>/vendor/unrar/license.txt` in the Cargo registry, and the OFL body comes from
+`node_modules/@fontsource/inter/LICENSE`. The packaging pipeline aborts if the file is missing.
 
 *Upstream licenses for the community projects referenced above are listed for convenience only and
 are not asserted on their authors' behalf — verify them at the source. ModEngine's license status

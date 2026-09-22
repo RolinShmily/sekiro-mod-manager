@@ -1,5 +1,28 @@
-SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
-Applied to the following font software redistributed with Sekiro Mod Manager:
+================================================================================
+THIRD-PARTY LICENSES
+Sekiro Mod Manager (SMM) — https://github.com/RolinShmily/sekiro-mod-manager
+================================================================================
+
+This file contains the complete license texts of the third-party components that
+SMM redistributes in binary form. It ships with every release, inside the NSIS
+installer and alongside the portable and CLI artifacts.
+
+SMM's own license is the MIT License, in the separate LICENSE file. The scope of
+that grant, plus attribution for the remaining dependencies, are documented in
+README.md.
+
+Verbatim texts included below:
+
+  1. SIL Open Font License 1.1  — Inter, JetBrains Mono, Noto Sans SC
+  2. RARLAB UnRAR license       — UnRAR, statically linked via unrar_sys
+
+
+================================================================================
+1. SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+   Applies to: Inter, JetBrains Mono, Noto Sans SC
+================================================================================
+
+Copyright notices of the Font Software:
 
   Inter
     Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
@@ -12,8 +35,10 @@ Applied to the following font software redistributed with Sekiro Mod Manager:
     Copyright Google Inc.
     (https://fonts.google.com/noto/specimen/Noto+Sans+SC)
 
---------------------------------------------------------------------------
-Full license text follows (verbatim):
+The fonts are redistributed as a library, not sold. Full license text follows
+(verbatim):
+
+--------------------------------------------------------------------------------
 
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
 -----------------------------------------------------------
@@ -100,3 +125,57 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+
+================================================================================
+2. UnRAR — free utility for RAR archives
+   License for use and distribution of the FREE portable version
+   Applies to: RARLAB UnRAR, statically linked into smm.exe and Sekiro-Mod-Manager.exe
+================================================================================
+
+Full license text follows (verbatim):
+
+--------------------------------------------------------------------------------
+
+ ******    *****   ******   UnRAR - free utility for RAR archives
+ **   **  **   **  **   **  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ******   *******  ******    License for use and distribution of
+ **   **  **   **  **   **   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ **   **  **   **  **   **         FREE portable version
+                                   ~~~~~~~~~~~~~~~~~~~~~
+
+      The source code of UnRAR utility is freeware. This means:
+
+   1. All copyrights to RAR and the utility UnRAR are exclusively
+      owned by the author - Alexander Roshal.
+
+   2. UnRAR source code may be used in any software to handle
+      RAR archives without limitations free of charge, but cannot be
+      used to develop RAR (WinRAR) compatible archiver and to
+      re-create RAR compression algorithm, which is proprietary.
+      Distribution of modified UnRAR source code in separate form
+      or as a part of other software is permitted, provided that
+      full text of this paragraph, starting from "UnRAR source code"
+      words, is included in license, or in documentation if license
+      is not available, and in source code comments of resulting package.
+
+   3. The UnRAR utility may be freely distributed. It is allowed
+      to distribute UnRAR inside of other software packages.
+
+   4. THE RAR ARCHIVER AND THE UnRAR UTILITY ARE DISTRIBUTED "AS IS".
+      NO WARRANTY OF ANY KIND IS EXPRESSED OR IMPLIED.  YOU USE AT 
+      YOUR OWN RISK. THE AUTHOR WILL NOT BE LIABLE FOR DATA LOSS, 
+      DAMAGES, LOSS OF PROFITS OR ANY OTHER KIND OF LOSS WHILE USING
+      OR MISUSING THIS SOFTWARE.
+
+   5. Installing and using the UnRAR utility signifies acceptance of
+      these terms and conditions of the license.
+
+   6. If you don't agree with terms of the license you must remove
+      UnRAR files from your storage devices and cease to use the
+      utility.
+
+      Thank you for your interest in RAR and UnRAR.
+
+
+                                            Alexander L. Roshal
