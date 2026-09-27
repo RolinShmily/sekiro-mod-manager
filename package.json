@@ -17,6 +17,6 @@
     "@fontsource/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/noto-sans-sc": "^5.3.0",
-    "subset-font": "^2.7.0"
+    "subset-font": "^2.9.0"
   }
 }
