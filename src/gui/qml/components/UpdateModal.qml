@@ -9,8 +9,8 @@ HusModal {
     id: rootModal
 
     width: 540
-    title: qsTr("软件更新就地重装")
-    description: qsTr("SEKIRO MOD MANAGER · 自动热重装引擎")
+    title: qsTr("软件版本更新")
+    description: qsTr("SEKIRO MOD MANAGER · 版本更新通知")
 
     readonly property var updater: smmBackend ? smmBackend.updater : null
 
@@ -23,43 +23,29 @@ HusModal {
             anchors.right: parent.right
             spacing: 8
 
-            // 当有更新可用且未完成时
+            // 当有更新可用时
             HusButton {
-                visible: rootModal.updater && rootModal.updater.updateAvailable && !rootModal.updater.downloadCompleted && !rootModal.updater.isDownloading
+                visible: rootModal.updater && rootModal.updater.updateAvailable
                 text: qsTr("稍后再说")
                 onClicked: rootModal.close()
             }
 
             HusButton {
-                visible: rootModal.updater && rootModal.updater.isDownloading
-                text: qsTr("取消下载")
+                visible: rootModal.updater && rootModal.updater.updateAvailable
+                text: qsTr("下载安装程序 (.exe)")
                 onClicked: {
-                    if (rootModal.updater) rootModal.updater.cancelDownload();
+                    if (rootModal.updater) rootModal.updater.openSetupDownload();
+                    rootModal.close();
                 }
             }
 
             HusButton {
-                visible: rootModal.updater && rootModal.updater.updateAvailable && !rootModal.updater.isDownloading && !rootModal.updater.downloadCompleted
+                visible: rootModal.updater && rootModal.updater.updateAvailable
                 type: HusButton.Type_Primary
-                text: qsTr("一键下载并就地更新")
+                text: qsTr("前往发布页面")
                 onClicked: {
-                    if (rootModal.updater) rootModal.updater.startDownload();
-                }
-            }
-
-            // 当下载已就绪时
-            HusButton {
-                visible: rootModal.updater && rootModal.updater.downloadCompleted
-                text: qsTr("稍后重启")
-                onClicked: rootModal.close()
-            }
-
-            HusButton {
-                visible: rootModal.updater && rootModal.updater.downloadCompleted
-                type: HusButton.Type_Primary
-                text: qsTr("立即重启完成更新")
-                onClicked: {
-                    if (rootModal.updater) rootModal.updater.applyUpdateAndRestart();
+                    if (rootModal.updater) rootModal.updater.openReleasePage();
+                    rootModal.close();
                 }
             }
 
@@ -112,7 +98,7 @@ HusModal {
 
                     HusText {
                         text: qsTr("正在连接 GitHub 校验最新版本清单...")
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         color: HusTheme.Primary.colorTextPrimary
                     }
                 }
@@ -134,7 +120,7 @@ HusModal {
 
                         HusText {
                             text: rootModal.updater ? ("v" + rootModal.updater.latestVersion) : ""
-                            font.pixelSize: 14
+                            font.pixelSize: 16
                             font.bold: true
                             color: HusTheme.Primary.colorTextPrimary
                         }
@@ -143,15 +129,15 @@ HusModal {
 
                         HusText {
                             text: rootModal.updater ? (qsTr("当前版本: v") + rootModal.updater.currentVersion) : ""
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             color: HusTheme.Primary.colorTextTertiary
                         }
                     }
 
                     HusText {
                         Layout.fillWidth: true
-                        text: qsTr("免下载安装包！下载完成后将由内置程序毫秒级原地覆盖并重启软件。")
-                        font.pixelSize: 11
+                        text: qsTr("官方推荐通过安装程序进行平滑升级；便携版用户可前往 GitHub 发布页下载最新压缩包解压使用。")
+                        font.pixelSize: 12
                         color: HusTheme.Primary.colorTextSecondary
                         wrapMode: Text.WordWrap
                     }
@@ -170,54 +156,8 @@ HusModal {
 
                     HusText {
                         text: rootModal.updater ? (qsTr("当前版本 (v%1) 为最新发布版本，无需更新。").arg(rootModal.updater.currentVersion)) : ""
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         color: HusTheme.Primary.colorTextPrimary
-                    }
-                }
-
-                // 下载进度条
-                ColumnLayout {
-                    visible: rootModal.updater && (rootModal.updater.isDownloading || rootModal.updater.downloadCompleted)
-                    Layout.fillWidth: true
-                    spacing: 6
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        HusText {
-                            text: rootModal.updater ? rootModal.updater.statusMessage : ""
-                            font.pixelSize: 11
-                            color: HusTheme.Primary.colorTextSecondary
-                        }
-
-                        Item { Layout.fillWidth: true }
-
-                        HusText {
-                            text: rootModal.updater ? Math.round(rootModal.updater.downloadProgress * 100) + "%" : ""
-                            font.pixelSize: 11
-                            font.bold: true
-                            color: HusTheme.Primary.colorPrimary
-                        }
-                    }
-
-                    // 进度轨道
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 6
-                        radius: 3
-                        color: HusTheme.Primary.colorFillSecondary
-
-                        Rectangle {
-                            height: parent.height
-                            radius: 3
-                            width: parent.width * (rootModal.updater ? rootModal.updater.downloadProgress : 0)
-                            color: rootModal.updater && rootModal.updater.downloadCompleted ?
-                                   HusTheme.Primary.colorSuccess : HusTheme.Primary.colorPrimary
-
-                            Behavior on width {
-                                NumberAnimation { duration: 120 }
-                            }
-                        }
                     }
                 }
             }
@@ -231,14 +171,14 @@ HusModal {
 
             HusText {
                 text: qsTr("更新内容详情:")
-                font.pixelSize: 11
+                font.pixelSize: 12
                 font.bold: true
                 color: HusTheme.Primary.colorTextTertiary
             }
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 120
+                Layout.preferredHeight: 130
                 radius: HusTheme.Primary.radiusPrimary
                 color: HusTheme.Primary.colorFillQuaternary
                 border.width: 1
@@ -256,7 +196,7 @@ HusModal {
                     HusText {
                         width: parent.width - 12
                         text: rootModal.updater ? rootModal.updater.releaseNotes : ""
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         color: HusTheme.Primary.colorTextSecondary
                         wrapMode: Text.WordWrap
                     }

@@ -14,6 +14,10 @@ summary; `git log` remains the authoritative record.
 - **Mod Pack Preset Import Sync**: Automatically registers imported `.smmpack` archives into `.smm_presets.json` and emits `refreshPresets()` for instantaneous preset list presentation.
 - **Bilingual Batch i18n**: Completed full English translations for all batch management actions and dialogs.
 
+### Changed
+
+- **Reliable Desktop Update Experience**: Refactored the update system into a clean version notification and one-click installer / release page launcher, eliminating fragile in-process file overwriting, Windows process locks, and installer version desynchronization.
+
 ### Fixed
 
 - **Settings Persistence & Mod Reload**: Resolved staging directory reverting to default on uncreated paths; added automatic recursive folder creation via `fs::create_directories` and `settings.sync()`.

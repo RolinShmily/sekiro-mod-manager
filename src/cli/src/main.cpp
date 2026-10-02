@@ -104,8 +104,6 @@ int main(int argc, char** argv) {
             data = run_env(ctx);
         } else if (ctx.command == "config") {
             data = run_config(ctx);
-        } else if (ctx.command == "self-update") {
-            data = run_self_update(ctx);
         } else {
             fail(smm::ErrorCode::InvalidArgument,
                  "Unknown command '" + ctx.command + "'. Run 'smm --help'.");

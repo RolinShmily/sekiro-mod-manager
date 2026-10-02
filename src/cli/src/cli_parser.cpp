@@ -47,10 +47,6 @@ const std::vector<CommandSpec> kCommands = {
     {"import-pack", "Import a .smmpack modpack into staging.", {"<pack-file>"}, {}, {"--overwrite"}},
     {"env", "Print the resolved configuration and the detected environment.", {}, {}, {}},
     {"config", "Persist the staging and game directories for future runs.", {}, {"--game-dir"}, {}},
-    {"self-update", "Apply a downloaded update package to replace binaries and restart the application.",
-     {},
-     {"--zip", "--target-dir", "--wait-pid"},
-     {"--restart"}},
 };
 
 /// Options that consume the following argument, across every command. Parsing needs this before

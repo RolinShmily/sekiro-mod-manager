@@ -11,7 +11,6 @@ add_executable(smm
     src/commands/cmd_doctor.cpp
     src/commands/cmd_presets.cpp
     src/commands/cmd_export.cpp
-    src/commands/cmd_self_update.cpp
 )
 
 target_include_directories(smm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

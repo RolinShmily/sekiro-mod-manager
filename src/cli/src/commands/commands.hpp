@@ -48,6 +48,4 @@ nlohmann::json run_setup_engine(CliContext& ctx);
 
 nlohmann::json run_presets(CliContext& ctx);
 
-nlohmann::json run_self_update(CliContext& ctx);
-
 } // namespace smm::cli
