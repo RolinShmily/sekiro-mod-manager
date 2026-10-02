@@ -1,0 +1,8 @@
+{
+  "version": "0.3.0",
+  "published_at": "2026-10-02T12:00:00Z",
+  "url": "https://github.com/RoL1n-SrP/sekiro-mods/releases/download/v0.3.0/SekiroModManager-v0.3.0-windows-x64.zip",
+  "sha256": "",
+  "notes_zh": "Sekiro Mod Manager v0.3.0 重构正式版\n- 采用纯 C++17 与 Qt 6 / QML (HuskarUI) 全新架构\n- 毫秒级 NTFS 零拷贝硬链接极速部署与纯净还原\n- 自动化 6 层压缩包递归寻根解析与散装文件启发式归位\n- 沉浸式高斯模糊模组底图与细粒度资产级独立启停\n- ModEngine 全景健康诊断与一键修复注入向导\n- 软件内置一键自动就地热重装引擎",
+  "notes_en": "Sekiro Mod Manager v0.3.0 Major Release\n- Rebuilt with modern C++17, Qt 6 / QML, and HuskarUI\n- Instantaneous zero-copy NTFS hardlink deployment and pristine rollback\n- Recursive 6-level nested archive extraction with loose file signature heuristics\n- Immersive blurred backdrop cards with fine-grained per-file asset toggling\n- ModEngine environment health diagnostics and one-click provisioning\n- Built-in zero-installer hot in-place auto-update engine"
+}
