@@ -100,18 +100,22 @@ void SmmClient::refreshEnvironment() {
     info.settingsFile = QStringLiteral("QSettings:HKCU/Software/SekiroModManager/SMM");
 
     fs::path stagingPath = toStdPath(stagingDir_);
-    if (stagingDir_.isEmpty() || !fs::exists(stagingPath)) {
-        stagingPath = smm::detect_staging_dir(stagingPath);
+    if (stagingDir_.trimmed().isEmpty()) {
+        stagingPath = smm::detect_staging_dir();
         if (!stagingPath.empty()) {
             stagingDir_ = toQString(stagingPath);
         }
+    }
+    std::error_code ec;
+    if (!stagingPath.empty()) {
+        fs::create_directories(stagingPath, ec);
     }
     info.stagingDir = stagingDir_;
     info.stagingExists = !stagingDir_.isEmpty() && fs::exists(toStdPath(stagingDir_));
 
     fs::path gamePath = toStdPath(gameDir_);
-    if (gameDir_.isEmpty() || !fs::exists(gamePath)) {
-        gamePath = smm::detect_game_dir(gamePath);
+    if (gameDir_.trimmed().isEmpty()) {
+        gamePath = smm::detect_game_dir();
         if (!gamePath.empty()) {
             gameDir_ = toQString(gamePath);
         }
@@ -495,11 +499,19 @@ void SmmClient::setupEngine() {
 }
 
 void SmmClient::saveConfig(const QString& staging, const QString& game) {
-    stagingDir_ = staging;
-    gameDir_ = game;
+    stagingDir_ = staging.trimmed();
+    gameDir_ = game.trimmed();
+
+    std::error_code ec;
+    if (!stagingDir_.isEmpty()) {
+        fs::create_directories(toStdPath(stagingDir_), ec);
+    }
+
     QSettings settings(QStringLiteral("SekiroModManager"), QStringLiteral("SMM"));
-    settings.setValue(QStringLiteral("stagingDir"), staging);
-    settings.setValue(QStringLiteral("sekiroDir"), game);
+    settings.setValue(QStringLiteral("stagingDir"), stagingDir_);
+    settings.setValue(QStringLiteral("sekiroDir"), gameDir_);
+    settings.sync();
+
     emit operationSucceeded(tr("Settings Saved"), tr("Configuration successfully persisted."));
     refreshEnvironment();
 }

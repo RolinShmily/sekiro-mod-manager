@@ -112,7 +112,7 @@ ColumnLayout {
         clip: true
         visible: smmBackend && smmBackend.presetListModel.count > 0
         cellWidth: Math.max(1, (packGrid.width - rootView.scrollBarSpace) / 2)
-        cellHeight: 236
+        cellHeight: 156
         rightMargin: rootView.scrollBarSpace
         model: smmBackend ? smmBackend.presetListModel : null
 
@@ -128,65 +128,95 @@ ColumnLayout {
             width: packGrid.cellWidth
             height: packGrid.cellHeight
 
-            HusCard {
+            Rectangle {
                 anchors.fill: parent
                 anchors.margins: 6
-                radiusBg.all: HusTheme.Primary.radiusPrimaryLG
-                colorBg: HusTheme.Primary.colorFillQuaternary
-                borderBg.color: packWrapper.model.isEquipped
-                                ? HusTheme.Primary.colorPrimary
-                                : HusTheme.Primary.colorBorderSecondary
+                radius: HusTheme.Primary.radiusPrimaryLG
+                color: HusTheme.Primary.colorFillQuaternary
+                border.width: packWrapper.model.isEquipped ? 2 : 1
+                border.color: packWrapper.model.isEquipped
+                              ? HusTheme.Primary.colorPrimary
+                              : (cardHover.containsMouse ? HusTheme.Primary.colorPrimaryBorder : HusTheme.Primary.colorBorderSecondary)
 
-                title: packWrapper.model.name
-                colorTitle: packWrapper.model.isEquipped
-                            ? HusTheme.Primary.colorPrimary
-                            : HusTheme.Primary.colorTextPrimary
-
-                extraDelegate: HusTag {
-                    anchors.verticalCenter: parent.verticalCenter
-                    tagState: packWrapper.model.isEquipped ? HusTag.State_Success : HusTag.State_Default
-                    text: packWrapper.model.isEquipped ? qsTr("已装配") : qsTr("就绪")
+                Behavior on border.color {
+                    ColorAnimation { duration: HusTheme.Primary.durationFast }
                 }
 
-                bodyDelegate: ColumnLayout {
-                    spacing: 8
-
-                    HusText {
-                        Layout.fillWidth: true
-                        text: packWrapper.model.description
-                        font.pixelSize: 14
-                        color: HusTheme.Primary.colorTextSecondary
-                        elide: Text.ElideRight
-                    }
-
-                    HusText {
-                        Layout.fillWidth: true
-                        text: packWrapper.model.descriptionEn
-                        font.pixelSize: 13
-                        color: HusTheme.Primary.colorTextQuaternary
-                        elide: Text.ElideRight
-                    }
+                MouseArea {
+                    id: cardHover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.NoButton
                 }
 
-                actionDelegate: Item {
-                    implicitHeight: 46
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 10
 
-                    HusDivider {
-                        anchors.top: parent.top
-                        width: parent.width
-                    }
-
+                    // 顶部标题与状态标签
                     RowLayout {
-                        anchors.top: parent.top
-                        anchors.topMargin: 9
-                        width: parent.width
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        HusIconText {
+                            iconSource: HusIcon.InboxOutlined
+                            iconSize: 17
+                            colorIcon: packWrapper.model.isEquipped ? HusTheme.Primary.colorPrimary : HusTheme.Primary.colorTextSecondary
+                        }
+
+                        HusText {
+                            Layout.fillWidth: true
+                            text: packWrapper.model.name
+                            font.pixelSize: 16
+                            font.bold: true
+                            color: packWrapper.model.isEquipped ? HusTheme.Primary.colorPrimary : HusTheme.Primary.colorTextPrimary
+                            elide: Text.ElideRight
+                        }
+
+                        HusTag {
+                            Layout.alignment: Qt.AlignVCenter
+                            text: qsTr("包含 %1 个模组").arg(packWrapper.model.modCount)
+                        }
+
+                        HusTag {
+                            Layout.alignment: Qt.AlignVCenter
+                            tagState: packWrapper.model.isEquipped ? HusTag.State_Success : HusTag.State_Default
+                            text: packWrapper.model.isEquipped ? qsTr("已装配") : qsTr("就绪")
+                        }
+                    }
+
+                    // 中间说明文本（若空则提供典雅的占位说明，彻底杜绝大面积空洞）
+                    HusText {
+                        Layout.fillWidth: true
+                        text: {
+                            if (packWrapper.model.description && packWrapper.model.description.trim() !== "")
+                                return packWrapper.model.description;
+                            if (packWrapper.model.descriptionEn && packWrapper.model.descriptionEn.trim() !== "")
+                                return packWrapper.model.descriptionEn;
+                            return qsTr("已保存的整合包预设方案，支持一键载入整套模组顺位与启用状态。");
+                        }
+                        font.pixelSize: 13
+                        color: (packWrapper.model.description && packWrapper.model.description.trim() !== "")
+                               ? HusTheme.Primary.colorTextSecondary
+                               : HusTheme.Primary.colorTextTertiary
+                        elide: Text.ElideRight
+                        maximumLineCount: 2
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Item { Layout.fillHeight: true }
+
+                    // 底部操作按钮栏
+                    RowLayout {
+                        Layout.fillWidth: true
                         spacing: 8
 
                         HusButton {
                             Layout.fillWidth: true
-                            implicitHeight: 30
-                            type: packWrapper.model.isEquipped ? HusButton.Type_Primary : HusButton.Type_Default
-                            text: packWrapper.model.isEquipped ? qsTr("正在装配中") : qsTr("激活此整合包")
+                            implicitHeight: 32
+                            type: packWrapper.model.isEquipped ? HusButton.Type_Default : HusButton.Type_Primary
+                            text: packWrapper.model.isEquipped ? qsTr("当前活跃方案") : qsTr("激活此整合包")
                             enabled: !packWrapper.model.isEquipped
                             onClicked: smmBackend.applyModPack(packWrapper.model.id)
                         }
@@ -202,7 +232,7 @@ ColumnLayout {
                         }
 
                         HusButton {
-                            implicitHeight: 30
+                            implicitHeight: 32
                             text: qsTr("删除")
                             onClicked: {
                                 if (smmBackend) smmBackend.deleteModPack(packWrapper.model.id);

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.3.1] - 2026-10-02
+
+### Added
+
+- **Batch Mod Management**: Added multi-select batch management in the Armoury view with select-all, batch enable/disable, and batch delete with confirmation modal.
+- **Mod Pack Preset Import Sync**: Automatically registers imported `.smmpack` archives into `.smm_presets.json` and emits `refreshPresets()` for instantaneous preset list presentation.
+- **Bilingual Batch i18n**: Completed full English translations for all batch management actions and dialogs.
+
+### Fixed
+
+- **Settings Persistence & Mod Reload**: Resolved staging directory reverting to default on uncreated paths; added automatic recursive folder creation via `fs::create_directories` and `settings.sync()`.
+- **Atomic Settings Confirmation**: Deferred language switching and directory changes to apply atomically on "Save Settings" click instead of taking immediate effect.
+- **Settings Scoped ID Resolution**: Fixed `ReferenceError: stagingDirInput is not defined` by managing pending states on the root modal across independent delegates.
+- **Responsive Toolbar Layout**: Restructured mod management toolbar into a two-row responsive layout, preventing right-edge truncation of view toggles and action buttons on narrow windows.
+- **Mod Pack Card Visual Overhaul**: Redesigned preset cards to 156px compact cards with mod count tags, status badges, elegant fallback descriptions, and refined primary action buttons.
+
 ## [0.3.0] - 2026-10-02
 
 ### Added

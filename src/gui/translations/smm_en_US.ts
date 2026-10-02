@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
+<?xml version='1.0' encoding='utf-8'?>
 <TS version="2.1" language="en_US" sourcelanguage="zh_CN">
   <context>
     <name>AboutModal</name>
@@ -138,7 +137,7 @@
       <source>音效音乐</source>
       <translation>Audio &amp; Music</translation>
     </message>
-  </context>
+  <message><source>批量管理</source><translation>Batch Manage</translation></message><message><source>退出批量</source><translation>Exit Batch</translation></message><message><source>全选</source><translation>Select All</translation></message><message><source>全不选</source><translation>Deselect All</translation></message><message><source>已选择 %1 / %2 项</source><translation>Selected %1 / %2</translation></message><message><source>批量启用</source><translation>Batch Enable</translation></message><message><source>批量禁用</source><translation>Batch Disable</translation></message><message><source>批量删除 (%1)</source><translation>Batch Delete (%1)</translation></message><message><source>确认批量删除模组</source><translation>Confirm Batch Deletion</translation></message><message><source>此操作将从暂存目录彻底删除选中的 %1 个模组文件，无法撤销。您确定要继续吗？</source><translation>This will permanently delete the %1 selected mod files from the staging directory. This cannot be undone. Are you sure you want to proceed?</translation></message><message><source>彻底删除</source><translation>Permanently Delete</translation></message><message><source>取消</source><translation>Cancel</translation></message></context>
   <context>
     <name>DoctorModal</name>
     <message>
@@ -540,7 +539,7 @@
       <source>选择导入 .smmpack 整合包</source>
       <translation>Select a .smmpack file to import</translation>
     </message>
-  </context>
+  <message><source>包含 %1 个模组</source><translation>Contains %1 mods</translation></message><message><source>已保存的整合包预设方案，支持一键载入整套模组顺位与启用状态。</source><translation>Saved modpack preset, allowing one-click loading of mod priorities and enabled states.</translation></message><message><source>当前活跃方案</source><translation>Currently Equipped</translation></message><message><source>导出 .smmpack 整合包</source><translation>Export .smmpack Mod Pack</translation></message><message><source>无附加说明</source><translation>No description provided</translation></message></context>
   <context>
     <name>SavePackModal</name>
     <message>

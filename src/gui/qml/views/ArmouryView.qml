@@ -75,7 +75,7 @@ ColumnLayout {
         }
     }
 
-    // ---------------------------------- 工具栏 ----------------------------------
+    // ---------------------------------- 工具栏第一行：标题与全局操作 ----------------------------------
     RowLayout {
         Layout.fillWidth: true
         spacing: 12
@@ -92,19 +92,74 @@ ColumnLayout {
 
             HusText {
                 text: qsTr("调整裁决顺位，或进入详情精细控制单个资产文件。")
-                font.pixelSize: 14
+                font.pixelSize: 13
                 color: HusTheme.Primary.colorTextTertiary
             }
         }
 
         Item { Layout.fillWidth: true }
 
+        HusButton {
+            type: rootView.batchMode ? HusButton.Type_Primary : HusButton.Type_Default
+            text: rootView.batchMode ? qsTr("退出批量") : qsTr("批量管理")
+            onClicked: {
+                rootView.batchMode = !rootView.batchMode;
+                if (!rootView.batchMode) rootView.clearSelection();
+            }
+        }
+
+        HusButton {
+            type: HusButton.Type_Primary
+            text: qsTr("导入压缩包")
+            onClicked: archiveDialog.open()
+        }
+    }
+
+    // ---------------------------------- 工具栏第二行：搜索、分类胶囊与视图控制 ----------------------------------
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 10
+
         HusInput {
-            implicitWidth: 210
+            Layout.preferredWidth: 200
             placeholderText: qsTr("搜索模组、作者…")
             onTextChanged: {
                 if (smmBackend)
                     smmBackend.modListModel.filterText = text;
+            }
+        }
+
+        Flickable {
+            id: categoryFlickable
+            Layout.fillWidth: true
+            Layout.preferredHeight: 32
+            contentWidth: categoryRow.implicitWidth
+            contentHeight: 32
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+
+            RowLayout {
+                id: categoryRow
+                spacing: 6
+
+                Repeater {
+                    model: smmBackend ? smmBackend.modListModel.availableCategories : ["all"]
+
+                    delegate: HusButton {
+                        id: catBtn
+                        required property string modelData
+                        implicitHeight: 28
+                        type: (smmBackend && smmBackend.modListModel.selectedCategory === catBtn.modelData)
+                              ? HusButton.Type_Primary
+                              : HusButton.Type_Default
+                        text: rootView.getCategoryLabel(catBtn.modelData)
+                        onClicked: {
+                            if (smmBackend) {
+                                smmBackend.modListModel.selectedCategory = catBtn.modelData;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -132,56 +187,6 @@ ColumnLayout {
             text: qsTr("背景图")
             checked: rootView.showBackdrop
             onCheckedChanged: rootView.showBackdrop = checked
-        }
-
-        HusButton {
-            type: rootView.batchMode ? HusButton.Type_Primary : HusButton.Type_Default
-            text: rootView.batchMode ? qsTr("退出批量") : qsTr("批量管理")
-            onClicked: {
-                rootView.batchMode = !rootView.batchMode;
-                if (!rootView.batchMode) rootView.clearSelection();
-            }
-        }
-
-        HusButton {
-            type: HusButton.Type_Primary
-            text: qsTr("导入压缩包")
-            onClicked: archiveDialog.open()
-        }
-    }
-
-    // ---------------------------------- 分类过滤胶囊栏 ----------------------------------
-    Flickable {
-        id: categoryFlickable
-        Layout.fillWidth: true
-        Layout.preferredHeight: 32
-        contentWidth: categoryRow.implicitWidth
-        contentHeight: 32
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-
-        RowLayout {
-            id: categoryRow
-            spacing: 6
-
-            Repeater {
-                model: smmBackend ? smmBackend.modListModel.availableCategories : ["all"]
-
-                delegate: HusButton {
-                    id: catBtn
-                    required property string modelData
-                    implicitHeight: 28
-                    type: (smmBackend && smmBackend.modListModel.selectedCategory === catBtn.modelData)
-                          ? HusButton.Type_Primary
-                          : HusButton.Type_Default
-                    text: rootView.getCategoryLabel(catBtn.modelData)
-                    onClicked: {
-                        if (smmBackend) {
-                            smmBackend.modListModel.selectedCategory = catBtn.modelData;
-                        }
-                    }
-                }
-            }
         }
     }
 

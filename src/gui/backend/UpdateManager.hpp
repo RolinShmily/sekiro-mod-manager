@@ -28,7 +28,7 @@ public:
     bool isChecking() const { return isChecking_; }
     bool isDownloading() const { return isDownloading_; }
     bool isUpdateAvailable() const { return updateAvailable_; }
-    QString currentVersion() const { return QStringLiteral("0.3.0"); }
+    QString currentVersion() const { return QStringLiteral("0.3.1"); }
     QString latestVersion() const { return latestVersion_; }
     QString releaseNotes() const { return releaseNotes_; }
     QString releaseUrl() const { return releaseUrl_; }

@@ -249,10 +249,11 @@ Rectangle {
         }
 
         HusText {
-            Layout.preferredWidth: 180
+            Layout.fillWidth: true
+            Layout.maximumWidth: 260
             Layout.alignment: Qt.AlignVCenter
             text: rootCard.modName
-            font.pixelSize: 13
+            font.pixelSize: 15
             font.bold: true
             color: rootCard.textPrimary
             elide: Text.ElideRight

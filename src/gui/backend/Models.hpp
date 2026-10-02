@@ -266,7 +266,8 @@ public:
     Q_INVOKABLE void restore();
     Q_INVOKABLE void launchGame();
     Q_INVOKABLE void autoDetectGameDir();
-    Q_INVOKABLE void saveSettings(const QString& staging, const QString& game);
+    Q_INVOKABLE QString detectSekiroDir() const;
+    Q_INVOKABLE void saveSettings(const QString& staging, const QString& game, const QString& lang = {});
     Q_INVOKABLE void openModDetail(const QString& modId);
     Q_INVOKABLE void setModPreview(const QString& modId, const QString& imagePath);
     Q_INVOKABLE void setModSourceUrl(const QString& modId, const QString& url);

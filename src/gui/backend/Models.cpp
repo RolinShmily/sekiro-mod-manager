@@ -6,6 +6,7 @@
 #include <QGuiApplication>
 #include <QSettings>
 
+#include <smm/doctor.hpp>
 #include <smm/loader.hpp>
 #include <smm/manager.hpp>
 #include <smm/preset.hpp>
@@ -539,32 +540,46 @@ void GuiController::launchGame() {
     emit notification("info", tr("Launched Sekiro via Steam (AppID 814380)"));
 }
 
+QString GuiController::detectSekiroDir() const {
+    const auto detected = smm::detect_game_dir();
+    if (!detected.empty()) {
+        return QString::fromStdWString(detected.wstring());
+    }
+    return {};
+}
+
 void GuiController::autoDetectGameDir() {
-    // 典型 Steam 库默认安装路径
-    const QStringList candidates = {
-        "C:/Program Files (x86)/Steam/steamapps/common/Sekiro",
-        "D:/SteamLibrary/steamapps/common/Sekiro",
-        "E:/SteamLibrary/steamapps/common/Sekiro",
-        "F:/SteamLibrary/steamapps/common/Sekiro"
-    };
-    for (const auto& path : candidates) {
-        if (QFileInfo::exists(path + "/sekiro.exe")) {
-            setSekiroDir(path);
-            emit notification("success", tr("Auto-detected Sekiro installation: %1").arg(path));
-            return;
-        }
+    const QString detected = detectSekiroDir();
+    if (!detected.isEmpty()) {
+        setSekiroDir(detected);
+        emit notification("success", tr("Auto-detected Sekiro installation: %1").arg(detected));
+        return;
     }
     emit notification("warning", tr("Could not auto-detect Sekiro in default Steam libraries. Please select manually."));
 }
 
-void GuiController::saveSettings(const QString& staging, const QString& game) {
-    setStagingDir(staging);
-    setSekiroDir(game);
-    client_.saveConfig(staging, game);
+void GuiController::saveSettings(const QString& staging, const QString& game, const QString& lang) {
+    const QString cleanStaging = staging.trimmed();
+    const QString cleanGame = game.trimmed();
+    const QString cleanLang = lang.trimmed();
+
+    setStagingDir(cleanStaging);
+    setSekiroDir(cleanGame);
+    if (!cleanLang.isEmpty()) {
+        setLanguage(cleanLang);
+    }
+
+    client_.saveConfig(cleanStaging, cleanGame);
 
     QSettings settings("SekiroModManager", "SMM");
-    settings.setValue("stagingDir", staging);
-    settings.setValue("sekiroDir", game);
+    settings.setValue("stagingDir", cleanStaging);
+    settings.setValue("sekiroDir", cleanGame);
+    if (!cleanLang.isEmpty()) {
+        settings.setValue("language", cleanLang);
+    }
+    settings.sync();
+
+    refreshAll();
 
     emit notification("success", tr("Preferences saved successfully."));
 }
