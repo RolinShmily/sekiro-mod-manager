@@ -14,7 +14,7 @@
 namespace {
 
 const QString kDefaultManifestUrl = QStringLiteral(
-    "https://raw.githubusercontent.com/RoL1n-SrP/sekiro-mods/main/latest.json"
+    "https://github.com/RolinShmily/sekiro-mod-manager/releases/latest/download/latest.json"
 );
 
 } // namespace

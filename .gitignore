@@ -63,11 +63,8 @@ test_game_mods/
 # ---------------------------------------------------------------------------
 .vs/
 .idea/
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-!.vscode/launch.json
-!.vscode/tasks.json
+.vscode/
+latest.json
 *.suo
 *.user
 *.sln

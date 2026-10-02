@@ -83,7 +83,7 @@ jobs:
           $latest = @{
               version = $version
               published_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-              url = "https://github.com/RoL1n-SrP/sekiro-mods/releases/download/${{ github.ref_name }}/SekiroModManager-${{ github.ref_name }}-windows-x64.zip"
+              url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/SekiroModManager-${{ github.ref_name }}-windows-x64.zip"
               sha256 = $sha256
               notes_zh = "Sekiro Mod Manager ${{ github.ref_name }} 发布"
               notes_en = "Sekiro Mod Manager ${{ github.ref_name }} Release"
