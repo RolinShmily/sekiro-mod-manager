@@ -52,7 +52,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ env.QT_ROOT }}"
+          cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
 
       - name: Build Release Targets
         run: |
@@ -61,7 +61,7 @@ jobs:
       - name: Package Standalone GUI with windeployqt
         shell: pwsh
         run: |
-          $qtBin = "${{ env.QT_ROOT }}/bin"
+          $qtBin = "$env:QT_ROOT_DIR/bin"
           $outDir = "dist/SekiroModManager-${{ github.ref_name }}"
           New-Item -ItemType Directory -Path $outDir -Force | Out-Null
           
