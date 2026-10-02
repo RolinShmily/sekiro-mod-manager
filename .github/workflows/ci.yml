@@ -40,6 +40,10 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2022_64'
 
+      - name: Patch Submodules
+        run: |
+          python tools/patch_huskarui.py
+
       - name: Configure CMake
         run: |
           cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ env.QT_ROOT }}"
