@@ -26,6 +26,9 @@ public:
     static ModInfo set_mod_preview(const fs::path& staging_dir, const std::string& mod_id,
                                    const fs::path& image_src_path);
 
+    /// Ensures preview image in mod_dir is in standard decodable PNG format, converting WebP if needed.
+    static bool normalize_preview_image(const fs::path& mod_dir, std::string& preview_name);
+
     /// Applies user-editable metadata fields (never id, never root_path).
     static ModInfo update_mod_info(const fs::path& staging_dir, const std::string& mod_id, const ModInfo& updated);
 

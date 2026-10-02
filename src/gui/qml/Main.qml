@@ -267,6 +267,7 @@ HusWindow {
                     smmBackend.openModDetail(modId);
                     modDrawer.open();
                 }
+                onRequestSavePack: savePackModal.open()
             }
 
             ModPackView {

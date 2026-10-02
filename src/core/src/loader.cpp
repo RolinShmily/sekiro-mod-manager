@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "smm/error.hpp"
+#include "smm/manager.hpp"
 #include "smm/normalizer.hpp"
 
 namespace smm {
@@ -75,6 +76,10 @@ ModInfo ModLoader::load_mod_info(const fs::path& mod_dir) {
                 break;
             }
         }
+    }
+
+    if (info.preview_image.has_value() && !info.preview_image->empty()) {
+        ModManager::normalize_preview_image(mod_dir, *info.preview_image);
     }
 
     return info;

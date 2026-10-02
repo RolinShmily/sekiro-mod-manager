@@ -60,13 +60,25 @@ Rectangle {
         return cat.toUpperCase();
     }
 
-    function getDomainLabel(url) {
-        if (!url) return "";
+    function getDomainInfo(url) {
+        if (!url) return { label: "", icon: "", color: "" };
         const u = url.toLowerCase();
-        if (u.includes("nexusmods")) return "Nexus";
-        if (u.includes("github")) return "GitHub";
-        if (u.includes("bilibili")) return "Bilibili";
-        return qsTr("来源");
+        if (u.includes("nexusmods.com")) {
+            return { label: "Nexus", icon: "qrc:/images/icon_nexus.png", color: "#da8e35" };
+        }
+        if (u.includes("gamebanana.com")) {
+            return { label: "Banana", icon: "qrc:/images/icon_banana.png", color: "#facc15" };
+        }
+        if (u.includes("3dmgame.com")) {
+            return { label: "3DM", icon: "qrc:/images/icon_3dm.png", color: "#ef4444" };
+        }
+        if (u.includes("bilibili.com") || u.includes("b23.tv")) {
+            return { label: "Bilibili", icon: "qrc:/images/icon_bilibili.svg", color: "#00aeec" };
+        }
+        if (u.includes("github.com")) {
+            return { label: "GitHub", icon: "qrc:/images/icon_github.svg", color: "#cbd5e1" };
+        }
+        return { label: qsTr("来源"), icon: "", color: HusTheme.Primary.colorPrimary };
     }
 
     /// 裁决顺位可选项数量需覆盖当前全部模组，否则高顺位无法表达。
@@ -159,6 +171,7 @@ Rectangle {
             source: rootCard.previewImagePath
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
+            cache: false
             autoTransform: true
             mipmap: true
             smooth: true
@@ -397,13 +410,26 @@ Rectangle {
 
             Item { Layout.fillWidth: true }
 
-            HusButton {
+            RowLayout {
                 visible: rootCard.modSourceUrl !== ""
-                implicitHeight: 22
-                type: HusButton.Type_Text
-                text: "🌐 " + rootCard.getDomainLabel(rootCard.modSourceUrl)
-                font.pixelSize: 10
-                onClicked: Qt.openUrlExternally(rootCard.modSourceUrl)
+                spacing: 4
+                readonly property var dInfo: rootCard.getDomainInfo(rootCard.modSourceUrl)
+
+                Image {
+                    Layout.preferredWidth: 12
+                    Layout.preferredHeight: 12
+                    Layout.alignment: Qt.AlignVCenter
+                    source: parent.dInfo.icon
+                    visible: parent.dInfo.icon !== ""
+                }
+
+                HusButton {
+                    implicitHeight: 22
+                    type: HusButton.Type_Text
+                    text: parent.dInfo.icon !== "" ? parent.dInfo.label : ("🌐 " + parent.dInfo.label)
+                    font.pixelSize: 11
+                    onClicked: Qt.openUrlExternally(rootCard.modSourceUrl)
+                }
             }
         }
 
@@ -427,6 +453,7 @@ Rectangle {
                     source: rootCard.previewImagePath
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
+                    cache: false
                     autoTransform: true
                     mipmap: true
                     smooth: true

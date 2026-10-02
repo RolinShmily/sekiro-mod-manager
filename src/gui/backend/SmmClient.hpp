@@ -171,9 +171,16 @@ public:
     void batchUpdatePriorities(const QMap<QString, quint32>& priorities);
     void removeMod(const QString& modId);
     void exportSingleMod(const QString& modId, const QString& outputPath = {});
-    void updateModMetadata(const QString& modId, const QString& name, const QString& author,
+    void updateModMetadata(const QString& modId, const QString& newId,
+                           const QString& name, const QString& author,
                            const QString& version, const QString& category,
                            const QString& description, const QString& sourceUrl);
+    void updateModMetadata(const QString& modId, const QString& name,
+                           const QString& author, const QString& version,
+                           const QString& category, const QString& description,
+                           const QString& sourceUrl) {
+        updateModMetadata(modId, modId, name, author, version, category, description, sourceUrl);
+    }
     void importPaths(const QStringList& paths, const QString& customId, const QString& customName,
                      bool overwrite);
     void exportModPack(const QStringList& modIds, const QString& outputPath, const QString& name,

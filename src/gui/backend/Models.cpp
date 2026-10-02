@@ -68,6 +68,11 @@ void ModListModel::rebuildFilter() {
     const QString cat = selectedCategory_.trimmed();
     for (int i = 0; i < mods_.size(); ++i) {
         const auto& m = mods_[i];
+        if (onlyEquippedPackMods_) {
+            if (!equippedModIds_.contains(m.id)) {
+                continue;
+            }
+        }
         if (!cat.isEmpty() && cat != QLatin1String("all")) {
             if (m.category.compare(cat, Qt::CaseInsensitive) != 0) {
                 continue;
@@ -94,6 +99,26 @@ void ModListModel::setSelectedCategory(const QString& cat) {
     endResetModel();
     emit selectedCategoryChanged();
     emit countChanged();
+}
+
+void ModListModel::setOnlyEquippedPackMods(bool only) {
+    if (onlyEquippedPackMods_ == only) return;
+    beginResetModel();
+    onlyEquippedPackMods_ = only;
+    rebuildFilter();
+    endResetModel();
+    emit onlyEquippedPackModsChanged();
+    emit countChanged();
+}
+
+void ModListModel::setEquippedModIds(const QSet<QString>& ids) {
+    equippedModIds_ = ids;
+    if (onlyEquippedPackMods_) {
+        beginResetModel();
+        rebuildFilter();
+        endResetModel();
+        emit countChanged();
+    }
 }
 
 void ModListModel::setFilterText(const QString& filter) {
@@ -383,6 +408,10 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
     stagingDir_ = settings.value("stagingDir").toString();
     sekiroDir_ = settings.value("sekiroDir").toString();
     language_ = settings.value("language", QStringLiteral("zh-CN")).toString();
+    equippedPackId_ = settings.value("equippedPresetId").toString();
+    if (!equippedPackId_.isEmpty()) {
+        presetListModel_.setEquippedId(equippedPackId_);
+    }
 
     if (!stagingDir_.isEmpty()) client_.setStagingDir(stagingDir_);
     if (!sekiroDir_.isEmpty()) client_.setGameDir(sekiroDir_);
@@ -414,6 +443,7 @@ void GuiController::initSignals() {
         currentModId_ = mod.id;
         currentModName_ = mod.name;
         currentModAuthor_ = mod.author;
+        currentModVersion_ = mod.version;
         currentModDesc_ = mod.description;
         currentModPreview_ = mod.previewImage;
         currentModCategory_ = mod.category;
@@ -426,6 +456,10 @@ void GuiController::initSignals() {
 
     connect(&client_, &SmmClient::presetsLoaded, this, [this](const QVector<PresetEntry>& presets) {
         presetListModel_.setPresets(presets);
+        if (!equippedPackId_.isEmpty()) {
+            presetListModel_.setEquippedId(equippedPackId_);
+            updateEquippedModIds();
+        }
     });
 
     connect(&client_, &SmmClient::conflictsLoaded, this, [this](const QVector<ConflictEntry>& conflicts) {
@@ -589,7 +623,18 @@ void GuiController::openModDetail(const QString& modId) {
 }
 
 void GuiController::setModPreview(const QString& modId, const QString& imagePath) {
-    client_.setModPreview(modId, imagePath);
+    QString cleanPath = imagePath.trimmed();
+    if (cleanPath.startsWith(QStringLiteral("file:///"))) {
+        cleanPath = cleanPath.mid(8);
+    } else if (cleanPath.startsWith(QStringLiteral("file://"))) {
+        cleanPath = cleanPath.mid(7);
+    }
+    cleanPath = QUrl::fromPercentEncoding(cleanPath.toUtf8());
+    cleanPath = QDir::toNativeSeparators(cleanPath);
+
+    client_.setModPreview(modId, cleanPath);
+    previewRevision_++;
+    emit previewRevisionChanged();
 }
 
 void GuiController::saveModPack(const QString& nameZh, const QString& descZh,
@@ -616,7 +661,46 @@ void GuiController::setModsEnabled(const QStringList& modIds, bool enabled) {
 
 void GuiController::applyModPack(const QString& packId) {
     presetListModel_.setEquippedId(packId);
+    equippedPackId_ = packId;
+    updateEquippedModIds();
+    emit equippedPackChanged();
+
+    QSettings settings(QStringLiteral("SekiroModManager"), QStringLiteral("SMM"));
+    settings.setValue(QStringLiteral("equippedPresetId"), packId);
+
     client_.applyPreset(packId);
+}
+
+void GuiController::deactivateModPack() {
+    presetListModel_.setEquippedId({});
+    equippedPackId_.clear();
+    updateEquippedModIds();
+    emit equippedPackChanged();
+
+    QSettings settings(QStringLiteral("SekiroModManager"), QStringLiteral("SMM"));
+    settings.remove(QStringLiteral("equippedPresetId"));
+
+    emit notification(QStringLiteral("info"), tr("整合包已取消应用，当前进入自由模组管理状态。"));
+}
+
+void GuiController::updateEquippedModIds() {
+    QSet<QString> ids;
+    if (!equippedPackId_.isEmpty()) {
+        const std::filesystem::path stagingPath = client_.stagingDir().toStdWString();
+        std::error_code ec;
+        if (std::filesystem::exists(stagingPath, ec)) {
+            const auto presets = smm::PresetManager::list_presets(stagingPath);
+            for (const auto& p : presets) {
+                if (QString::fromStdString(p.id) == equippedPackId_) {
+                    for (const auto& m : p.mods) {
+                        ids.insert(QString::fromStdString(m.mod_id));
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    modListModel_.setEquippedModIds(ids);
 }
 
 void GuiController::exportModPack(const QString& packId, const QString& outputPath) {
@@ -709,11 +793,11 @@ void GuiController::exportSingleMod(const QString& modId, const QString& outputP
     }
 }
 
-void GuiController::updateModMetadata(const QString& modId, const QString& name,
-                                      const QString& author, const QString& version,
-                                      const QString& category, const QString& description,
-                                      const QString& sourceUrl) {
-    client_.updateModMetadata(modId, name, author, version, category, description, sourceUrl);
+void GuiController::updateModMetadata(const QString& modId, const QString& newId,
+                                      const QString& name, const QString& author,
+                                      const QString& version, const QString& category,
+                                      const QString& description, const QString& sourceUrl) {
+    client_.updateModMetadata(modId, newId, name, author, version, category, description, sourceUrl);
 }
 
 void GuiController::deleteModPack(const QString& packId) {

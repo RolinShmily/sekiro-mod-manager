@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QMetaObject>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QThreadPool>
 
@@ -412,10 +413,10 @@ void SmmClient::exportSingleMod(const QString& modId, const QString& outputPath)
     }
 }
 
-void SmmClient::updateModMetadata(const QString& modId, const QString& name,
-                                  const QString& author, const QString& version,
-                                  const QString& category, const QString& description,
-                                  const QString& sourceUrl) {
+void SmmClient::updateModMetadata(const QString& modId, const QString& newId,
+                                  const QString& name, const QString& author,
+                                  const QString& version, const QString& category,
+                                  const QString& description, const QString& sourceUrl) {
     const fs::path stagingPath = toStdPath(stagingDir_);
     try {
         const auto modDir = smm::ModManager::find_mod_dir(stagingPath, modId.toStdString());
@@ -426,9 +427,33 @@ void SmmClient::updateModMetadata(const QString& modId, const QString& name,
         if (!category.trimmed().isEmpty()) info.category = category.trimmed().toStdString();
         info.description = description.toStdString();
         info.source_url = sourceUrl.toStdString();
-        smm::ModManager::save_mod_info(modDir, info);
+
+        QString targetId = newId.trimmed();
+        if (targetId.isEmpty()) {
+            targetId = modId;
+        } else {
+            targetId.replace(QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")), QStringLiteral("-"));
+        }
+
+        fs::path finalModDir = modDir;
+        if (targetId != modId) {
+            fs::path targetDir = stagingPath / toStdPath(targetId);
+            std::error_code ec;
+            if (fs::exists(targetDir, ec)) {
+                throw std::runtime_error(tr("Mod ID '%1' already exists.").arg(targetId).toStdString());
+            }
+            fs::rename(modDir, targetDir, ec);
+            if (!ec) {
+                finalModDir = targetDir;
+                info.id = targetId.toStdString();
+            } else {
+                info.id = targetId.toStdString();
+            }
+        }
+
+        smm::ModManager::save_mod_info(finalModDir, info);
         emit operationSucceeded(tr("Metadata Saved"), tr("Mod details updated."));
-        refreshModDetail(modId);
+        refreshModDetail(targetId);
         refreshMods();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Save Failed"), QString::fromUtf8(e.what()));

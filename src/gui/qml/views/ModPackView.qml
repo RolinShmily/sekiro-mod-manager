@@ -66,14 +66,9 @@ ColumnLayout {
         Item { Layout.fillWidth: true }
 
         HusButton {
+            type: HusButton.Type_Primary
             text: qsTr("导入 .smmpack")
             onClicked: importPackDialog.open()
-        }
-
-        HusButton {
-            type: HusButton.Type_Primary
-            text: qsTr("当前配置存为整合包")
-            onClicked: rootView.requestSavePack()
         }
     }
 
@@ -215,10 +210,19 @@ ColumnLayout {
                         HusButton {
                             Layout.fillWidth: true
                             implicitHeight: 32
-                            type: packWrapper.model.isEquipped ? HusButton.Type_Default : HusButton.Type_Primary
-                            text: packWrapper.model.isEquipped ? qsTr("当前活跃方案") : qsTr("激活此整合包")
-                            enabled: !packWrapper.model.isEquipped
+                            visible: !packWrapper.model.isEquipped
+                            type: HusButton.Type_Primary
+                            text: qsTr("激活此整合包")
                             onClicked: smmBackend.applyModPack(packWrapper.model.id)
+                        }
+
+                        HusButton {
+                            Layout.fillWidth: true
+                            implicitHeight: 32
+                            visible: packWrapper.model.isEquipped
+                            type: HusButton.Type_Default
+                            text: qsTr("取消整合包应用")
+                            onClicked: smmBackend.deactivateModPack()
                         }
 
                         HusButton {

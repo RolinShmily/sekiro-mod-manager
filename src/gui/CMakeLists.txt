@@ -108,6 +108,14 @@ qt_add_resources(smm_gui "smm_images"
         resources/images/sekiro_hero_art.png
         resources/images/sekiro_silvergrass.png
         resources/images/sekiro_mortal_blade.png
+        resources/images/icon_nexus.png
+        resources/images/icon_banana.png
+        resources/images/icon_3dm.png
+        resources/images/icon_nexus.svg
+        resources/images/icon_banana.svg
+        resources/images/icon_3dm.svg
+        resources/images/icon_bilibili.svg
+        resources/images/icon_github.svg
 )
 
 target_compile_definitions(smm_gui PRIVATE

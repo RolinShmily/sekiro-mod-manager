@@ -62,6 +62,7 @@ ColumnLayout {
     }
 
     signal requestOpenDrawer(string modId)
+    signal requestSavePack()
 
     FileDialog {
         id: archiveDialog
@@ -110,6 +111,26 @@ ColumnLayout {
         }
 
         Item { Layout.fillWidth: true }
+
+        HusButton {
+            visible: smmBackend && smmBackend.hasEquippedPack
+            type: (smmBackend && smmBackend.modListModel.onlyEquippedPackMods)
+                  ? HusButton.Type_Primary
+                  : HusButton.Type_Default
+            text: (smmBackend && smmBackend.modListModel.onlyEquippedPackMods)
+                  ? qsTr("显示全部暂存区模组")
+                  : qsTr("仅显示整合包模组")
+            onClicked: {
+                if (smmBackend) {
+                    smmBackend.modListModel.onlyEquippedPackMods = !smmBackend.modListModel.onlyEquippedPackMods;
+                }
+            }
+        }
+
+        HusButton {
+            text: qsTr("当前配置存为整合包")
+            onClicked: rootView.requestSavePack()
+        }
 
         HusButton {
             type: rootView.batchMode ? HusButton.Type_Primary : HusButton.Type_Default

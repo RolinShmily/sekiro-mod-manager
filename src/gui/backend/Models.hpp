@@ -21,6 +21,7 @@ class ModListModel : public QAbstractListModel {
     Q_PROPERTY(QString filterText READ filterText WRITE setFilterText NOTIFY filterTextChanged)
     Q_PROPERTY(QString selectedCategory READ selectedCategory WRITE setSelectedCategory NOTIFY selectedCategoryChanged)
     Q_PROPERTY(QStringList availableCategories READ availableCategories NOTIFY availableCategoriesChanged)
+    Q_PROPERTY(bool onlyEquippedPackMods READ onlyEquippedPackMods WRITE setOnlyEquippedPackMods NOTIFY onlyEquippedPackModsChanged)
 
 public:
     enum ModRoles {
@@ -58,6 +59,10 @@ public:
 
     QStringList availableCategories() const { return availableCategories_; }
 
+    bool onlyEquippedPackMods() const { return onlyEquippedPackMods_; }
+    void setOnlyEquippedPackMods(bool only);
+    void setEquippedModIds(const QSet<QString>& ids);
+
     void setMods(const QVector<ModEntry>& mods);
     const QVector<ModEntry>& mods() const { return mods_; }
     const ModEntry* findMod(const QString& id) const;
@@ -77,6 +82,7 @@ signals:
     void filterTextChanged();
     void selectedCategoryChanged();
     void availableCategoriesChanged();
+    void onlyEquippedPackModsChanged();
     void modToggled(const QString& modId, bool enabled);
     void priorityChanged(const QString& modId, quint32 priority);
     void prioritiesSwapped(const QString& modIdA, quint32 priA, const QString& modIdB, quint32 priB);
@@ -90,6 +96,8 @@ private:
     QString filterText_;
     QString selectedCategory_{QStringLiteral("all")};
     QStringList availableCategories_;
+    bool onlyEquippedPackMods_{false};
+    QSet<QString> equippedModIds_;
 };
 
 /// QML-friendly List Model for individual asset files within one mod.
@@ -199,8 +207,12 @@ class GuiController : public QObject {
     Q_PROPERTY(QString currentModId READ currentModId NOTIFY currentModChanged)
     Q_PROPERTY(QString currentModName READ currentModName NOTIFY currentModChanged)
     Q_PROPERTY(QString currentModAuthor READ currentModAuthor NOTIFY currentModChanged)
+    Q_PROPERTY(QString currentModVersion READ currentModVersion NOTIFY currentModChanged)
     Q_PROPERTY(QString currentModDesc READ currentModDesc NOTIFY currentModChanged)
     Q_PROPERTY(QString currentModPreview READ currentModPreview NOTIFY currentModChanged)
+    Q_PROPERTY(int previewRevision READ previewRevision NOTIFY previewRevisionChanged)
+    Q_PROPERTY(bool hasEquippedPack READ hasEquippedPack NOTIFY equippedPackChanged)
+    Q_PROPERTY(QString equippedPackId READ equippedPackId NOTIFY equippedPackChanged)
     Q_PROPERTY(QString currentModCategory READ currentModCategory NOTIFY currentModChanged)
     Q_PROPERTY(QString currentModSourceUrl READ currentModSourceUrl NOTIFY currentModChanged)
     Q_PROPERTY(QString currentModHomepage READ currentModHomepage NOTIFY currentModChanged)
@@ -243,8 +255,12 @@ public:
     QString currentModId() const { return currentModId_; }
     QString currentModName() const { return currentModName_; }
     QString currentModAuthor() const { return currentModAuthor_; }
+    QString currentModVersion() const { return currentModVersion_; }
     QString currentModDesc() const { return currentModDesc_; }
     QString currentModPreview() const { return currentModPreview_; }
+    int previewRevision() const { return previewRevision_; }
+    bool hasEquippedPack() const { return !equippedPackId_.isEmpty(); }
+    QString equippedPackId() const { return equippedPackId_; }
     QString currentModCategory() const { return currentModCategory_; }
     QString currentModSourceUrl() const { return currentModSourceUrl_; }
     QString currentModHomepage() const { return currentModHomepage_; }
@@ -271,9 +287,16 @@ public:
     Q_INVOKABLE void openModDetail(const QString& modId);
     Q_INVOKABLE void setModPreview(const QString& modId, const QString& imagePath);
     Q_INVOKABLE void setModSourceUrl(const QString& modId, const QString& url);
-    Q_INVOKABLE void updateModMetadata(const QString& modId, const QString& name, const QString& author,
+    Q_INVOKABLE void updateModMetadata(const QString& modId, const QString& newId,
+                                       const QString& name, const QString& author,
                                        const QString& version, const QString& category,
                                        const QString& description, const QString& sourceUrl);
+    Q_INVOKABLE void updateModMetadata(const QString& modId, const QString& name,
+                                       const QString& author, const QString& version,
+                                       const QString& category, const QString& description,
+                                       const QString& sourceUrl) {
+        updateModMetadata(modId, modId, name, author, version, category, description, sourceUrl);
+    }
     Q_INVOKABLE void deleteMod(const QString& modId);
     Q_INVOKABLE void deleteMods(const QStringList& modIds);
     Q_INVOKABLE void setModsEnabled(const QStringList& modIds, bool enabled);
@@ -287,6 +310,7 @@ public:
     Q_INVOKABLE void saveModPack(const QString& nameZh, const QString& descZh,
                                  const QString& nameEn = {}, const QString& descEn = {});
     Q_INVOKABLE void applyModPack(const QString& packId);
+    Q_INVOKABLE void deactivateModPack();
     Q_INVOKABLE void deleteModPack(const QString& packId);
     Q_INVOKABLE void exportModPack(const QString& packId, const QString& outputPath);
     Q_INVOKABLE void importModPack(const QString& packPath);
@@ -303,6 +327,8 @@ signals:
     void telemetryChanged();
     void doctorChanged();
     void currentModChanged();
+    void previewRevisionChanged();
+    void equippedPackChanged();
     void assetCountsChanged();
     void notification(const QString& type, const QString& message);
 
@@ -324,10 +350,15 @@ private:
     int deployedFiles_{16};
     quint64 bytesSaved_{4820000000ULL};
     int conflictCount_{0};
+    int previewRevision_{0};
+    QString equippedPackId_;
+
+    void updateEquippedModIds();
 
     QString currentModId_;
     QString currentModName_;
     QString currentModAuthor_;
+    QString currentModVersion_;
     QString currentModDesc_;
     QString currentModPreview_;
     QString currentModCategory_;

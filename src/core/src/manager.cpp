@@ -8,13 +8,105 @@
 #include "smm/error.hpp"
 #include "smm/loader.hpp"
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <wincodec.h>
+
+#pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "ole32.lib")
+
+namespace {
+
+bool is_webp_header(const smm::fs::path& p) {
+    std::ifstream f(p, std::ios::binary);
+    if (!f) return false;
+    char header[12];
+    if (f.read(header, 12)) {
+        return header[0] == 'R' && header[1] == 'I' && header[2] == 'F' && header[3] == 'F' &&
+               header[8] == 'W' && header[9] == 'E' && header[10] == 'B' && header[11] == 'P';
+    }
+    return false;
+}
+
+bool convert_to_standard_png_wic(const smm::fs::path& src_path, const smm::fs::path& dst_path) {
+    CoInitialize(NULL);
+    IWICImagingFactory* pFactory = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFactory));
+    if (FAILED(hr)) return false;
+
+    IWICBitmapDecoder* pDecoder = NULL;
+    hr = pFactory->CreateDecoderFromFilename(src_path.c_str(), NULL, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &pDecoder);
+    if (FAILED(hr)) { pFactory->Release(); return false; }
+
+    IWICBitmapFrameDecode* pFrame = NULL;
+    hr = pDecoder->GetFrame(0, &pFrame);
+    if (FAILED(hr)) { pDecoder->Release(); pFactory->Release(); return false; }
+
+    IWICFormatConverter* pConverter = NULL;
+    hr = pFactory->CreateFormatConverter(&pConverter);
+    if (FAILED(hr)) { pFrame->Release(); pDecoder->Release(); pFactory->Release(); return false; }
+
+    hr = pConverter->Initialize(pFrame, GUID_WICPixelFormat32bppBGRA, WICBitmapDitherTypeNone, NULL, 0.0, WICBitmapPaletteTypeCustom);
+    if (FAILED(hr)) { pConverter->Release(); pFrame->Release(); pDecoder->Release(); pFactory->Release(); return false; }
+
+    IWICStream* pStream = NULL;
+    hr = pFactory->CreateStream(&pStream);
+    if (FAILED(hr)) { pConverter->Release(); pFrame->Release(); pDecoder->Release(); pFactory->Release(); return false; }
+
+    hr = pStream->InitializeFromFilename(dst_path.c_str(), GENERIC_WRITE);
+    if (FAILED(hr)) { pStream->Release(); pConverter->Release(); pFrame->Release(); pDecoder->Release(); pFactory->Release(); return false; }
+
+    IWICBitmapEncoder* pEncoder = NULL;
+    hr = pFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &pEncoder);
+    if (FAILED(hr)) { pStream->Release(); pConverter->Release(); pFrame->Release(); pDecoder->Release(); pFactory->Release(); return false; }
+
+    hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
+    if (FAILED(hr)) { pEncoder->Release(); pStream->Release(); pConverter->Release(); pFrame->Release(); pDecoder->Release(); return false; }
+
+    IWICBitmapFrameEncode* pOutFrame = NULL;
+    hr = pEncoder->CreateNewFrame(&pOutFrame, NULL);
+    if (FAILED(hr)) { pEncoder->Release(); pStream->Release(); pConverter->Release(); pFrame->Release(); pDecoder->Release(); return false; }
+
+    hr = pOutFrame->Initialize(NULL);
+    if (FAILED(hr)) { pOutFrame->Release(); pEncoder->Release(); pStream->Release(); pConverter->Release(); pFrame->Release(); pDecoder->Release(); return false; }
+
+    UINT width = 0, height = 0;
+    pFrame->GetSize(&width, &height);
+    pOutFrame->SetSize(width, height);
+
+    WICPixelFormatGUID format = GUID_WICPixelFormat32bppBGRA;
+    pOutFrame->SetPixelFormat(&format);
+
+    hr = pOutFrame->WriteSource(pConverter, NULL);
+    if (SUCCEEDED(hr)) {
+        pOutFrame->Commit();
+        pEncoder->Commit();
+    }
+
+    pOutFrame->Release();
+    pEncoder->Release();
+    pStream->Release();
+    pConverter->Release();
+    pFrame->Release();
+    pDecoder->Release();
+    pFactory->Release();
+    CoUninitialize();
+    return SUCCEEDED(hr);
+}
+
+} // namespace
+#endif
+
 namespace smm {
 
 fs::path ModManager::find_mod_dir(const fs::path& staging_dir, const std::string& mod_id) {
     std::error_code ec;
     if (!fs::exists(staging_dir, ec)) {
         fail(ErrorCode::Io,
-             "Staging directory does not exist: " + staging_dir.string(), staging_dir);
+             "Staging directory does not exist: " + path_to_utf8(staging_dir), staging_dir);
     }
 
     // Fast path: the directory is named after the id.
@@ -115,19 +207,34 @@ ModInfo ModManager::set_mod_preview(const fs::path& staging_dir, const std::stri
     const fs::path mod_dir = find_mod_dir(staging_dir, mod_id);
     std::error_code ec;
     if (!fs::exists(image_src_path, ec)) {
-        fail(ErrorCode::Io, "Preview image file does not exist: " + image_src_path.string(), image_src_path);
+        fail(ErrorCode::Io, "Preview image file does not exist: " + path_to_utf8(image_src_path), image_src_path);
     }
 
-    std::string ext = image_src_path.extension().string();
-    if (ext.empty()) {
-        ext = ".png";
-    }
-    const std::string filename = "preview" + ext;
-    const fs::path target_path = mod_dir / filename;
+    std::string ext = path_to_utf8(image_src_path.extension());
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
 
-    fs::copy_file(image_src_path, target_path, fs::copy_options::overwrite_existing, ec);
+    std::string filename = "preview.png";
+#ifdef _WIN32
+    bool converted = false;
+    if (ext == ".webp" || is_webp_header(image_src_path)) {
+        converted = convert_to_standard_png_wic(image_src_path, mod_dir / filename);
+    }
+    if (!converted) {
+        if (ext == ".jpg" || ext == ".jpeg") {
+            filename = "preview" + ext;
+        }
+        fs::copy_file(image_src_path, mod_dir / filename, fs::copy_options::overwrite_existing, ec);
+    }
+#else
+    if (!ext.empty()) {
+        filename = "preview" + ext;
+    }
+    fs::copy_file(image_src_path, mod_dir / filename, fs::copy_options::overwrite_existing, ec);
+#endif
     if (ec) {
-        fail(ErrorCode::Io, "Failed to copy preview image to staging: " + ec.message(), target_path);
+        fail(ErrorCode::Io, "Failed to copy preview image to staging: " + ec.message(), mod_dir / filename);
     }
 
     ModInfo info = ModLoader::load_mod_info(mod_dir);
@@ -232,10 +339,28 @@ void ModManager::save_mod_info(const fs::path& mod_dir, const ModInfo& info) {
             stream << payload;
             stream.flush();
             if (!stream) {
-                fail(ErrorCode::Io, "Failed to write mod metadata: " + meta_path.string(), meta_path);
+                fail(ErrorCode::Io, "Failed to write mod metadata: " + path_to_utf8(meta_path), meta_path);
             }
         }
     }
+}
+
+bool ModManager::normalize_preview_image(const fs::path& mod_dir, std::string& preview_name) {
+    if (preview_name.empty()) return false;
+    std::error_code ec;
+    const fs::path img_path = mod_dir / preview_name;
+    if (!fs::exists(img_path, ec)) return false;
+
+#ifdef _WIN32
+    if (preview_name.size() >= 5 && preview_name.substr(preview_name.size() - 5) == ".webp" || is_webp_header(img_path)) {
+        const fs::path png_path = mod_dir / "preview.png";
+        if (convert_to_standard_png_wic(img_path, png_path)) {
+            preview_name = "preview.png";
+            return true;
+        }
+    }
+#endif
+    return true;
 }
 
 } // namespace smm

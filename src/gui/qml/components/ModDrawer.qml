@@ -12,23 +12,57 @@ HusDrawer {
     implicitWidth: 500
     title: smmBackend ? smmBackend.currentModName : ""
 
-    function getDomainLabel(url) {
-        if (!url) return "";
+    function getDomainInfo(url) {
+        if (!url) return { label: "", icon: "", color: "" };
         const u = url.toLowerCase();
-        if (u.includes("nexusmods")) return "Nexus Mods";
-        if (u.includes("github")) return "GitHub";
-        if (u.includes("bilibili")) return "Bilibili";
-        return qsTr("官方/发布源");
+        if (u.includes("nexusmods.com")) {
+            return { label: "Nexus Mods", icon: "qrc:/images/icon_nexus.png", color: "#da8e35" };
+        }
+        if (u.includes("gamebanana.com")) {
+            return { label: "GameBanana", icon: "qrc:/images/icon_banana.png", color: "#facc15" };
+        }
+        if (u.includes("3dmgame.com")) {
+            return { label: "3DM Mods", icon: "qrc:/images/icon_3dm.png", color: "#ef4444" };
+        }
+        if (u.includes("bilibili.com") || u.includes("b23.tv")) {
+            return { label: "Bilibili", icon: "qrc:/images/icon_bilibili.svg", color: "#00aeec" };
+        }
+        if (u.includes("github.com")) {
+            return { label: "GitHub", icon: "qrc:/images/icon_github.svg", color: "#cbd5e1" };
+        }
+        return { label: qsTr("来源链接"), icon: "", color: HusTheme.Primary.colorPrimary };
+    }
+
+    function syncInputs() {
+        if (smmBackend) {
+            modIdInput.text = smmBackend.currentModId;
+            modNameInput.text = smmBackend.currentModName;
+            modAuthorInput.text = smmBackend.currentModAuthor;
+            modDescInput.text = smmBackend.currentModDesc;
+            sourceUrlInput.text = smmBackend.currentModSourceUrl;
+        }
+    }
+
+    onOpened: syncInputs()
+
+    Connections {
+        target: smmBackend
+        function onCurrentModChanged() {
+            rootDrawer.syncInputs();
+        }
     }
 
     FileDialog {
         id: imageFileDialog
         title: qsTr("选择模组预览背景图")
-        nameFilters: ["Images (*.png *.jpg *.jpeg *.webp)"]
+        nameFilters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
         onAccepted: {
             if (selectedFile) {
-                const path = selectedFile.toString().replace("file:///", "");
-                smmBackend.setModPreview(smmBackend.currentModId, path);
+                let p = selectedFile.toString();
+                if (p.startsWith("file:///")) p = p.substring(8);
+                else if (p.startsWith("file://")) p = p.substring(7);
+                p = decodeURIComponent(p).replace(/\//g, "\\");
+                smmBackend.setModPreview(smmBackend.currentModId, p);
             }
         }
     }
@@ -88,10 +122,12 @@ HusDrawer {
                     anchors.fill: parent
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
+                    cache: false
                     source: {
                         if (!smmBackend || !smmBackend.currentModPreview) return "";
                         const sDir = smmBackend.stagingDir.replace(/\\/g, "/");
-                        return "file:///" + sDir + "/" + smmBackend.currentModId + "/" + smmBackend.currentModPreview;
+                        const rev = smmBackend.previewRevision;
+                        return "file:///" + sDir + "/" + smmBackend.currentModId + "/" + smmBackend.currentModPreview + "?rev=" + rev;
                     }
                 }
 
@@ -134,39 +170,105 @@ HusDrawer {
             Layout.fillWidth: true
         }
 
-        // ------------------------------ 模组信息 ------------------------------
-        GridLayout {
+        // ------------------------------ 模组信息与元数据编辑 ------------------------------
+        ColumnLayout {
             Layout.fillWidth: true
-            columns: 2
-            rowSpacing: 6
-            columnSpacing: 16
+            spacing: 8
 
-            HusText {
-                text: qsTr("模组 ID")
-                font.pixelSize: 11
-                color: HusTheme.Primary.colorTextTertiary
-            }
-
-            HusText {
+            RowLayout {
                 Layout.fillWidth: true
-                text: smmBackend ? smmBackend.currentModId : ""
-                font.pixelSize: 12
-                color: HusTheme.Primary.colorTextPrimary
-                elide: Text.ElideRight
+
+                HusText {
+                    Layout.fillWidth: true
+                    text: qsTr("模组信息与元数据")
+                    font.pixelSize: 13
+                    font.bold: true
+                    color: HusTheme.Primary.colorTextPrimary
+                }
+
+                HusButton {
+                    implicitHeight: 26
+                    type: HusButton.Type_Primary
+                    text: qsTr("保存修改")
+                    onClicked: {
+                        if (smmBackend) {
+                            smmBackend.updateModMetadata(
+                                smmBackend.currentModId,
+                                modIdInput.text.trim(),
+                                modNameInput.text.trim(),
+                                modAuthorInput.text.trim(),
+                                smmBackend.currentModVersion,
+                                smmBackend.currentModCategory,
+                                modDescInput.text.trim(),
+                                sourceUrlInput.text.trim()
+                            );
+                        }
+                    }
+                }
             }
 
-            HusText {
-                text: qsTr("作者")
-                font.pixelSize: 11
-                color: HusTheme.Primary.colorTextTertiary
-            }
-
-            HusText {
+            GridLayout {
                 Layout.fillWidth: true
-                text: smmBackend ? smmBackend.currentModAuthor : ""
-                font.pixelSize: 12
-                color: HusTheme.Primary.colorTextPrimary
-                elide: Text.ElideRight
+                columns: 2
+                rowSpacing: 8
+                columnSpacing: 12
+
+                HusText {
+                    text: qsTr("模组 ID")
+                    font.pixelSize: 12
+                    color: HusTheme.Primary.colorTextTertiary
+                }
+
+                HusInput {
+                    id: modIdInput
+                    Layout.fillWidth: true
+                    implicitHeight: 28
+                    text: smmBackend ? smmBackend.currentModId : ""
+                    placeholderText: qsTr("唯一标识符 (例如: emma-evening-dress)")
+                }
+
+                HusText {
+                    text: qsTr("模组名称")
+                    font.pixelSize: 12
+                    color: HusTheme.Primary.colorTextTertiary
+                }
+
+                HusInput {
+                    id: modNameInput
+                    Layout.fillWidth: true
+                    implicitHeight: 28
+                    text: smmBackend ? smmBackend.currentModName : ""
+                    placeholderText: qsTr("显示名称…")
+                }
+
+                HusText {
+                    text: qsTr("作者")
+                    font.pixelSize: 12
+                    color: HusTheme.Primary.colorTextTertiary
+                }
+
+                HusInput {
+                    id: modAuthorInput
+                    Layout.fillWidth: true
+                    implicitHeight: 28
+                    text: smmBackend ? smmBackend.currentModAuthor : ""
+                    placeholderText: qsTr("作者署名…")
+                }
+
+                HusText {
+                    text: qsTr("描述")
+                    font.pixelSize: 12
+                    color: HusTheme.Primary.colorTextTertiary
+                    Layout.alignment: Qt.AlignTop
+                }
+
+                HusInput {
+                    id: modDescInput
+                    Layout.fillWidth: true
+                    implicitHeight: 32
+                    text: smmBackend ? smmBackend.currentModDesc : ""
+                    placeholderText: qsTr("模组功能说明与备注…")
+                }
             }
         }
 
@@ -207,6 +309,7 @@ HusDrawer {
 
             RowLayout {
                 Layout.fillWidth: true
+                spacing: 8
 
                 HusText {
                     Layout.fillWidth: true
@@ -216,10 +319,26 @@ HusDrawer {
                     color: HusTheme.Primary.colorTextPrimary
                 }
 
-                HusTag {
+                RowLayout {
                     Layout.alignment: Qt.AlignVCenter
-                    text: rootDrawer.getDomainLabel(smmBackend ? smmBackend.currentModSourceUrl : "")
+                    spacing: 4
                     visible: smmBackend && smmBackend.currentModSourceUrl !== ""
+
+                    readonly property var dInfo: rootDrawer.getDomainInfo(smmBackend ? smmBackend.currentModSourceUrl : "")
+
+                    Image {
+                        Layout.preferredWidth: 14
+                        Layout.preferredHeight: 14
+                        Layout.alignment: Qt.AlignVCenter
+                        source: parent.dInfo.icon
+                        visible: parent.dInfo.icon !== ""
+                    }
+
+                    HusTag {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: parent.dInfo.label
+                        colorText: parent.dInfo.color !== "" ? parent.dInfo.color : HusTheme.Primary.colorTextSecondary
+                    }
                 }
             }
 

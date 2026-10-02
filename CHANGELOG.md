@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.3.2] - 2026-10-02
+
+### Added
+
+- **Real-Time Preview Image Conversion & Healing**: Added native Windows Imaging Component (WIC) image normalizer in `smm_core`. Automatically converts WebP / corrupt image formats to standard PNG on upload and auto-heals legacy mod preview images. Integrated cache-busting revision tracking in QML for instant real-time UI feedback.
+- **Unequip Mod Pack Preset**: Added dedicated "Unequip Mod Pack" option in the preset view to disengage active preset locks and return to freeform mod management.
+- **Equipped Mod Pack Filter**: Added a toggle button in the mod management toolbar to view only mods belonging to the active mod pack, with $O(1)$ memory lookup.
+- **Mod Metadata Full Editing**: Added full editing for Mod ID, display name, author, and description in `ModDrawer` with automatic safe folder renaming in staging.
+- **Domain-Matched Source Icons**: Added automatic platform icon recognition for Nexus Mods, GameBanana, 3DM Mods, Bilibili, and GitHub with official brand assets.
+- **Streamlined Workflow Layout**: Relocated "Save Setup as Mod Pack" directly into the Armoury view toolbar next to batch operations.
+
 ## [0.3.1] - 2026-10-02
 
 ### Added
