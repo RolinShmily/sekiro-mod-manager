@@ -50,10 +50,9 @@ HusWindow {
 
         HusText {
             text: "SEKIRO MOD MANAGER"
-            font.family: "'Instrument Serif', 'Georgia', serif"
-            font.pixelSize: 15
+            font.pixelSize: 12
             font.bold: true
-            font.letterSpacing: 0.8
+            font.letterSpacing: 0.5
             color: HusTheme.Primary.colorTextPrimary
             verticalAlignment: Text.AlignVCenter
         }

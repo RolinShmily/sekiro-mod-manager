@@ -32,6 +32,11 @@ add_subdirectory(${SMM_HUSKAR_ROOT} ${CMAKE_BINARY_DIR}/huskarui EXCLUDE_FROM_AL
 
 qt_standard_project_setup(REQUIRES 6.5)
 
+set(SMM_GUI_RC "")
+if(WIN32)
+    set(SMM_GUI_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/smm_gui.rc")
+endif()
+
 qt_add_executable(smm_gui
     main.cpp
     backend/SmmClient.hpp
@@ -40,6 +45,7 @@ qt_add_executable(smm_gui
     backend/Models.cpp
     backend/UpdateManager.hpp
     backend/UpdateManager.cpp
+    ${SMM_GUI_RC}
 )
 
 qt_add_qml_module(smm_gui
@@ -102,15 +108,6 @@ qt_add_resources(smm_gui "smm_images"
         resources/images/sekiro_hero_art.png
         resources/images/sekiro_silvergrass.png
         resources/images/sekiro_mortal_blade.png
-)
-
-qt_add_resources(smm_gui "smm_fonts"
-    PREFIX "/fonts"
-    BASE "${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts"
-    FILES
-        resources/fonts/Inter.ttf
-        resources/fonts/JetBrainsMono.ttf
-        resources/fonts/InstrumentSerif-Regular.ttf
 )
 
 target_compile_definitions(smm_gui PRIVATE

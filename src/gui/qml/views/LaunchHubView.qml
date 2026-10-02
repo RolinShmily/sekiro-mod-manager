@@ -143,8 +143,7 @@ ScrollView {
 
                         HusText {
                             text: qsTr("隻狼：影逝二度")
-                            font.family: "'Noto Serif SC', 'Instrument Serif', 'Songti SC', 'SimSun', serif"
-                            font.pixelSize: 26
+                            font.pixelSize: 24
                             font.bold: true
                             color: HusTheme.Primary.colorTextPrimary
                         }
@@ -250,8 +249,7 @@ ScrollView {
 
                             HusText {
                                 text: smmBackend ? String(smmBackend.deployedFiles) : "0"
-                                font.family: "'JetBrains Mono', 'Cascadia Code', monospace"
-                                font.pixelSize: 26
+                                font.pixelSize: 24
                                 font.bold: true
                                 color: HusTheme.Primary.colorTextPrimary
                             }
@@ -268,8 +266,7 @@ ScrollView {
 
                             HusText {
                                 text: rootView.formatBytes(smmBackend ? smmBackend.bytesSaved : 0)
-                                font.family: "'JetBrains Mono', 'Cascadia Code', monospace"
-                                font.pixelSize: 26
+                                font.pixelSize: 24
                                 font.bold: true
                                 color: HusTheme.Primary.colorTextPrimary
                             }

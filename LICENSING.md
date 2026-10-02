@@ -34,20 +34,7 @@ Detailed third-party copyright texts, vendor notices, and build flags are provid
 
 ---
 
-## 3. Typography & Embedded Fonts
-
-SMM embeds and bundles open-source fonts licensed under the [SIL Open Font License 1.1 (OFL-1.1)](http://scripts.sil.org/OFL):
-
-| Font | Role in SMM | Copyright & Attribution | License |
-| :--- | :--- | :--- | :--- |
-| **Inter** | Latin body & interface prose text | Copyright (c) 2016-2023 The Inter Project Authors | **OFL-1.1** |
-| **JetBrains Mono** | Digits, metrics, code blocks & UI telemetry chrome | Copyright (c) 2020 The JetBrains Mono Authors | **OFL-1.1** |
-| **Instrument Serif** | Brand-only display serif headings | Copyright (c) 2022 The Instrument Serif Project Authors | **OFL-1.1** |
-| **Noto Sans SC** | Chinese typography fallback stack (via system / DirectWrite) | Copyright (c) 2014-2025 Adobe, Google, and the Noto Project Authors | **OFL-1.1** |
-
----
-
-## 4. Sekiro Mod Engine (ModEngine) is NOT Bundled
+## 3. Sekiro Mod Engine (ModEngine) is NOT Bundled
 
 Sekiro Mod Engine (`dinput8.dll`) created by **katalash** is proprietary third-party software with **no published open-source license**:
 - Its repository contains no `LICENSE` file.
@@ -59,14 +46,14 @@ SMM **never embeds, bundles, or redistributes** any `dinput8.dll` binary. Instea
 
 ---
 
-## 5. Community Mods & User Content
+## 4. Community Mods & User Content
 
 - Any mod packages installed, staged, imported, or deployed via SMM remain the intellectual property of their respective creators under their original licenses (e.g. Creative Commons, NexusMods Custom, Permissive).
 - SMM acts solely as a local file management and linking utility; it does not relicense, claim ownership of, or sublicense user mod content.
 
 ---
 
-## 6. Trademarks & Disclaimer
+## 5. Trademarks & Disclaimer
 
 *Sekiro: Shadows Die Twice* is a registered trademark of FromSoftware, Inc. and Activision.
 Sekiro Mod Manager (SMM) is an independent, unofficial community tool created by fans and contributors. It is not affiliated with, endorsed by, or sponsored by FromSoftware, Inc., Activision, or any of their affiliates.
