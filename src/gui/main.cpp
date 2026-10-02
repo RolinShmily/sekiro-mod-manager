@@ -16,6 +16,7 @@ Q_IMPORT_QML_PLUGIN(HuskarUI_BasicPlugin)
 
 #include <QTimer>
 #include <QTranslator>
+#include <QFontDatabase>
 #include "backend/Models.hpp"
 
 #include <theme/hustheme.h>
@@ -53,12 +54,20 @@ int main(int argc, char* argv[]) {
     devMode = true;
 #endif
 
+    // 注册全局字体族（按角色严谨搭配）：
+    // - Inter: 拉丁正文 / 界面排版 (Latin body/prose text)
+    // - JetBrains Mono: 界面数据、版本号、路径与代码度量 (Latin/digits in code blocks and UI chrome)
+    // - Instrument Serif: 品牌展示衬线体 (brand-only display serif)
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/Inter.ttf"));
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/JetBrainsMono.ttf"));
+    QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/InstrumentSerif-Regular.ttf"));
+
     // 必须在 QML 引擎加载前完成主题安装，避免首帧闪烁与配色错乱
     HusTheme::instance()->setDarkMode(themeMode);
     // 水墨泥金：经典金碧水墨与和风素雅强调色（替代过艳的深红，呈现淡雅沉稳质感）
     HusTheme::instance()->installThemePrimaryColorBase(QColor(QStringLiteral("#c29f5d")));
     HusTheme::instance()->installThemePrimaryFontFamiliesBase(
-        QStringLiteral("'Microsoft YaHei UI', 'Segoe UI', 'Noto Sans SC', sans-serif"));
+        QStringLiteral("'Inter', 'Noto Sans SC', 'Segoe UI', 'Microsoft YaHei UI', sans-serif"));
     HusTheme::instance()->installThemePrimaryFontSizeBase(14);
 
     QQmlApplicationEngine engine;

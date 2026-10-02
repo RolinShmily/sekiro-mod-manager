@@ -104,6 +104,15 @@ qt_add_resources(smm_gui "smm_images"
         resources/images/sekiro_mortal_blade.png
 )
 
+qt_add_resources(smm_gui "smm_fonts"
+    PREFIX "/fonts"
+    BASE "${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts"
+    FILES
+        resources/fonts/Inter.ttf
+        resources/fonts/JetBrainsMono.ttf
+        resources/fonts/InstrumentSerif-Regular.ttf
+)
+
 target_compile_definitions(smm_gui PRIVATE
     BUILD_HUSKARUI_STATIC_LIBRARY
     SMM_VERSION_STRING="${PROJECT_VERSION}"

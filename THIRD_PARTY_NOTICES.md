@@ -48,6 +48,26 @@ below. Each component's full licence text is kept next to its source.
   re-checked-out from upstream, this patch must be reapplied or a `block`-mode `HusSegmented`
   will crash the GUI on open.
 
+## Typography & Embedded Fonts
+
+### Inter
+- **Upstream:** https://github.com/rsms/inter
+- **Copyright:** (c) 2016-2023 The Inter Project Authors
+- **Licence:** SIL Open Font License, Version 1.1 (OFL-1.1)
+- **Role:** Latin body text and interface prose.
+
+### JetBrains Mono
+- **Upstream:** https://github.com/JetBrains/JetBrainsMono
+- **Copyright:** (c) 2020 The JetBrains Mono Authors
+- **Licence:** SIL Open Font License, Version 1.1 (OFL-1.1)
+- **Role:** Digits, telemetry metrics, code paths, version badges, and monospace alignment.
+
+### Instrument Serif
+- **Upstream:** https://github.com/googlefonts/instrument-serif
+- **Copyright:** (c) 2022 The Instrument Serif Project Authors
+- **Licence:** SIL Open Font License, Version 1.1 (OFL-1.1)
+- **Role:** Brand titles and display headings.
+
 ## Not bundled, on purpose
 
 ### ModEngine (dinput8.dll)

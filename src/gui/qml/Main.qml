@@ -42,8 +42,6 @@ HusWindow {
             Layout.alignment: Qt.AlignVCenter
             Layout.preferredWidth: 26
             Layout.preferredHeight: 26
-            width: 26
-            height: 26
             source: "qrc:/images/sekiro_icon_64.png"
             fillMode: Image.PreserveAspectFit
             smooth: true
@@ -52,9 +50,10 @@ HusWindow {
 
         HusText {
             text: "SEKIRO MOD MANAGER"
-            font.pixelSize: 12
+            font.family: "'Instrument Serif', 'Georgia', serif"
+            font.pixelSize: 15
             font.bold: true
-            font.letterSpacing: 0.4
+            font.letterSpacing: 0.8
             color: HusTheme.Primary.colorTextPrimary
             verticalAlignment: Text.AlignVCenter
         }
