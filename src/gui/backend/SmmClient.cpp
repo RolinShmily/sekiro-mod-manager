@@ -24,18 +24,19 @@ namespace smm::gui {
 namespace {
 
 fs::path toStdPath(const QString& qpath) {
+    QString p = QDir::toNativeSeparators(qpath.trimmed());
 #ifdef _WIN32
-    return fs::path(qpath.toStdWString());
+    return fs::path(p.toStdWString());
 #else
-    return fs::path(qpath.toStdString());
+    return fs::path(p.toStdString());
 #endif
 }
 
 QString toQString(const fs::path& p) {
 #ifdef _WIN32
-    return QString::fromStdWString(p.wstring());
+    return QDir::toNativeSeparators(QString::fromStdWString(p.wstring()));
 #else
-    return QString::fromStdString(p.string());
+    return QString::fromStdString(path_to_utf8(p));
 #endif
 }
 

@@ -214,7 +214,7 @@ ProcessResult run_captured(const fs::path& exe, const std::vector<std::wstring>&
 
 ProcessResult run_captured(const fs::path& exe, const std::vector<std::wstring>& args) {
     ProcessResult result;
-    std::string command = "'" + exe.string() + "'";
+    std::string command = "'" + path_to_utf8(exe) + "'";
     for (const auto& arg : args) {
         std::string narrow;
         narrow.reserve(arg.size());
@@ -330,7 +330,7 @@ void extract_with_external(const fs::path& tool, const fs::path& archive, const 
     const ProcessResult result = run_captured(tool, args);
     if (!result.started) {
         fail(ErrorCode::ExtractionError,
-             std::string("Failed to execute ") + tool_label + " (" + tool.string() + ").", tool);
+             std::string("Failed to execute ") + tool_label + " (" + path_to_utf8(tool) + ").", tool);
     }
     if (result.exit_code != 0) {
         const std::string detail = tail_of(result.output);
@@ -360,7 +360,7 @@ ArchiveFormat detect_archive_format(const fs::path& path) {
         return ArchiveFormat::Unknown;
     }
 
-    const std::string extension = to_lower_ascii(path.extension().string());
+    const std::string extension = to_lower_ascii(path_to_utf8(path.extension()));
     if (extension == ".zip") {
         return ArchiveFormat::Zip;
     }
@@ -545,7 +545,7 @@ void extract_rar(const fs::path& archive, const fs::path& dest_dir) {
         const ProcessResult result = run_captured(unrar, args);
         if (!result.started) {
             fail(ErrorCode::ExtractionError,
-                 "Failed to execute the unrar tool (" + unrar.string() + ").", unrar);
+                 "Failed to execute the unrar tool (" + path_to_utf8(unrar) + ").", unrar);
         }
         if (result.exit_code != 0) {
             const std::string detail = tail_of(result.output);

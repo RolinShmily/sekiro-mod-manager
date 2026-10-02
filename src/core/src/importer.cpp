@@ -114,7 +114,7 @@ void copy_dir_recursive(const fs::path& source, const fs::path& destination) {
                 }
                 fs::copy_file(path, target, fs::copy_options::overwrite_existing, ec);
                 if (ec) {
-                    fail(ErrorCode::Io, "Failed to copy '" + path.string() + "': " + ec.message(),
+                    fail(ErrorCode::Io, "Failed to copy '" + path_to_utf8(path) + "': " + ec.message(),
                          path);
                 }
             }
@@ -162,7 +162,7 @@ std::vector<std::pair<std::string, fs::path>> collect_documentation_files_impl(c
             bool in_hidden_dir = false;
             if (!rel_ec) {
                 for (const auto& part : relative.parent_path()) {
-                    const std::string piece = part.string();
+                    const std::string piece = path_to_utf8(part);
                     if (piece.size() > 1 && piece.front() == '.') {
                         in_hidden_dir = true;
                         break;
@@ -170,7 +170,7 @@ std::vector<std::pair<std::string, fs::path>> collect_documentation_files_impl(c
                 }
             }
             if (!in_hidden_dir) {
-                const std::string name = path.filename().string();
+                const std::string name = path_to_utf8(path.filename());
                 const std::string lower = to_lower_ascii(name);
                 if (starts_with(lower, "readme") || starts_with(lower, "license") ||
                     starts_with(lower, "licence") || starts_with(lower, "changelog") ||
@@ -248,7 +248,7 @@ fs::path pick_primary_nested_archive(const std::vector<fs::path>& archives) {
 
     for (const std::string_view keyword : kKeywords) {
         const auto it = std::find_if(archives.begin(), archives.end(), [keyword](const fs::path& p) {
-            return to_lower_ascii(p.filename().string()).find(keyword) != std::string::npos;
+            return to_lower_ascii(path_to_utf8(p.filename())).find(keyword) != std::string::npos;
         });
         if (it != archives.end()) {
             return *it;
@@ -318,7 +318,7 @@ ModInfo derive_mod_info(const fs::path& source, const std::vector<AssetEntry>& a
     if (source.has_extension()) {
         stem_path = source.stem();
     }
-    const std::string stem = stem_path.string();
+    const std::string stem = path_to_utf8(stem_path);
 
     ModInfo info;
     info.id = options.id.value_or(slugify(stem));
@@ -327,7 +327,7 @@ ModInfo derive_mod_info(const fs::path& source, const std::vector<AssetEntry>& a
     info.author = "Unknown";
     info.category = infer_category(assets);
     info.priority = options.priority.value_or(default_priority_for_category(info.category));
-    info.description = "Imported package from " + source.filename().string();
+    info.description = "Imported package from " + path_to_utf8(source.filename());
     info.source_url = options.source_url;
     info.enabled = true;
     return info;
@@ -391,7 +391,7 @@ void move_into_staging(const fs::path& build_dir, const fs::path& target_dir, bo
     if (fs::exists(target_dir, ec)) {
         if (!overwrite) {
             fail(ErrorCode::ModAlreadyExists,
-                 "A mod with this id is already staged: " + target_dir.filename().string(),
+                 "A mod with this id is already staged: " + path_to_utf8(target_dir.filename()),
                  target_dir);
         }
         fs::remove_all(target_dir, ec);
@@ -609,7 +609,7 @@ uint32_t default_priority_for_category(std::string_view category) {
 void to_json(json& j, const ImportResult& r) {
     j = json{
         {"mod", r.info},
-        {"mod_dir", r.mod_dir.string()},
+        {"mod_dir", path_to_utf8(r.mod_dir)},
         {"asset_count", r.asset_count},
         {"ignored_count", r.ignored_count},
         {"total_bytes", r.total_bytes},
@@ -623,7 +623,7 @@ ImportResult import_mod(const fs::path& source, const fs::path& staging_dir,
                         const ImportOptions& options) {
     std::error_code ec;
     if (!fs::exists(source, ec)) {
-        fail(ErrorCode::Io, "Source path does not exist: " + source.string(), source);
+        fail(ErrorCode::Io, "Source path does not exist: " + path_to_utf8(source), source);
     }
 
     fs::create_directories(staging_dir, ec);
@@ -717,7 +717,7 @@ ImportResult import_multiple_files_as_mod(const std::vector<fs::path>& files,
     for (std::size_t index = 0; index < files.size(); ++index) {
         const fs::path& source = files[index];
         if (!fs::exists(source, ec)) {
-            fail(ErrorCode::Io, "Source path does not exist: " + source.string(), source);
+            fail(ErrorCode::Io, "Source path does not exist: " + path_to_utf8(source), source);
         }
 
         if (fs::is_regular_file(source, ec)) {
@@ -741,7 +741,7 @@ ImportResult import_multiple_files_as_mod(const std::vector<fs::path>& files,
 
         for (const fs::path& archive : find_nested_archives(item_unpack)) {
             const fs::path nested_out =
-                workspace.path() / ("item_" + std::to_string(index) + "_" + archive.stem().string());
+                workspace.path() / ("item_" + std::to_string(index) + "_" + path_to_utf8(archive.stem()));
             try {
                 extract_archive(archive, nested_out);
                 copy_dir_recursive(nested_out, item_unpack);
@@ -780,7 +780,7 @@ ImportResult import_multiple_files_as_mod(const std::vector<fs::path>& files,
     const fs::path first_stem = files.front().has_extension() ? files.front().stem()
                                                              : files.front().filename();
     const std::string default_name =
-        options.name.value_or("Merged - " + humanize_name(first_stem.string()));
+        options.name.value_or("Merged - " + humanize_name(path_to_utf8(first_stem)));
 
     ModInfo info;
     info.id = options.id.value_or(slugify(default_name));

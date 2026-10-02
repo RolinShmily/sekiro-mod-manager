@@ -30,13 +30,13 @@ ModInfo ModLoader::load_mod_info(const fs::path& mod_dir) {
         meta_path = mod_dir / "mod.json";
         if (!fs::exists(meta_path, ec)) {
             fail(ErrorCode::MetadataNotFound,
-                 "No mod metadata (.smm_mod.json or mod.json) in " + mod_dir.string(), mod_dir);
+                 "No mod metadata (.smm_mod.json or mod.json) in " + path_to_utf8(mod_dir), mod_dir);
         }
     }
 
     std::ifstream stream(meta_path, std::ios::binary);
     if (!stream) {
-        fail(ErrorCode::Io, "Cannot open mod metadata: " + meta_path.string(), meta_path);
+        fail(ErrorCode::Io, "Cannot open mod metadata: " + path_to_utf8(meta_path), meta_path);
     }
 
     json parsed;
@@ -58,7 +58,7 @@ ModInfo ModLoader::load_mod_info(const fs::path& mod_dir) {
     if (info.id.empty()) {
         // A mod without an id cannot be addressed by any other command, so the directory
         // name is the only sane fallback.
-        info.id = mod_dir.filename().string();
+        info.id = path_to_utf8(mod_dir.filename());
     }
     info.root_path = mod_dir;
 
@@ -103,7 +103,7 @@ ScanOutcome ModLoader::scan_mods_directory(const fs::path& staging_dir) {
     std::error_code ec;
     if (!fs::exists(staging_dir, ec)) {
         fail(ErrorCode::Io,
-             "Staging directory does not exist: " + staging_dir.string(), staging_dir);
+             "Staging directory does not exist: " + path_to_utf8(staging_dir), staging_dir);
     }
 
     ScanOutcome outcome;
@@ -130,7 +130,7 @@ ScanOutcome ModLoader::scan_mods_directory(const fs::path& staging_dir) {
         return a.info.id < b.info.id;
     });
     std::sort(outcome.failures.begin(), outcome.failures.end(), [](const ScanFailure& a, const ScanFailure& b) {
-        return a.path.string() < b.path.string();
+        return a.path.native() < b.path.native();
     });
 
     return outcome;

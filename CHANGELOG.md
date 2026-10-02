@@ -25,6 +25,8 @@ summary; `git log` remains the authoritative record.
 - **Settings Scoped ID Resolution**: Fixed `ReferenceError: stagingDirInput is not defined` by managing pending states on the root modal across independent delegates.
 - **Responsive Toolbar Layout**: Restructured mod management toolbar into a two-row responsive layout, preventing right-edge truncation of view toggles and action buttons on narrow windows.
 - **Mod Pack Card Visual Overhaul**: Redesigned preset cards to 156px compact cards with mod count tags, status badges, elegant fallback descriptions, and refined primary action buttons.
+- **Unicode/Code Page Immunity**: Replaced ANSI code page conversions with Win32 CP_UTF8 conversions via `path_to_utf8` and `utf8_to_path`, completely resolving 'No mapping for the Unicode character exists in the target multi-byte code page' and restoring full compatibility with legacy mod repositories.
+- **Path Normalization & Multi-Archive Batch Import**: Unified directory path separators to native Windows backslashes with URL percent-encoding decoding; enabled multi-file selection in `FileDialog` for batch archive importing.
 
 ## [0.3.0] - 2026-10-02
 

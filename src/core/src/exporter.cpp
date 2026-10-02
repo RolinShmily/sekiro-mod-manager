@@ -265,7 +265,7 @@ void add_docs_and_source(ZipWriter& writer, const std::string& prefix, const fs:
             std::error_code rel_ec;
             const fs::path relative = fs::relative(it->path(), source_dir, rel_ec);
             if (!rel_ec) {
-                writer.add_file(prefix + ".smm_source/" + to_archive_path(relative.string()),
+                writer.add_file(prefix + ".smm_source/" + to_archive_path(path_to_utf8(relative)),
                                 it->path());
             }
         }
@@ -285,7 +285,7 @@ fs::path find_manifest_file(const fs::path& root) {
     while (!ec && it != end) {
         std::error_code type_ec;
         if (it->is_regular_file(type_ec) && !type_ec) {
-            std::string name = it->path().filename().string();
+            std::string name = path_to_utf8(it->path().filename());
             std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
                 return static_cast<char>(std::tolower(c));
             });
@@ -406,7 +406,7 @@ fs::path export_single_mod(const fs::path& staging_dir, const std::string& mod_i
 
     fs::path final_path = resolve_output_path(output_file, ".zip");
     if (final_path.has_extension() &&
-        !ends_with_ignore_case(final_path.extension().string(), ".zip")) {
+        !ends_with_ignore_case(path_to_utf8(final_path.extension()), ".zip")) {
         final_path.replace_extension(".zip");
     }
 
@@ -468,7 +468,7 @@ fs::path export_modpack(const fs::path& staging_dir, const std::vector<std::stri
 
     fs::path final_path = resolve_output_path(output_file, ".smmpack");
     if (final_path.has_extension() &&
-        !ends_with_ignore_case(final_path.extension().string(), ".smmpack")) {
+        !ends_with_ignore_case(path_to_utf8(final_path.extension()), ".smmpack")) {
         final_path.replace_extension(".smmpack");
     }
 
@@ -502,7 +502,7 @@ ModPackImportResult import_modpack(const fs::path& pack_file, const fs::path& st
                                    bool overwrite) {
     std::error_code ec;
     if (!fs::exists(pack_file, ec)) {
-        fail(ErrorCode::Io, "Modpack file does not exist: " + pack_file.string(), pack_file);
+        fail(ErrorCode::Io, "Modpack file does not exist: " + path_to_utf8(pack_file), pack_file);
     }
 
     fs::create_directories(staging_dir, ec);

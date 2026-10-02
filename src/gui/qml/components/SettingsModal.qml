@@ -17,9 +17,21 @@ HusModal {
     property string pendingGameDir: ""
     property string pendingLanguage: "zh-CN"
 
+    function cleanLocalPath(urlVal) {
+        if (!urlVal) return "";
+        let s = urlVal.toString();
+        if (s.startsWith("file:///")) {
+            s = s.substring(8);
+        } else if (s.startsWith("file://")) {
+            s = s.substring(7);
+        }
+        s = decodeURIComponent(s);
+        return s.replace(/\//g, "\\");
+    }
+
     onOpened: {
-        pendingStagingDir = smmBackend ? smmBackend.stagingDir : "";
-        pendingGameDir = smmBackend ? smmBackend.sekiroDir : "";
+        pendingStagingDir = cleanLocalPath(smmBackend ? smmBackend.stagingDir : "");
+        pendingGameDir = cleanLocalPath(smmBackend ? smmBackend.sekiroDir : "");
         pendingLanguage = smmBackend ? smmBackend.language : "zh-CN";
     }
 
@@ -65,8 +77,8 @@ HusModal {
                 onClicked: {
                     if (smmBackend) {
                         smmBackend.saveSettings(
-                            rootModal.pendingStagingDir.trim(),
-                            rootModal.pendingGameDir.trim(),
+                            rootModal.cleanLocalPath(rootModal.pendingStagingDir.trim()),
+                            rootModal.cleanLocalPath(rootModal.pendingGameDir.trim()),
                             rootModal.pendingLanguage
                         );
                     }
@@ -85,7 +97,7 @@ HusModal {
             title: qsTr("选择只狼游戏安装根目录")
             onAccepted: {
                 if (selectedFolder) {
-                    rootModal.pendingGameDir = selectedFolder.toString().replace("file:///", "");
+                    rootModal.pendingGameDir = rootModal.cleanLocalPath(selectedFolder);
                 }
             }
         }
@@ -95,7 +107,7 @@ HusModal {
             title: qsTr("选择模组暂存区目录")
             onAccepted: {
                 if (selectedFolder) {
-                    rootModal.pendingStagingDir = selectedFolder.toString().replace("file:///", "");
+                    rootModal.pendingStagingDir = rootModal.cleanLocalPath(selectedFolder);
                 }
             }
         }
@@ -154,7 +166,7 @@ HusModal {
                         if (smmBackend) {
                             const detected = smmBackend.detectSekiroDir();
                             if (detected && detected !== "") {
-                                rootModal.pendingGameDir = detected;
+                                rootModal.pendingGameDir = rootModal.cleanLocalPath(detected);
                             } else {
                                 smmBackend.autoDetectGameDir();
                             }

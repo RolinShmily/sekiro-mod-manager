@@ -6,7 +6,41 @@
 #include <cstdio>
 #include <string>
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
 namespace smm {
+
+std::string path_to_utf8(const fs::path& p) {
+#ifdef _WIN32
+    const std::wstring ws = p.native();
+    if (ws.empty()) return {};
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, ws.data(), static_cast<int>(ws.size()), NULL, 0, NULL, NULL);
+    if (size_needed <= 0) return {};
+    std::string str(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, ws.data(), static_cast<int>(ws.size()), &str[0], size_needed, NULL, NULL);
+    return str;
+#else
+    return p.string();
+#endif
+}
+
+fs::path utf8_to_path(const std::string& str) {
+#ifdef _WIN32
+    if (str.empty()) return {};
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0);
+    if (size_needed <= 0) return {};
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), &wstr[0], size_needed);
+    return fs::path(wstr);
+#else
+    return fs::path(str);
+#endif
+}
 namespace {
 
 /// Field helper: read an optional string member, tolerating both absent and null.
@@ -235,7 +269,7 @@ void from_json(const json& j, ModInfo& m) {
 void to_json(json& j, const AssetEntry& a) {
     j = json{
         {"relative_path", a.relative_path},
-        {"source_path", a.source_path.string()},
+        {"source_path", path_to_utf8(a.source_path)},
         {"file_size", a.file_size},
         {"category", to_string(a.category)},
         {"is_critical", a.is_critical},
@@ -246,7 +280,7 @@ void to_json(json& j, const AssetEntry& a) {
 
 void from_json(const json& j, AssetEntry& a) {
     a.relative_path = j.value("relative_path", std::string{});
-    a.source_path = fs::path(j.value("source_path", std::string{}));
+    a.source_path = utf8_to_path(j.value("source_path", std::string{}));
     a.file_size = j.value("file_size", uint64_t{0});
     a.category = asset_category_from_string(j.value("category", std::string{"other"}));
     a.is_critical = j.value("is_critical", is_critical_asset(a.relative_path));

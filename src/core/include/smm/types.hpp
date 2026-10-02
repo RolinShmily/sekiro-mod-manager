@@ -32,6 +32,13 @@ enum class ModCategory {
 std::string to_string(ModCategory category);
 ModCategory mod_category_from_string(std::string_view text);
 
+/// Converts a std::filesystem::path to a UTF-8 encoded std::string safely across all platforms.
+/// On Windows, this completely prevents "No mapping for the Unicode character exists in the target multi-byte code page".
+std::string path_to_utf8(const fs::path& p);
+
+/// Converts a UTF-8 encoded std::string to a std::filesystem::path.
+fs::path utf8_to_path(const std::string& str);
+
 /// Metadata describing a Sekiro mod package.
 ///
 /// Persisted to disk twice - as `.smm_mod.json` (SMM's own, authoritative) and as

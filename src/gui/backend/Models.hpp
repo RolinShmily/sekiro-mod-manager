@@ -291,6 +291,7 @@ public:
     Q_INVOKABLE void exportModPack(const QString& packId, const QString& outputPath);
     Q_INVOKABLE void importModPack(const QString& packPath);
     Q_INVOKABLE void importArchive(const QString& archivePath);
+    Q_INVOKABLE void importArchives(const QStringList& archivePaths);
 
 signals:
     void busyChanged();

@@ -66,7 +66,7 @@ std::string to_slash_path(const fs::path& path) {
         if (!result.empty()) {
             result.push_back('/');
         }
-        result.append(part.string());
+        result.append(path_to_utf8(part));
     }
     return result;
 }
@@ -243,7 +243,7 @@ std::string Normalizer::normalize_relative_path(std::string_view rel_path) {
 }
 
 bool Normalizer::is_ignored_file(const fs::path& path, const fs::path& canonical_root) {
-    const std::string file_name = path.filename().string();
+    const std::string file_name = path_to_utf8(path.filename());
     const std::string lower = to_lower_ascii(file_name);
 
     if (!file_name.empty() && file_name.front() == '.') {
@@ -267,7 +267,7 @@ bool Normalizer::is_ignored_file(const fs::path& path, const fs::path& canonical
             return true;
         }
         for (const auto& part : relative) {
-            const std::string name = part.string();
+            const std::string name = path_to_utf8(part);
             if (name.size() > 1 && name.front() == '.') {
                 return true;
             }
@@ -311,7 +311,7 @@ std::size_t count_canonical_anchors(const fs::path& dir) {
 
     std::size_t count = 0;
     for (const auto& entry : it) {
-        const std::string name = to_lower_ascii(entry.path().filename().string());
+        const std::string name = to_lower_ascii(path_to_utf8(entry.path().filename()));
         std::error_code type_ec;
         if (entry.is_directory(type_ec) && !type_ec) {
             bool matched = false;
@@ -395,7 +395,7 @@ bool contains_signature_files(const fs::path& dir) {
         if (!entry.is_regular_file(type_ec) || type_ec) {
             continue;
         }
-        if (looks_like_asset_file(to_lower_ascii(entry.path().filename().string()))) {
+        if (looks_like_asset_file(to_lower_ascii(path_to_utf8(entry.path().filename())))) {
             return true;
         }
     }

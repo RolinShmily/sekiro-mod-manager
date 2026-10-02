@@ -65,12 +65,24 @@ ColumnLayout {
 
     FileDialog {
         id: archiveDialog
-        title: qsTr("选择要导入的模组压缩包")
-        nameFilters: ["Mod Archives (*.zip *.7z *.rar)"]
+        title: qsTr("选择要导入的模组压缩包（支持多选批量导入）")
+        fileMode: FileDialog.OpenFiles
+        nameFilters: ["Mod Archives (*.zip *.7z *.rar)", "All Files (*.*)"]
         onAccepted: {
-            if (selectedFile) {
-                const path = selectedFile.toString().replace("file:///", "");
-                smmBackend.importArchive(path);
+            if (selectedFiles && selectedFiles.length > 0) {
+                let paths = [];
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    let p = selectedFiles[i].toString();
+                    if (p.startsWith("file:///")) {
+                        p = p.substring(8);
+                    } else if (p.startsWith("file://")) {
+                        p = p.substring(7);
+                    }
+                    p = decodeURIComponent(p);
+                    p = p.replace(/\//g, "\\");
+                    paths.push(p);
+                }
+                smmBackend.importArchives(paths);
             }
         }
     }

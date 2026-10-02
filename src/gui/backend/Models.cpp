@@ -651,7 +651,27 @@ void GuiController::importModPack(const QString& packPath) {
 }
 
 void GuiController::importArchive(const QString& archivePath) {
-    client_.importPaths({archivePath}, {}, {}, true);
+    importArchives({archivePath});
+}
+
+void GuiController::importArchives(const QStringList& archivePaths) {
+    QStringList cleanPaths;
+    for (const auto& raw : archivePaths) {
+        QString s = raw.trimmed();
+        if (s.startsWith(QStringLiteral("file:///"))) {
+            s = s.mid(8);
+        } else if (s.startsWith(QStringLiteral("file://"))) {
+            s = s.mid(7);
+        }
+        s = QUrl::fromPercentEncoding(s.toUtf8());
+        s = QDir::toNativeSeparators(s);
+        if (!s.isEmpty()) {
+            cleanPaths.append(s);
+        }
+    }
+    if (!cleanPaths.isEmpty()) {
+        client_.importPaths(cleanPaths, {}, {}, true);
+    }
 }
 
 QVariantList GuiController::healthItems() const {
