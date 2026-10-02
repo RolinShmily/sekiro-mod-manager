@@ -38,6 +38,12 @@ jobs:
         with:
           version: 1.11.1
 
+      - name: Setup Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
@@ -58,32 +64,50 @@ jobs:
         run: |
           cmake --build build --config Release
 
-      - name: Package Standalone GUI with windeployqt
+      - name: Package CLI, GUI, and Setup Installer
         shell: pwsh
         run: |
           $qtBin = "$env:QT_ROOT_DIR/bin"
-          $outDir = "dist/SekiroModManager-${{ github.ref_name }}"
-          New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-          
-          Copy-Item "build/src/gui/smm_gui.exe" -Destination "$outDir/SekiroModManager.exe"
-          Copy-Item "build/src/cli/smm.exe" -Destination "$outDir/smm.exe"
-          Copy-Item "LICENSE" -Destination "$outDir/"
-          Copy-Item "THIRD_PARTY_NOTICES.md" -Destination "$outDir/"
-          Copy-Item "README.md" -Destination "$outDir/"
-          Copy-Item "README.zh-CN.md" -Destination "$outDir/"
+          New-Item -ItemType Directory -Path "dist" -Force | Out-Null
 
-          & "$qtBin/windeployqt.exe" --qmldir "src/gui/qml" --release --no-translations --compiler-runtime "$outDir/SekiroModManager.exe"
+          # 1. Package Standalone CLI Tool
+          $cliDir = "dist/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-cli"
+          New-Item -ItemType Directory -Path $cliDir -Force | Out-Null
+          Copy-Item "build/src/cli/smm.exe" -Destination "$cliDir/smm.exe"
+          Copy-Item "LICENSE" -Destination "$cliDir/"
+          Copy-Item "THIRD_PARTY_NOTICES.md" -Destination "$cliDir/"
+          Copy-Item "README.md" -Destination "$cliDir/"
+          Copy-Item "README.zh-CN.md" -Destination "$cliDir/"
+          $cliZip = "dist/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-cli.zip"
+          Compress-Archive -Path "$cliDir" -DestinationPath $cliZip -Force
 
-          $zipPath = "dist/SekiroModManager-${{ github.ref_name }}-windows-x64.zip"
-          Compress-Archive -Path "$outDir" -DestinationPath $zipPath -Force
+          # 2. Package Standalone GUI Portable Bundle
+          $guiDir = "dist/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-gui"
+          New-Item -ItemType Directory -Path $guiDir -Force | Out-Null
+          Copy-Item "build/src/gui/smm_gui.exe" -Destination "$guiDir/SekiroModManager.exe"
+          Copy-Item "build/src/cli/smm.exe" -Destination "$guiDir/smm.exe"
+          Copy-Item "LICENSE" -Destination "$guiDir/"
+          Copy-Item "THIRD_PARTY_NOTICES.md" -Destination "$guiDir/"
+          Copy-Item "README.md" -Destination "$guiDir/"
+          Copy-Item "README.zh-CN.md" -Destination "$guiDir/"
 
-          # Calculate SHA-256 and generate latest.json update manifest
-          $sha256 = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLower()
+          & "$qtBin/windeployqt.exe" --qmldir "src/gui/qml" --release --no-translations --compiler-runtime "$guiDir/SekiroModManager.exe"
+
+          $guiZip = "dist/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-gui.zip"
+          Compress-Archive -Path "$guiDir" -DestinationPath $guiZip -Force
+
+          # 3. Build Windows Setup Installer with Inno Setup
+          $absGuiDir = (Resolve-Path "$guiDir").Path
+          $absDistDir = (Resolve-Path "dist").Path
+          ISCC.exe /DMyAppVersion="${{ github.ref_name }}" /DSourceDir="$absGuiDir" /DOutputDir="$absDistDir" installer/installer.iss
+
+          # 4. Calculate SHA-256 for GUI Zip and generate latest.json update manifest
+          $sha256 = (Get-FileHash -Path $guiZip -Algorithm SHA256).Hash.ToLower()
           $version = "${{ github.ref_name }}".TrimStart('v')
           $latest = @{
               version = $version
               published_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-              url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/SekiroModManager-${{ github.ref_name }}-windows-x64.zip"
+              url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-gui.zip"
               sha256 = $sha256
               notes_zh = "Sekiro Mod Manager ${{ github.ref_name }} 发布"
               notes_en = "Sekiro Mod Manager ${{ github.ref_name }} Release"
@@ -95,6 +119,7 @@ jobs:
         with:
           files: |
             dist/*.zip
+            dist/*.exe
             dist/latest.json
           draft: false
           prerelease: false
