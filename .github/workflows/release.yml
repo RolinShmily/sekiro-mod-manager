@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-and-release:
-    name: Build Installer & Publish Release
+    name: Build & Publish Release
     runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/v')
 
@@ -24,107 +24,75 @@ jobs:
             echo "::error::Tag '${TAG}' does not match required semver format v0.0.1 (regex: ^v[0-9]+\.[0-9]+\.[0-9]+$)"
             exit 1
           fi
-          echo "Tag format validated successfully: ${TAG}"
 
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          submodules: recursive
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
         with:
-          version: 10
+          version: 1.11.1
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
+          version: '6.8.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtquickcontrols2'
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build frontend bundle
-        run: pnpm --filter smm-desktop build
-
-      - name: Verify subset font artifacts
-        shell: bash
+      - name: Configure CMake
         run: |
-          # smm-desktop build 前置运行 scripts/subset-fonts.mjs（按量子集化）；此处断言产物齐全非空
-          for f in inter-400 inter-500 inter-600 inter-700 jetbrains-mono-400 jetbrains-mono-700 noto-sans-sc-400 noto-sans-sc-600 noto-sans-sc-700; do
-            [ -s "apps/smm-desktop/dist/fonts/$f.woff2" ] || { echo "::error::subset font artifact missing or empty: $f.woff2"; exit 1; }
-          done
-          echo "All 9 subset font artifacts present in dist/fonts."
+          cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${{ env.QT_ROOT }}"
 
-      - name: Run workspace tests
-        run: cargo test --workspace
-
-      - name: Run packaging pipeline (setup.exe)
-        shell: powershell
-        run: powershell -ExecutionPolicy Bypass -File scripts/build-installer.ps1
-
-      - name: Determine tag name
-        id: tag
-        shell: bash
+      - name: Build Release Targets
         run: |
-          echo "val=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          cmake --build build --config Release
 
-      - name: Generate release notes
-        id: notes
-        # pwsh (PowerShell 7) is required, not Windows PowerShell 5.1: this step writes
-        # non-ASCII text (Chinese, emoji) and 5.1 reads the BOM-less script file using the
-        # ANSI/CP1252 codepage, which mangled every generated release note up to v0.1.7.
+      - name: Package Standalone GUI with windeployqt
         shell: pwsh
         run: |
-          $checksumContent = Get-Content "dist-installer\SHA256SUMS.txt" -Raw
-          $tag = "${{ steps.tag.outputs.val }}"
-          $body = @"
-          ## Sekiro Mod Manager (SMM) Release $tag
+          $qtBin = "${{ env.QT_ROOT }}/bin"
+          $outDir = "dist/SekiroModManager-${{ github.ref_name }}"
+          New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+          
+          Copy-Item "build/src/gui/smm_gui.exe" -Destination "$outDir/SekiroModManager.exe"
+          Copy-Item "build/src/cli/smm.exe" -Destination "$outDir/smm.exe"
+          Copy-Item "LICENSE" -Destination "$outDir/"
+          Copy-Item "THIRD_PARTY_NOTICES.md" -Destination "$outDir/"
+          Copy-Item "README.md" -Destination "$outDir/"
+          Copy-Item "README.zh-CN.md" -Destination "$outDir/"
 
-          High-Performance, Zero-Disk-Copy Desktop Mod Manager & Automation Core for *Sekiro: Shadows Die Twice*.
+          & "$qtBin/windeployqt.exe" --qmldir "src/gui/qml" --release --no-translations --compiler-runtime "$outDir/SekiroModManager.exe"
 
-          ### Included Assets
-          - **Sekiro-Mod-Manager.exe**: Standalone portable desktop GUI (免安装绿色独立程序，双击即用).
-          - **Sekiro-Mod-Manager-Setup.exe**: Windows setup installer (Windows 安装向导版).
-          - **smm-cli.exe**: Standalone CLI executable for AI-Agents and terminal scripting (命令行工具).
-          - **SHA256SUMS.txt**: Cryptographic integrity verification hashes (校验哈希清单).
-          - **LICENSE / licenses/**: MIT license, plus the verbatim upstream texts ``OFL-1.1.txt`` (embedded subset fonts) and ``UnRAR.txt`` (statically linked RARLAB code) (开源许可证与第三方许可证原文). The exact scope of the MIT grant — including why ModEngine is not bundled — is documented in ``LICENSING.md`` in the repository. The Setup installer places the license texts in a ``licenses`` folder next to ``smm.exe``.
+          $zipPath = "dist/SekiroModManager-${{ github.ref_name }}-windows-x64.zip"
+          Compress-Archive -Path "$outDir" -DestinationPath $zipPath -Force
 
-          ### Core Highlights
-          - ⚡ **Win32 NTFS Hard Link Deployment**: Millisecond-level projection into game ``mods/`` directory with zero disk space cost.
-          - 🛡️ **Pristine Rollback**: One-click restore strictly driven by ``.smm_manifest.json``.
-          - 🔍 **Heuristic Normalization**: Automated unnesting and standard FromSoftware folder re-alignment.
-          - ⚠️ **Three-Tier Semantic Conflict Detection**: Balance collision warnings (``gameparam``) and weapon/skin exclusivity.
-          - 📦 **Modpack Bundling & Provenance**: Full ``.smmpack`` bundle import/export and Nexus Mods source tracking.
-          - 🤖 **AI-Agent Ready**: Direct terminal invocation via ``smm-cli``.
+          # Calculate SHA-256 and generate latest.json update manifest
+          $sha256 = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLower()
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $latest = @{
+              version = $version
+              published_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+              url = "https://github.com/RoL1n-SrP/sekiro-mods/releases/download/${{ github.ref_name }}/SekiroModManager-${{ github.ref_name }}-windows-x64.zip"
+              sha256 = $sha256
+              notes_zh = "Sekiro Mod Manager ${{ github.ref_name }} 发布"
+              notes_en = "Sekiro Mod Manager ${{ github.ref_name }} Release"
+          } | ConvertTo-Json -Depth 4
+          $latest | Set-Content -Path "dist/latest.json" -Encoding utf8
 
-          ### SHA-256 Checksums
-          ````text
-          $checksumContent
-          ````
-          "@
-          Set-Content -Path "RELEASE_NOTES.md" -Value $body -Encoding utf8NoBOM
-
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v3
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.val }}
-          name: Sekiro Mod Manager ${{ steps.tag.outputs.val }}
-          body_path: RELEASE_NOTES.md
+          files: |
+            dist/*.zip
+            dist/latest.json
           draft: false
           prerelease: false
-          files: |
-            dist-installer/Sekiro-Mod-Manager.exe
-            dist-installer/Sekiro-Mod-Manager-Setup.exe
-            dist-installer/smm-cli.exe
-            dist-installer/SHA256SUMS.txt
-            dist-installer/licenses/**
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true

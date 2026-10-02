@@ -1,0 +1,62 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "architecture": { "value": "x64", "strategy": "external" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_PREFIX_PATH": "C:/Qt/6.11.2/msvc2022_64",
+        "BUILD_CLI": true,
+        "BUILD_GUI": true,
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+      },
+      "description": "Environment macros are $env{VAR} and $penv{VAR}: a single $ with no surrounding braces. Writing ${penv{PATH}} makes CMake look for a macro named \"penv{PATH}\", which invalidates the file and disables every preset.",
+      "environment": { "PATH": "C:/Qt/6.11.2/msvc2022_64/bin;$penv{PATH}" }
+    },
+    {
+      "name": "msvc-x64-debug",
+      "displayName": "MSVC 2022 x64 (Debug)",
+      "description": "Ninja + MSVC 2022, Qt 6.11.2 for the GUI",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "msvc-x64-release",
+      "displayName": "MSVC 2022 x64 (Release)",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "core-only",
+      "displayName": "Core + CLI only (no Qt needed)",
+      "inherits": "windows-base",
+      "cacheVariables": { "BUILD_GUI": false, "BUILD_CLI": true }
+    },
+    {
+      "name": "vs2022-x64",
+      "displayName": "Visual Studio 2022 x64 (no developer prompt needed)",
+      "description": "MSBuild generator: it locates the MSVC toolchain itself, so `cmake --preset` works from a plain shell. Ninja presets need a vcvarsall environment because cl.exe must already be on PATH. Slower to build; useful when you are not driving from an IDE.",
+      "generator": "Visual Studio 17 2022",
+      "architecture": { "value": "x64" },
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "C:/Qt/6.11.2/msvc2022_64",
+        "BUILD_CLI": true,
+        "BUILD_GUI": true,
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+      },
+      "environment": { "PATH": "C:/Qt/6.11.2/msvc2022_64/bin;$penv{PATH}" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "build-debug", "configurePreset": "msvc-x64-debug" },
+    { "name": "build-release", "configurePreset": "msvc-x64-release" },
+    { "name": "build-core", "configurePreset": "core-only" },
+    { "name": "build-vs2022-x64", "configurePreset": "vs2022-x64", "configuration": "Debug" }
+  ]
+}

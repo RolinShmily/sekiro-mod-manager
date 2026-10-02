@@ -1,158 +1,145 @@
-<div align="center">
+# 只狼模组管理器 (Sekiro Mod Manager · SMM)
 
-# Sekiro Mod Manager (只狼模组管理器)
-
-**专为《只狼：影逝二度》（Sekiro: Shadows Die Twice）量身定制的高性能、零磁盘开销专用桌面模组管理器与自动化调度核心**
-
-[![CI](https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/RolinShmily/sekiro-mod-manager?sort=semver)](https://github.com/RolinShmily/sekiro-mod-manager/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-[![Rust](https://img.shields.io/badge/Rust-1.80%2B-orange.svg)](https://www.rust-lang.org/)
-[![Tauri](https://img.shields.io/badge/Tauri-v2-24C8D8.svg)](https://tauri.app/)
-[![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://react.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v3-38B2AC.svg)](https://tailwindcss.com/)
+专为《只狼：影逝二度》设计的高性能模组暂存、语义冲突仲裁与 NTFS 零拷贝硬链接部署管理器。
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-</div>
+---
+
+## 项目简介
+
+**Sekiro Mod Manager (SMM)** 是一款专为《只狼：影逝二度》打造的现代化轻量级原生模组管理工具。项目基于 **现代 C++17**、**Qt 6 / QML** 以及 **HuskarUI** 组件库重构，采用干净整洁的沙盒暂存区设计，通过 **NTFS 物理硬链接** 技术直接将生效模组投射至游戏 `mods/` 目录中，实现瞬间部署、零额外磁盘占用与一键纯净还原。
 
 ---
 
 ## 核心特性
 
-- ⚡ **Win32 NTFS 零开销秒级部署**：利用 Windows 原生 `CreateHardLinkW` 硬链接技术直接将 Mod 资产投射至游戏 `mods/` 目录，耗时毫秒级且**不额外占用一分一毫磁盘空间**。
-- 🛡️ **纯净还原与防炸档机制**：每次部署均由 `.smm_manifest.json` 全息追踪。一键「还原纯净」仅定向摘除 SMM 建立的链接，绝对不碰游戏本体与未托管文件。
-- 🔍 **智能目录归一化算法**：自动穿透并剥离压缩包内任意多层嵌套父文件夹，启发式将散落在根目录的文件（如 `c0000.chrbnd.dcx`）精准归位至只狼官方标准子路径（`chr/`, `parts/` 等）。
-- ⚠️ **三级语义冲突裁决引擎**：
-  - `[CRITICAL]` 核心数值冲突：精准拦截多模组对核心参数表 `gameparam.parambnd.dcx` 的物理覆盖冲突，预防坏档；
-  - `[EXCLUSIVE SLOT]` 独占槽位互斥：识别主角体模（`c0000`）与武器（`wp_a_0300`）槽位，高优先级模组胜出，低优先级自动遮蔽；
-  - `[INFO]` 普通覆盖：贴图、UI、音效按优先级正常接管。
-- 📦 **来源全景溯源与整合包分发**：记录 Nexus Mods / GitHub / 网盘下载原址，支持附带原始压缩包导出单模组，以及一键打包/解包 `.smmpack` 模组整合包。
-- 🤖 **AI-Agent 与自动化支持**：桌面端安装器同步将无头命令行工具（`smm.exe`）一并安装，方便 AI Agent 或终端脚本对模组进行全自动化管理。
-- 🎨 **极简日式硬件级视觉体系**：严格落地统一设计规范，纯白底色、经典战国朱砂金纹「隻狼」印玺图标、100% 纯矢量 SVG；字体全量自托管子集化（Inter / JetBrains Mono / Noto Sans SC），运行期不访问任何 CDN。
+- **⚡ 秒级 NTFS 零拷贝硬链接部署**
+  通过 Windows `CreateHardLinkW` 底层接口将暂存区模组直链至游戏目录。无论数十 GB 的高清材质包还是复杂模型，均能在毫秒内投射完毕，零额外消耗硬盘空间。跨盘符时自动智能回退为稳健拷贝模式并提示诊断信息。
+
+- **🛡️ 一键纯净还原**
+  每次部署均通过 `.smm_manifest.json` 严格追踪记录。点击还原时仅精准清除 SMM 所投射的文件和空目录，绝不误删游戏原本的原生资产。
+
+- **🧩 智能层级规整与多层压缩包深度解析**
+  自动适配 Nexus Mods 及社区各类五花八门的压缩包结构：
+  - 递归穿透多达 6 层的包裹外壳，准确定位 FromSoftware 游戏资产根目录；
+  - 启发式归位散装文件（如根目录下裸放的 `wp_a_0300.partsbnd.dcx` 自动归位至 `parts/`，`c0000.chrbnd.dcx` 归位至 `chr/`，`.gfx` 归位至 `menu/font/`）；
+  - 智能清洗 `_yabber` / `_witchy` / `.xml` 等解包工具残留脚手架。
+
+- **⚖️ 三级语义冲突仲裁矩阵**
+  支持自定义优先级拖拽与下拉顺位调谐（数值越小顺位越高），智能提示冲突级别：
+  - **严重 (Critical)**：核心数值平衡表冲突（`gameparam.parambnd.dcx`）；
+  - **警告 (Warning)**：同名排他性角色或武器槽位重叠；
+  - **提示 (Info)**：一般性资源覆盖。
+
+- **📦 跨端预设整合包 (.smmpack)**
+  支持将当前的模组组合、启用状态与优先级整体打包导出为标准的 `.smmpack` 绿色分发包（含中英双语介绍与元数据），随时随地一键导入复原。
+
+- **🎛️ 资产文件级启停与沉浸式卡片底图**
+  支持直接在模组详情抽屉中查看其包含的全部子资产并单独开关；支持为模组卡片自定义高斯模糊磨砂底图，打造极具艺术感的管理体验。
+
+- **🩺 ModEngine 全景健康诊断仪**
+  内置环境检测向导，一键全景排查 `sekiro.exe` 主程序有效性、`dinput8.dll` 钩子有效性、`modengine.ini` 配置完整度及 NTFS 同卷匹配度，并提供一键自动注入与修复。
+
+- **🌐 中英双语动态切换**
+  内置完整的本地化翻译支持，可在设置中无缝即时切换简体中文 (`zh-CN`) 与英文 (`en-US`)。
 
 ---
 
-## 系统目录架构
+## 模块架构
 
-```text
-sekiro-mods/
-├── Cargo.toml                  # Rust Workspace 根配置（smm-core / smm-cli / smm-desktop）
-├── package.json                # pnpm 脚本：构建、打包、测试
-├── pnpm-workspace.yaml         # pnpm Monorepo 工作区
-├── LICENSE                     # MIT 开源许可证
-├── LICENSING.md                # MIT 授权范围与第三方声明
-├── README.md                   # 英文文档
-├── README.zh-CN.md             # 中文文档
-├── .github/workflows/          # CI（fmt + clippy + 测试）与打标签自动发布流水线
-├── crates/
-│   ├── smm-core/               # 只狼模组管理器核心算法与调度库
-│   │   ├── src/
-│   │   │   ├── conflict.rs     # 语义冲突检测与矩阵遮蔽引擎
-│   │   │   ├── deploy.rs       # 胜出文件部署规划器 (DeploymentPlanner)
-│   │   │   ├── doctor.rs       # ModEngine 环境自检与装配引擎
-│   │   │   ├── error.rs        # 强类型错误面
-│   │   │   ├── executor.rs     # Win32 NTFS 硬链接物理执行与安全回滚
-│   │   │   ├── exporter.rs     # 整合包 (.smmpack) 与单模组导出引擎
-│   │   │   ├── extractor.rs    # 多格式原生解压引擎 (zip / 7z / rar)
-│   │   │   ├── importer.rs     # 智能归一化解包导入与来源溯源
-│   │   │   ├── loader.rs       # 模组目录发现与元数据解析
-│   │   │   ├── manager.rs      # 启停状态、优先级与元数据持久化
-│   │   │   ├── normalizer.rs   # 启发式目录归一化算法与特征库
-│   │   │   ├── preset.rs       # 启用方案（Preset）引擎
-│   │   │   └── types.rs        # 强类型数据合约模型
-│   │   └── tests/              # 完整单元与集成测试套件
-│   └── smm-cli/                # 独立命令行工具 (`smm`)
-│       └── src/
-│           ├── cli.rs          # clap 命令与参数定义
-│           ├── commands/       # 每个子命令一个模块
-│           ├── output.rs       # 表格与配色格式化
-│           └── resolve.rs      # 暂存 / 目标路径解析
-├── apps/smm-desktop/           # Tauri v2 + React 18 + Tailwind CSS 桌面 GUI
-│   ├── src/                    # React 应用（api / components / utils）
-│   └── src-tauri/              # Tauri v2 原生绑定与 IPC 桥接
-├── scripts/
-│   ├── build-installer.ps1     # 自动化一键打包流水线脚本
-│   └── subset-fonts.mjs        # 离线字体子集化
-└── licenses/                   # 上游许可证原文
+```
+                 +-------------------+
+                 |    smm_core       |  <-- 纯 C++17 静态库
+                 |  (核心业务引擎)   |      (目录归一化、冲突检测、硬链部署、整合包)
+                 +---------+---------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+   +-------------------+       +-------------------+
+   |     smm_cli       |       |     smm_gui       |
+   | (smm.exe / JSON)  |       |   (smm_gui.exe)   |
+   | CLI 命令行工具    |       | Qt 6 / QML + HuskarUI |
+   +-------------------+       +-------------------+
 ```
 
+| 模块 | 产物目标 | 技术栈 | 职责边界 |
+|---|---|---|---|
+| `src/core` | `smm_core` | C++17 静态库 | 纯净底层引擎：文件规整、冲突矩阵分析、NTFS 链接处理、ZIP 压缩解包。 |
+| `src/cli` | `smm.exe` | C++17 可执行文件 | 独立的终端命令行工具与 JSON 自动化接口，便于脚本驱动与 AI Agent 集成。 |
+| `src/gui` | `smm_gui.exe` | Qt 6 Quick / QML | 硬件加速的高颜值桌面客户端，进程内直接链接 `smm_core`，无任何中间进程损耗。 |
+
 ---
 
-## 安装与发布产物
+## 源码编译
 
-可直接从 [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases) 下载：
-- **`Sekiro-Mod-Manager.exe`**：免安装绿色独立程序（双击直接启动 GUI，无需安装向导）；
-- **`Sekiro-Mod-Manager-Setup.exe`**：Windows 标准安装包（提供安装向导并创建桌面及开始菜单图标）；
-- **`smm-cli.exe`**：独立命令行终端工具（供 AI-Agent 自动化与脚本直接调用）。
+### 环境准备
 
-### 从源码编译构建
-确保本地已安装环境：
-- [Rust](https://www.rust-lang.org/) (1.80+)
-- [Node.js](https://nodejs.org/) (v20+) 与 [pnpm](https://pnpm.io/) (v9+)
+- **Windows 10 / 11 (64 位)**
+- **Visual Studio 2022**（安装 MSVC v143 工具集，支持 C++17）
+- **CMake 3.25+**
+- **Qt 6.7+**（包含 `Qt6::Quick`、`Qt6::Qml`、`Qt6::LinguistTools` 模块）
+- **Ninja**（可选，推荐配置以获得极速构建体验）
+
+### 克隆仓库（包含子模块）
 
 ```bash
-# 克隆仓库
-git clone https://github.com/RolinShmily/sekiro-mod-manager.git
-cd sekiro-mod-manager
-
-# 安装前端依赖
-pnpm install
-
-# 运行全工作区单元与集成测试
-cargo test --workspace
-
-# 启动桌面 GUI 开发热重载模式
-pnpm run desktop:dev
-
-# 一键执行全自动打包流水线
-pnpm run package
+git clone --recurse-submodules https://github.com/RoL1n-SrP/sekiro-mods.git
+cd sekiro-mods
 ```
 
-打包完成后，最终产物统一生成在 `dist-installer/` 目录，并附带 SHA-256 校验文件 `dist-installer/SHA256SUMS.txt`。
-
----
-
-## 命令行 CLI 使用指南（供 AI-Agent 与终端自动化）
-
-随安装包捆绑的 `smm.exe` 提供全量可编程接口：
+### 使用 CMake Presets 构建（Ninja / MSVC）
 
 ```bash
-# 检查游戏环境与 ModEngine 注入状态
-smm doctor --game-dir "D:\SteamLibrary\steamapps\common\Sekiro"
+# Debug 构建（支持 QML 源码热重载）
+cmake --preset msvc-x64-debug
+cmake --build --preset build-debug
 
-# 查看暂存库内全部模组的优先级与启停状态
-smm list --staging "staging"
+# Release 构建（高度优化的独立发布版本）
+cmake --preset msvc-x64-release
+cmake --build --preset build-release
+```
 
-# 导入外部压缩包并自动归一化纳管
-smm import "D:\Downloads\WeaponMod.zip" --staging "staging"
+### 使用 Visual Studio 构建
 
-# 调整模组部署优先级 (数值越小优先级越高，P:1 压制 P:10)
-smm priority "kusabimaru-reaper" 5 --staging "staging"
-
-# 执行语义冲突与文件碰撞扫描
-smm scan --staging "staging"
-
-# 一键毫秒级执行 NTFS 硬链接部署到游戏的 mods/ 目录
-smm deploy --target "D:\SteamLibrary\steamapps\common\Sekiro\mods" --staging "staging"
-
-# 还原游戏 mods 目录为 100% 初始纯净状态
-smm restore --target "D:\SteamLibrary\steamapps\common\Sekiro\mods"
+```bash
+cmake -B build -S . -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/6.11.2/msvc2022_64"
+cmake --build build --config Release --target smm_gui
 ```
 
 ---
 
-## 参与贡献
+## CLI 命令速查
 
-欢迎提交贡献：开发环境、CI 质量门禁与提交 / PR 规范见 [CONTRIBUTING.md](CONTRIBUTING.md)；
-请遵守[行为准则](CODE_OF_CONDUCT.md)，安全问题请按 [SECURITY.md](SECURITY.md) 私下报告。
+SMM 提供功能完备的命令行工具（`smm.exe`），所有子命令均原生支持 `--json` 输出：
 
-## 开源协议与致谢
+```bash
+# 环境诊断与自动配置
+smm.exe doctor
+smm.exe doctor --json
+smm.exe setup-engine
 
-本项目采用 [MIT 许可证](LICENSE)。MIT 授权**仅**覆盖 SMM 原创源代码；第三方组件、ModEngine
-不再分发的法律依据，以及必须随附的上游声明，均记录于 **[LICENSING.md](LICENSING.md)**，
-许可证原文随发布产物提供于 [`licenses/`](licenses/)。
+# 模组管理
+smm.exe list
+smm.exe enable <MOD_ID>
+smm.exe disable <MOD_ID>
+smm.exe set-priority <MOD_ID> <RANK>
+smm.exe conflicts
 
-SMM 为社区非官方工具。《只狼：影逝二度》（Sekiro: Shadows Die Twice）系 FromSoftware, Inc.
-与 Activision 之注册商标；本项目与二者无隶属、背书或赞助关系。
+# 部署与还原
+smm.exe deploy
+smm.exe restore
+
+# 整合包管理
+smm.exe pack-export my-pack.smmpack
+smm.exe pack-import my-pack.smmpack
+```
+
+---
+
+## 开源协议与版权声明
+
+- 本项目源码采用 [MIT 许可证](LICENSE) 开源发布。
+- 第三方组件与开源许可信息详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [LICENSING.md](LICENSING.md)。
+- 《只狼：影逝二度》(Sekiro: Shadows Die Twice) 是 FromSoftware, Inc. 与 Activision 的注册商标。本项目为玩家社区自主开发的开源工具，与 FromSoftware 或 Activision 无任何商业关联。

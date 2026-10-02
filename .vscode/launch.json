@@ -1,0 +1,68 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "启动 GUI (msvc-x64-release · 发布版)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc-x64-release/src/gui/smm_gui.exe",
+      "cwd": "${workspaceFolder}",
+      "args": [],
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "environment": [
+        { "name": "PATH", "value": "C:/Qt/6.11.2/msvc2022_64/bin;${env:PATH}" },
+        { "name": "QT_PLUGIN_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/plugins" },
+        { "name": "QML2_IMPORT_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/qml" },
+        { "name": "QML_IMPORT_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/qml" }
+      ]
+    },
+    {
+      // 首选配置：直接指向 CMakePresets 中的 msvc-x64-debug (Ninja) 构建树。
+      // 调试前请先 "CMake: Build"（或 build-debug 构建预设），否则会运行旧二进制。
+      "name": "启动 GUI (msvc-x64-debug · Ninja)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc-x64-debug/src/gui/smm_gui.exe",
+      "cwd": "${workspaceFolder}",
+      "args": ["--dev"],
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "environment": [
+        { "name": "PATH", "value": "C:/Qt/6.11.2/msvc2022_64/bin;${env:PATH}" },
+        { "name": "QT_PLUGIN_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/plugins" },
+        { "name": "QML2_IMPORT_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/qml" },
+        { "name": "QML_IMPORT_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/qml" }
+      ]
+    },
+    {
+      // 备选：路径由 CMake Tools 解析，跟随它当前选中的构建目标，
+      // 不会像硬编码路径那样在重新 configure 后指向过期二进制。
+      // 使用前需先在 CMake 面板把启动目标设为 smm_gui。
+      "name": "启动 GUI (CMake 目标动态解析)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "cwd": "${workspaceFolder}",
+      "args": ["--dev"],
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "environment": [
+        { "name": "PATH", "value": "C:/Qt/6.11.2/msvc2022_64/bin;${env:PATH}" },
+        { "name": "QT_PLUGIN_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/plugins" },
+        { "name": "QML2_IMPORT_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/qml" },
+        { "name": "QML_IMPORT_PATH", "value": "C:/Qt/6.11.2/msvc2022_64/qml" }
+      ]
+    },
+    {
+      "name": "调试 CLI (smm list)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc-x64-debug/src/cli/smm.exe",
+      "cwd": "${workspaceFolder}",
+      "args": ["list", "--json"],
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ]
+}

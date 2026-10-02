@@ -6,21 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
-## [Unreleased]
+## [0.3.0] - 2026-10-02
+
+### Added
+
+- **Architectural Rewrite in C++17 & Qt 6 / QML**: Replaced legacy Rust/Tauri stack with high-performance native C++17 libraries and Qt 6 QML desktop GUI powered by HuskarUI.
+- **In-Process Core Integration**: `smm_gui` links `smm_core` directly in-process for instantaneous UI response and zero subprocess overhead.
+- **Sumi-e & Modern Tactile Aesthetics**: High-contrast, restrained dark/light theme styling with custom calligraphy window icons and watermark artwork.
+- **Bilingual Internationalization (i18n)**: Seamless dynamic language switching between Simplified Chinese (`zh-CN`) and English (`en-US`) with 150+ localized keys.
+- **Full Environment Health Doctor**: Interactive diagnostics for `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini`, and NTFS cross-volume link viability with automated repair.
+- **Fine-Grained Asset Management**: Per-asset enable/disable toggles inside the mod drawer.
+- **Immersive Card Backdrops**: Visual blurred background artwork for mod cards with automatic `.smmpack` packaging.
+- **Multi-Depth Archive Parsing**: Automatic 6-level recursive nested zip extraction and loose file heuristic categorization.
 
 ### Changed
 
-- Adopt the Node 24 Action lines: `actions/checkout@v7`, `actions/setup-node@v7`,
-  `pnpm/action-setup@v6` and `softprops/action-gh-release@v3`. The previous versions still ran on
-  the deprecated Node 20 runtime.
-- Dependabot now opens minor and patch updates only for Cargo and npm; major upgrades are made
-  deliberately by hand. GitHub Actions majors are still opened, since that is how those actions
-  ship.
-
-### Fixed
-
-- Generated release notes now point at `LICENSING.md` for the scope of the MIT grant, instead of
-  listing only the shipped license texts.
+- Transitioned build system to standard CMake 3.25+ with Ninja and Visual Studio 2022 presets.
+- Preserved 100% backward compatibility with v0.2.0 mod staging directories and portable `.smmpack` mod packs.
+- Cleaned and modernized repository root: purged obsolete Node/Rust dependencies.
 
 ## [0.2.0] - 2026-09-22
 

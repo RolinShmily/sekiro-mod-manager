@@ -1,74 +1,89 @@
-# Rust build artifacts
-target/
-**/target/
-**/*.rs.bk
+# ===========================================================================
+# Sekiro Mod Manager (.gitignore)
+# Modern C++17 / CMake / Qt 6 & QML Project Ignore Rules
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Build & CMake outputs
+# ---------------------------------------------------------------------------
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CMakeUserPresets.json
+compile_commands.json
+.ninja_deps
+.ninja_log
+.qt/
+.rcc/
+.moc/
+.qmlcache/
+out/
+
+# Compiled Binaries & Libraries
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.obj
+*.o
 *.pdb
+*.ilk
+*.exp
+*.idb
+*.ipch
+*.VC.db
 
-# Node & Package Managers
-node_modules/
-**/node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Frontend & Vite build output
-dist/
-**/dist/
-dist-ssr/
-*.local
-*.tsbuildinfo
-**/*.tsbuildinfo
-
-# Tauri v2 build artifacts
-*.wixpdb
-*.msi
-# Generated ACL/capability schemas (recreated by tauri-build; ignored by the upstream template)
-**/src-tauri/gen/schemas/
-
-# SMM Runtime state & test outputs
-.smm_settings.json
-**/.smm_settings.json
-.smm_manifest.json
-**/.smm_manifest.json
-*.tmp
-**/*.tmp
-test_game_mods/
-**/test_game_mods/
+# ---------------------------------------------------------------------------
+# SMM Runtime State & User Test Directories
+# ---------------------------------------------------------------------------
 staging/
 **/staging/
 mods_staging/
 **/mods_staging/
 exports/
 **/exports/
+.smm_settings.json
+**/.smm_settings.json
+.smm_manifest.json
+**/.smm_manifest.json
 .smm_source/
 **/.smm_source/
-dist-installer/*.exe
-# License files are copied into dist-installer/ by scripts/build-installer.ps1.
-# They are build outputs; the single source of truth is the repo root LICENSE and licenses/.
-dist-installer/licenses/
+test_game_mods/
+**/test_game_mods/
+*.tmp
+**/*.tmp
 
-# Screenshots & Visual Test Captures
-target/*.png
-*.png.tmp
-
-# Agent harness & session storage
-.memory/
-.pi/
-
-# IDE & Editor configuration
+# ---------------------------------------------------------------------------
+# IDE & Editor Configuration
+# ---------------------------------------------------------------------------
+.vs/
 .idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 *.suo
-*.ntvs*
-*.njsproj
+*.user
 *.sln
 *.sw?
 
-# OS metadata
+# ---------------------------------------------------------------------------
+# Operating System Metadata
+# ---------------------------------------------------------------------------
 .DS_Store
 Thumbs.db
 ehthumbs.db
+
+# ---------------------------------------------------------------------------
+# AI Agent & Local Tooling Cache
+# ---------------------------------------------------------------------------
+.memory/
+.pi/
+.agents/
+skills-lock.json

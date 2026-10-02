@@ -1,159 +1,142 @@
-<div align="center">
-
 # Sekiro Mod Manager (SMM)
 
-**High-Performance, Zero-Disk-Copy Desktop Mod Manager & Automation Core for *Sekiro: Shadows Die Twice***
-
-[![CI](https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/RolinShmily/sekiro-mod-manager?sort=semver)](https://github.com/RolinShmily/sekiro-mod-manager/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-[![Rust](https://img.shields.io/badge/Rust-1.80%2B-orange.svg)](https://www.rust-lang.org/)
-[![Tauri](https://img.shields.io/badge/Tauri-v2-24C8D8.svg)](https://tauri.app/)
-[![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://react.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v3-38B2AC.svg)](https://tailwindcss.com/)
+High-performance mod staging, semantic conflict arbitration, and zero-copy NTFS deployment for *Sekiro: Shadows Die Twice*.
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-</div>
+---
+
+## Overview
+
+**Sekiro Mod Manager (SMM)** is a modern, lightweight, native mod manager engineered specifically for *Sekiro: Shadows Die Twice*. Built in modern **C++17**, **Qt 6 / QML**, and **HuskarUI**, it keeps mods cleanly staged in isolated folders and projects active files directly into the game's `mods/` directory using **NTFS hard links** — achieving instantaneous zero-disk-space deployments with pristine rollback capability.
 
 ---
 
-## Highlights
+## Key Features
 
-- ⚡ **Zero Disk Copy Deployment**: Utilizes Win32 native NTFS hard links (`CreateHardLinkW`) to project mods into the `mods/` directory in milliseconds, consuming zero additional disk space.
-- 🛡️ **Pristine Rollback & Safety**: Every deployment is strictly tracked via `.smm_manifest.json`. One-click clean restore removes only managed hard links without touching baseline game assets.
-- 🔍 **Intelligent Directory Normalization**: Strips arbitrary nested zip wrapper directories automatically, heuristics reposition loose signature files (`c0000.chrbnd.dcx`, `wp_a_0300.partsbnd.dcx`) into canonical FromSoftware game paths (`chr/`, `parts/`).
-- ⚠️ **Three-Tier Conflict Engine**: Resolves file overrides by priority (`P:1 > P:10`), while flagging `[CRITICAL]` warnings on game balance collisions (`gameparam.parambnd.dcx`) and `[EXCLUSIVE SLOT]` on character/weapon skins.
-- 📦 **Granular Source Tracking & Modpack Bundling**: Preserves origin URLs (NexusMods, GitHub, Netdisk), supports single-mod export with original archives, and exports/imports self-contained `.smmpack` modpacks.
-- 🤖 **AI-Agent & Automation Friendly**: Includes both a modern desktop GUI and a standalone headless CLI (`smm.exe`), bundled directly in the installer for scripting and automated AI-agent workflows.
-- 🎨 **Minimalist Japanese Hardware Aesthetic**: Styled strictly according to modern design tokens, stark white canvas, classic "隻狼" cinnabar gold seal logo, 100% vector SVG icons, and self-hosted subset fonts (Inter, JetBrains Mono, Noto Sans SC) — no CDN and no network access at runtime.
+- **⚡ Zero-Copy NTFS Deployment**
+  Enabled mods are projected into the game directory via Windows `CreateHardLinkW`. Deploying dozens of gigabytes of high-definition textures or character models takes milliseconds and consumes zero additional disk storage. SMM automatically detects cross-volume setups and gracefully falls back to copy mode with diagnostic feedback.
+
+- **🛡️ Pristine Rollback**
+  Every deployment state is tracked via `.smm_manifest.json`. Restoring purges only files and directories linked or copied by SMM, preserving the pristine state of your game installation.
+
+- **🧩 Smart Normalization & Multi-depth Archive Parsing**
+  Handles arbitrary folder hierarchies from Nexus Mods or community zip/7z packages. Recursively extracts nested archives up to 6 levels deep, routes loose signature files (`wp_a_0300.partsbnd.dcx` → `parts/`, `c0000.chrbnd.dcx` → `chr/`, `.gfx` → `menu/font/`), and cleans unpacking scaffolding (`_yabber`, `_witchy`).
+
+- **⚖️ 3-Tier Semantic Conflict Arbiter**
+  Automatic collision resolution by user-assigned priority rank:
+  - **Critical**: Collisions on global balance tables (`gameparam.parambnd.dcx`).
+  - **Warning**: Overlaps on exclusive player/weapon slots.
+  - **Info**: General asset overrides.
+
+- **📦 Mod Pack Presets (.smmpack)**
+  Save, apply, export, and import entire curated mod configurations in portable `.smmpack` archives (with bilingual Chinese/English titles and descriptions).
+
+- **🎛️ Fine-Grained Asset Toggles & Immersive Backdrops**
+  Inspect individual asset files inside any staged mod and toggle them on or off individually. Customize mod cards with blurred immersive backdrop artwork.
+
+- **🩺 Environment Health Doctor**
+  Built-in diagnostic suite verifying `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini` injection parameters, and NTFS volume consistency with one-click automated repair.
+
+- **🌐 Bilingual Internationalization (i18n)**
+  Seamless real-time switching between Simplified Chinese (`zh-CN`) and English (`en-US`).
 
 ---
 
-## System Architecture
+## Architecture
 
-```text
-sekiro-mods/
-├── Cargo.toml                  # Rust workspace root (smm-core, smm-cli, smm-desktop)
-├── package.json                # pnpm scripts: build, package, test
-├── pnpm-workspace.yaml         # pnpm monorepo workspace
-├── LICENSE                     # MIT License
-├── LICENSING.md                # MIT scope & third-party notices
-├── README.md                   # English documentation
-├── README.zh-CN.md             # Simplified Chinese documentation
-├── .github/workflows/          # CI (fmt + clippy + tests) and tagged-release pipelines
-├── crates/
-│   ├── smm-core/               # Core engine library
-│   │   ├── src/
-│   │   │   ├── conflict.rs     # Multi-level semantic conflict analyzer
-│   │   │   ├── deploy.rs       # Winning-asset deployment planner
-│   │   │   ├── doctor.rs       # ModEngine diagnostic & setup engine
-│   │   │   ├── error.rs        # Typed error surface
-│   │   │   ├── executor.rs     # Win32 NTFS hard-link executor & rollback
-│   │   │   ├── exporter.rs     # Modpack (.smmpack) & single-mod export engine
-│   │   │   ├── extractor.rs    # Multi-archive extractor (zip / 7z / rar)
-│   │   │   ├── importer.rs     # Normalizing archive importer & provenance
-│   │   │   ├── loader.rs       # Mod directory discovery & metadata parser
-│   │   │   ├── manager.rs      # Lifecycle, priority & metadata persistence
-│   │   │   ├── normalizer.rs   # Heuristic directory normalization algorithm
-│   │   │   ├── preset.rs       # Activation preset engine
-│   │   │   └── types.rs        # Strongly typed data contracts
-│   │   └── tests/              # Automated integration test suites
-│   └── smm-cli/                # Standalone CLI tool (`smm`)
-│       └── src/
-│           ├── cli.rs          # clap command & flag definitions
-│           ├── commands/       # One module per subcommand
-│           ├── output.rs       # Table & colour formatting
-│           └── resolve.rs      # Staging / target path resolution
-├── apps/smm-desktop/           # Tauri v2 + React 18 + Tailwind CSS desktop GUI
-│   ├── src/                    # React app (api / components / utils)
-│   └── src-tauri/              # Tauri v2 native bindings & IPC handlers
-├── scripts/
-│   ├── build-installer.ps1     # Automated one-click packaging pipeline
-│   └── subset-fonts.mjs        # Offline font subsetting
-└── licenses/                   # Verbatim upstream license texts
+```
+                 +-------------------+
+                 |    smm_core       |  <-- Pure C++17 static library
+                 |  (Core Engine)    |      (Normalization, Conflicts, Deploy, Presets)
+                 +---------+---------+
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+   +-------------------+       +-------------------+
+   |     smm_cli       |       |     smm_gui       |
+   | (smm.exe / JSON)  |       |   (smm_gui.exe)   |
+   | CLI & Agent API   |       | Qt 6 / QML + HuskarUI |
+   +-------------------+       +-------------------+
 ```
 
+| Component | Target | Tech Stack | Description |
+|---|---|---|---|
+| `src/core` | `smm_core` | C++17 static lib | Zero-overhead core logic: file normalization, conflict matrix, NTFS link engine, ZIP archive extractor/packager. |
+| `src/cli` | `smm.exe` | C++17 executable | Standalone CLI and headless JSON API for automated workflows and scripting. |
+| `src/gui` | `smm_gui.exe` | Qt 6 Quick / QML | Hardware-accelerated desktop GUI linking `smm_core` directly in-process for instant response times. |
+
 ---
 
-## Installation & Releases
+## Building from Source
 
-Download the latest releases from [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases):
-- **`Sekiro-Mod-Manager.exe`**: Portable standalone desktop app (run directly without installation wizard).
-- **`Sekiro-Mod-Manager-Setup.exe`**: Windows setup installer (creates Start Menu & desktop shortcuts).
-- **`smm-cli.exe`**: Standalone command-line interface for terminal and AI-agent automation.
+### Prerequisites
 
-### Build from Source
-Ensure prerequisites are installed:
-- [Rust](https://www.rust-lang.org/) (1.80+)
-- [Node.js](https://nodejs.org/) (v20+) & [pnpm](https://pnpm.io/) (v9+)
+- **Windows 10 / 11 (64-bit)**
+- **Visual Studio 2022** (MSVC v143 toolset with C++17 support)
+- **CMake 3.25+**
+- **Qt 6.7+** (with `Qt6::Quick`, `Qt6::Qml`, `Qt6::LinguistTools`)
+- **Ninja** (optional, recommended for fast builds)
+
+### Clone with Submodules
 
 ```bash
-# Clone the repository
-git clone https://github.com/RolinShmily/sekiro-mod-manager.git
-cd sekiro-mod-manager
-
-# Install frontend dependencies
-pnpm install
-
-# Run all workspace unit & integration tests
-cargo test --workspace
-
-# Run desktop GUI in development mode
-pnpm run desktop:dev
-
-# Build the release artifacts
-pnpm run package
+git clone --recurse-submodules https://github.com/RoL1n-SrP/sekiro-mods.git
+cd sekiro-mods
 ```
 
-The resulting artifacts will be generated in `dist-installer/` along with `dist-installer/SHA256SUMS.txt`.
-
----
-
-## CLI Reference for AI-Agents & Power Users
-
-The bundled CLI tool (`smm.exe`) provides full programmatic control over mod management:
+### Build via CMake Presets (Ninja / MSVC)
 
 ```bash
-# Inspect game directory health & ModEngine hook status
-smm doctor --game-dir "D:\SteamLibrary\steamapps\common\Sekiro"
+# Debug Build with Live QML Hot-Reload Support
+cmake --preset msvc-x64-debug
+cmake --build --preset build-debug
 
-# List all mods in staging with priority and status
-smm list --staging "staging"
+# Release Build (Optimized standalone binary)
+cmake --preset msvc-x64-release
+cmake --build --preset build-release
+```
 
-# Import a downloaded mod archive or directory with source attribution
-smm import "D:\Downloads\WeaponMod.zip" --staging "staging"
+### Build via Visual Studio Solution
 
-# Adjust deployment priority (lower number wins)
-smm priority "kusabimaru-reaper" 5 --staging "staging"
-
-# Scan for path collisions and critical gameparam conflicts
-smm scan --staging "staging"
-
-# Deploy all enabled mods via instant NTFS hard links into the game's mods/ directory
-smm deploy --target "D:\SteamLibrary\steamapps\common\Sekiro\mods" --staging "staging"
-
-# Restore the game's mods directory to a 100% pristine clean state
-smm restore --target "D:\SteamLibrary\steamapps\common\Sekiro\mods"
+```bash
+cmake -B build -S . -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/6.11.2/msvc2022_64"
+cmake --build build --config Release --target smm_gui
 ```
 
 ---
 
-## Contributing
+## CLI Reference
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the
-quality gates CI enforces, and the commit and pull-request conventions. Please follow the
-[Code of Conduct](CODE_OF_CONDUCT.md), and report security issues privately as described in
-[SECURITY.md](SECURITY.md).
+SMM includes a headless CLI (`smm.exe`) for scripting, CI, or AI agent integration. Every command supports `--json` for structured output.
 
-## License & Credits
+```bash
+# General environment & diagnostics
+smm.exe doctor
+smm.exe doctor --json
+smm.exe setup-engine
 
-Released under the [MIT License](LICENSE). The MIT grant covers only SMM's own source code;
-third-party components, the deliberate non-redistribution of ModEngine, and the required upstream
-notices are documented in **[LICENSING.md](LICENSING.md)**, with the verbatim license texts shipped
-in [`licenses/`](licenses/).
+# Mod management
+smm.exe list
+smm.exe enable <MOD_ID>
+smm.exe disable <MOD_ID>
+smm.exe set-priority <MOD_ID> <RANK>
+smm.exe conflicts
 
-SMM is an unofficial community tool. *Sekiro: Shadows Die Twice* is a registered trademark of
-FromSoftware, Inc. and Activision; this project is not affiliated with, endorsed by, or sponsored
-by them.
+# Deployment
+smm.exe deploy
+smm.exe restore
+
+# Mod packs (.smmpack)
+smm.exe pack-export my-pack.smmpack
+smm.exe pack-import my-pack.smmpack
+```
+
+---
+
+## Licensing & Trademarks
+
+- SMM source code is licensed under the [MIT License](LICENSE).
+- Third-party dependencies and notices are detailed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSING.md](LICENSING.md).
+- *Sekiro: Shadows Die Twice* is a registered trademark of FromSoftware, Inc. and Activision. SMM is an independent community project not affiliated with FromSoftware or Activision.
