@@ -13,6 +13,33 @@ ColumnLayout {
 
     property string viewMode: "grid" // "grid" | "list"
     property bool showBackdrop: true
+    property bool batchMode: false
+    property var selectedModIds: []
+
+    function isModSelected(id) {
+        return selectedModIds.indexOf(id) >= 0;
+    }
+
+    function toggleModSelected(id) {
+        var arr = selectedModIds.slice();
+        var idx = arr.indexOf(id);
+        if (idx >= 0) {
+            arr.splice(idx, 1);
+        } else {
+            arr.push(id);
+        }
+        selectedModIds = arr;
+    }
+
+    function selectAll() {
+        if (smmBackend) {
+            selectedModIds = smmBackend.modListModel.allModIds();
+        }
+    }
+
+    function clearSelection() {
+        selectedModIds = [];
+    }
 
     /// 右侧为滚动条预留的宽度，避免卡片压在滚动条下方
     readonly property int scrollBarSpace: 12
@@ -58,14 +85,14 @@ ColumnLayout {
 
             HusText {
                 text: qsTr("模组管理")
-                font.pixelSize: 18
+                font.pixelSize: 20
                 font.bold: true
                 color: HusTheme.Primary.colorTextPrimary
             }
 
             HusText {
                 text: qsTr("调整裁决顺位，或进入详情精细控制单个资产文件。")
-                font.pixelSize: 12
+                font.pixelSize: 14
                 color: HusTheme.Primary.colorTextTertiary
             }
         }
@@ -105,6 +132,15 @@ ColumnLayout {
             text: qsTr("背景图")
             checked: rootView.showBackdrop
             onCheckedChanged: rootView.showBackdrop = checked
+        }
+
+        HusButton {
+            type: rootView.batchMode ? HusButton.Type_Primary : HusButton.Type_Default
+            text: rootView.batchMode ? qsTr("退出批量") : qsTr("批量管理")
+            onClicked: {
+                rootView.batchMode = !rootView.batchMode;
+                if (!rootView.batchMode) rootView.clearSelection();
+            }
         }
 
         HusButton {
@@ -149,6 +185,68 @@ ColumnLayout {
         }
     }
 
+    // ---------------------------------- 批量操作浮动工具条 ----------------------------------
+    Rectangle {
+        visible: rootView.batchMode && smmBackend && smmBackend.modListModel.count > 0
+        Layout.fillWidth: true
+        implicitHeight: 44
+        radius: HusTheme.Primary.radiusPrimary
+        color: HusTheme.isDark ? Qt.rgba(0.18, 0.18, 0.22, 0.85) : Qt.rgba(0.94, 0.94, 0.96, 0.95)
+        border.color: HusTheme.Primary.colorPrimary
+        border.width: 1
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
+            spacing: 12
+
+            HusButton {
+                implicitHeight: 28
+                text: (rootView.selectedModIds.length === (smmBackend ? smmBackend.modListModel.count : 0))
+                      ? qsTr("全不选") : qsTr("全选")
+                onClicked: {
+                    if (rootView.selectedModIds.length === (smmBackend ? smmBackend.modListModel.count : 0)) {
+                        rootView.clearSelection();
+                    } else {
+                        rootView.selectAll();
+                    }
+                }
+            }
+
+            HusText {
+                text: qsTr("已选择 %1 / %2 项").arg(rootView.selectedModIds.length).arg(smmBackend ? smmBackend.modListModel.count : 0)
+                font.pixelSize: 13
+                font.bold: true
+                color: HusTheme.Primary.colorTextPrimary
+            }
+
+            Item { Layout.fillWidth: true }
+
+            HusButton {
+                implicitHeight: 28
+                enabled: rootView.selectedModIds.length > 0
+                text: qsTr("批量启用")
+                onClicked: smmBackend.setModsEnabled(rootView.selectedModIds, true)
+            }
+
+            HusButton {
+                implicitHeight: 28
+                enabled: rootView.selectedModIds.length > 0
+                text: qsTr("批量禁用")
+                onClicked: smmBackend.setModsEnabled(rootView.selectedModIds, false)
+            }
+
+            HusButton {
+                implicitHeight: 28
+                enabled: rootView.selectedModIds.length > 0
+                type: HusButton.Type_Primary
+                text: qsTr("批量删除 (%1)").arg(rootView.selectedModIds.length)
+                onClicked: batchDeleteConfirmModal.open()
+            }
+        }
+    }
+
     // ---------------------------------- 空状态 ----------------------------------
     ColumnLayout {
         Layout.fillWidth: true
@@ -186,7 +284,7 @@ ColumnLayout {
         cellWidth: rootView.viewMode === "grid"
                    ? Math.max(1, (modGrid.width - rootView.scrollBarSpace) / 2)
                    : Math.max(1, modGrid.width - rootView.scrollBarSpace)
-        cellHeight: rootView.viewMode === "grid" ? 166 : 58
+        cellHeight: rootView.viewMode === "grid" ? 180 : 66
         rightMargin: rootView.scrollBarSpace
         model: smmBackend ? smmBackend.modListModel : null
 
@@ -240,7 +338,10 @@ ColumnLayout {
                 previewImagePath: cardWrapper.model.previewImagePath
                 showBackdrop: rootView.showBackdrop
                 compact: rootView.viewMode === "list"
+                batchMode: rootView.batchMode
+                isSelected: rootView.isModSelected(cardWrapper.model.id)
 
+                onToggleSelected: rootView.toggleModSelected(cardWrapper.model.id)
                 onToggleActive: (active) => smmBackend.modListModel.toggleEnabled(cardWrapper.index)
                 onRequestDetails: rootView.requestOpenDrawer(cardWrapper.model.id)
                 onPrioritySelected: (targetRank) => smmBackend.modListModel.swapPriority(cardWrapper.index, targetRank - 1)
@@ -258,6 +359,42 @@ ColumnLayout {
                     }
                     card.x = 5;
                     card.y = 5;
+                }
+            }
+        }
+    }
+
+    // ---------------------------------- 批量删除确认弹窗 ----------------------------------
+    HusModal {
+        id: batchDeleteConfirmModal
+        implicitWidth: 480
+        title: qsTr("确认批量删除模组")
+        description: qsTr("此操作将从暂存目录彻底删除选中的 %1 个模组文件，无法撤销。您确定要继续吗？").arg(rootView.selectedModIds.length)
+
+        footerDelegate: Item {
+            implicitHeight: 34
+            width: parent.width
+
+            RowLayout {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 10
+
+                HusButton {
+                    text: qsTr("取消")
+                    onClicked: batchDeleteConfirmModal.close()
+                }
+
+                HusButton {
+                    type: HusButton.Type_Primary
+                    text: qsTr("彻底删除")
+                    onClicked: {
+                        if (smmBackend) {
+                            smmBackend.deleteMods(rootView.selectedModIds);
+                            rootView.clearSelection();
+                        }
+                        batchDeleteConfirmModal.close();
+                    }
                 }
             }
         }

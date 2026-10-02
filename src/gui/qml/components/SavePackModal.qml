@@ -12,6 +12,13 @@ HusModal {
     title: qsTr("保存为整合包预设")
     description: qsTr("将当前所有模组的启用状态与优先级顺位打包归档，方便日后随时切换。")
 
+    onOpened: {
+        packNameInput.text = "";
+        packDescInput.text = "";
+        packNameEnInput.text = "";
+        packDescEnInput.text = "";
+    }
+
     colorShadow: Qt.rgba(0, 0, 0, HusTheme.isDark ? 0.62 : 0.20)
 
     T.Overlay.modal: Item {

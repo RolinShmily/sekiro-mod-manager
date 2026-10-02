@@ -13,7 +13,7 @@ Rectangle {
 
     signal clicked()
 
-    implicitHeight: 38
+    implicitHeight: 42
     radius: HusTheme.Primary.radiusPrimary
 
     scale: navHover.pressed ? 0.985 : 1.0
@@ -65,7 +65,7 @@ Rectangle {
         HusIconText {
             Layout.alignment: Qt.AlignVCenter
             iconSource: navItem.iconSource
-            iconSize: 15
+            iconSize: 17
             colorIcon: navItem.active
                        ? HusTheme.Primary.colorPrimary
                        : HusTheme.Primary.colorTextTertiary
@@ -75,7 +75,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
             text: navItem.label
-            font.pixelSize: 13
+            font.pixelSize: 15
             font.bold: navItem.active
             color: navItem.active
                    ? HusTheme.Primary.colorPrimary

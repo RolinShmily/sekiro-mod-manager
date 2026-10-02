@@ -95,7 +95,8 @@ HusWindow {
                     Layout.topMargin: 2
                     Layout.bottomMargin: 6
                     text: qsTr("导航")
-                    font.pixelSize: 11
+                    font.pixelSize: 13
+                    font.bold: true
                     color: HusTheme.Primary.colorTextQuaternary
                 }
 
@@ -151,7 +152,7 @@ HusWindow {
 
                             HusText {
                                 text: qsTr("运行状态")
-                                font.pixelSize: 11
+                                font.pixelSize: 13
                                 font.bold: true
                                 color: HusTheme.Primary.colorTextTertiary
                             }
@@ -160,7 +161,7 @@ HusWindow {
 
                             HusText {
                                 text: qsTr("诊断 ↗")
-                                font.pixelSize: 10
+                                font.pixelSize: 12
                                 color: HusTheme.Primary.colorPrimary
                             }
                         }
@@ -204,14 +205,14 @@ HusWindow {
                                 HusText {
                                     Layout.fillWidth: true
                                     text: statusRow.model.k
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     color: HusTheme.Primary.colorTextTertiary
                                     elide: Text.ElideRight
                                 }
 
                                 HusText {
                                     text: statusRow.model.v
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     font.bold: true
                                     color: HusTheme.Primary.colorTextSecondary
                                 }

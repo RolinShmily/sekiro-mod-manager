@@ -57,6 +57,8 @@
     { "name": "build-debug", "configurePreset": "msvc-x64-debug" },
     { "name": "build-release", "configurePreset": "msvc-x64-release" },
     { "name": "build-core", "configurePreset": "core-only" },
+    { "name": "build-vs2022-debug", "configurePreset": "vs2022-x64", "configuration": "Debug" },
+    { "name": "build-vs2022-release", "configurePreset": "vs2022-x64", "configuration": "Release" },
     { "name": "build-vs2022-x64", "configurePreset": "vs2022-x64", "configuration": "Debug" }
   ]
 }

@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Effects
 import HuskarUI.Basic
 
 Rectangle {
@@ -22,6 +21,8 @@ Rectangle {
     property string previewImagePath: ""
     property bool showBackdrop: true
     property bool compact: false
+    property bool batchMode: false
+    property bool isSelected: false
 
     readonly property bool hasBackdrop: !rootCard.compact && rootCard.showBackdrop && rootCard.previewImagePath !== ""
 
@@ -29,6 +30,7 @@ Rectangle {
     signal requestDetails()
     signal prioritySelected(int targetRank)
     signal dragEnded(real finalX, real finalY)
+    signal toggleSelected()
 
     readonly property bool isDragging: (rootCard.compact ? compactGripArea.drag.active : gripArea.drag.active)
 
@@ -84,13 +86,51 @@ Rectangle {
     radius: rootCard.compact ? HusTheme.Primary.radiusPrimary : HusTheme.Primary.radiusPrimaryLG
     clip: true
     color: HusTheme.Primary.colorFillQuaternary
-    border.width: 1
-    border.color: cardMouseArea.containsMouse
-                  ? HusTheme.Primary.colorPrimaryBorder
-                  : HusTheme.Primary.colorBorderSecondary
+    border.width: rootCard.isSelected ? 2 : 1
+    border.color: rootCard.isSelected
+                  ? HusTheme.Primary.colorPrimary
+                  : (cardMouseArea.containsMouse
+                     ? HusTheme.Primary.colorPrimaryBorder
+                     : HusTheme.Primary.colorBorderSecondary)
 
     Behavior on border.color {
         ColorAnimation { duration: HusTheme.Primary.durationFast }
+    }
+
+    // -------------------------------------------------------------------------
+    // 批量管理复选框
+    // -------------------------------------------------------------------------
+    Rectangle {
+        id: selectionBox
+        visible: rootCard.batchMode
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.margins: rootCard.compact ? 6 : 8
+        width: 20
+        height: 20
+        radius: 4
+        z: 50
+        color: rootCard.isSelected
+               ? HusTheme.Primary.colorPrimary
+               : (HusTheme.isDark ? Qt.rgba(0.20, 0.20, 0.25, 0.92) : Qt.rgba(1, 1, 1, 0.95))
+        border.color: rootCard.isSelected
+                      ? HusTheme.Primary.colorPrimary
+                      : HusTheme.Primary.colorBorder
+        border.width: 1.5
+
+        HusIconText {
+            visible: rootCard.isSelected
+            anchors.centerIn: parent
+            iconSource: HusIcon.CheckOutlined
+            font.pixelSize: 12
+            color: "#ffffff"
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: rootCard.toggleSelected()
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -395,7 +435,7 @@ Rectangle {
             HusText {
                 Layout.fillWidth: true
                 text: rootCard.modDesc
-                font.pixelSize: 12
+                font.pixelSize: 14
                 color: rootCard.textSecondary
                 elide: Text.ElideRight
                 maximumLineCount: 2

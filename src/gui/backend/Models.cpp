@@ -8,6 +8,7 @@
 
 #include <smm/loader.hpp>
 #include <smm/manager.hpp>
+#include <smm/preset.hpp>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -578,9 +579,24 @@ void GuiController::setModPreview(const QString& modId, const QString& imagePath
 
 void GuiController::saveModPack(const QString& nameZh, const QString& descZh,
                                 const QString& nameEn, const QString& descEn) {
-    Q_UNUSED(nameEn)
-    Q_UNUSED(descEn)
-    client_.savePreset(nameZh, descZh);
+    client_.savePreset(nameZh, descZh, nameEn, descEn);
+}
+
+void GuiController::deleteMods(const QStringList& modIds) {
+    if (modIds.isEmpty()) return;
+    for (const auto& id : modIds) {
+        client_.removeMod(id);
+    }
+    refreshAll();
+    emit notification(QStringLiteral("success"), tr("Deleted %1 mods successfully.").arg(modIds.size()));
+}
+
+void GuiController::setModsEnabled(const QStringList& modIds, bool enabled) {
+    if (modIds.isEmpty()) return;
+    for (const auto& id : modIds) {
+        client_.setModEnabled(id, enabled);
+    }
+    refreshAll();
 }
 
 void GuiController::applyModPack(const QString& packId) {
@@ -589,12 +605,30 @@ void GuiController::applyModPack(const QString& packId) {
 }
 
 void GuiController::exportModPack(const QString& packId, const QString& outputPath) {
-    Q_UNUSED(packId)
+    const std::filesystem::path stagingPath = client_.stagingDir().toStdWString();
+    auto presets = smm::PresetManager::list_presets(stagingPath);
+    QString packName = QStringLiteral("SekiroModPack");
+    QString packDesc = QStringLiteral("Custom Modpack exported from SMM");
     QStringList ids;
-    for (const auto& m : modListModel_.mods()) {
-        if (m.enabled) ids.append(m.id);
+
+    for (const auto& p : presets) {
+        if (QString::fromStdString(p.id) == packId) {
+            packName = QString::fromStdString(p.name);
+            if (p.description) packDesc = QString::fromStdString(*p.description);
+            for (const auto& m : p.mods) {
+                ids.append(QString::fromStdString(m.mod_id));
+            }
+            break;
+        }
     }
-    client_.exportModPack(ids, outputPath, "SekiroModPack", "Custom Modpack exported from SMM");
+
+    if (ids.isEmpty()) {
+        for (const auto& m : modListModel_.mods()) {
+            if (m.enabled) ids.append(m.id);
+        }
+    }
+
+    client_.exportModPack(ids, outputPath, packName, packDesc);
 }
 
 void GuiController::importModPack(const QString& packPath) {

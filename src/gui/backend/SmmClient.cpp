@@ -430,10 +430,26 @@ void SmmClient::updateModMetadata(const QString& modId, const QString& name,
     }
 }
 
-void SmmClient::savePreset(const QString& name, const QString& description) {
-    const fs::path stagingPath = toStdPath(stagingDir_);
+void SmmClient::savePreset(const QString& name, const QString& description,
+                           const QString& nameEn, const QString& descriptionEn) {
+    fs::path stagingPath = toStdPath(stagingDir_);
     try {
-        smm::PresetManager::create_preset_from_current(stagingPath, name.toStdString(), description.toStdString());
+        if (stagingDir_.isEmpty() || !fs::exists(stagingPath)) {
+            stagingPath = smm::detect_staging_dir(stagingPath);
+            std::error_code ec;
+            fs::create_directories(stagingPath, ec);
+            stagingDir_ = toQString(stagingPath);
+        }
+        auto preset = smm::PresetManager::create_preset_from_current(
+            stagingPath, name.toStdString(), description.toStdString());
+        if (!nameEn.trimmed().isEmpty()) {
+            preset.name_en = nameEn.trimmed().toStdString();
+        }
+        if (!descriptionEn.trimmed().isEmpty()) {
+            preset.description_en = descriptionEn.trimmed().toStdString();
+        }
+        smm::PresetManager::save_preset(stagingPath, preset);
+
         emit operationSucceeded(tr("Preset Saved"), tr("Preset '%1' created.").arg(name));
         refreshPresets();
     } catch (const std::exception& e) {
@@ -691,6 +707,18 @@ void SmmClient::importModPack(const QString& packPath) {
     QThreadPool::globalInstance()->start([this, file, stagingPath]() {
         try {
             const auto res = smm::import_modpack(file, stagingPath, true);
+
+            // 将导入的整合包同步写入预设配置（.smm_presets.json），确保在“整合包预设”界面立即展示并可一键装配
+            smm::ModPreset preset;
+            preset.name = res.manifest.name;
+            if (res.manifest.description) {
+                preset.description = *res.manifest.description;
+            }
+            for (const auto& item : res.manifest.mods) {
+                preset.mods.push_back(smm::ModPresetEntry{item.id, item.priority});
+            }
+            smm::PresetManager::save_preset(stagingPath, preset);
+
             QMetaObject::invokeMethod(this, [this, res]() {
                 setBusy(false);
                 emit operationSucceeded(tr("Pack Imported"),
@@ -700,6 +728,7 @@ void SmmClient::importModPack(const QString& packPath) {
                 refreshMods();
                 refreshConflicts();
                 refreshPlan();
+                refreshPresets();
             }, Qt::QueuedConnection);
         } catch (const std::exception& e) {
             const QString err = QString::fromUtf8(e.what());

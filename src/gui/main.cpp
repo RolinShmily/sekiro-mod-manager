@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
     // 采用 Windows 标准原生无衬线字体栈，呈现最清晰自然的阅读体验
     HusTheme::instance()->installThemePrimaryFontFamiliesBase(
         QStringLiteral("'Microsoft YaHei UI', 'Segoe UI', sans-serif"));
-    HusTheme::instance()->installThemePrimaryFontSizeBase(14);
+    HusTheme::instance()->installThemePrimaryFontSizeBase(16);
 
     QQmlApplicationEngine engine;
 

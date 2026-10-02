@@ -133,7 +133,7 @@ ScrollView {
 
                         HusText {
                             text: qsTr("已就绪 · 当前方案处于活跃投影状态")
-                            font.pixelSize: 12
+                            font.pixelSize: 14
                             color: HusTheme.Primary.colorTextSecondary
                         }
                     }
@@ -143,7 +143,7 @@ ScrollView {
 
                         HusText {
                             text: qsTr("隻狼：影逝二度")
-                            font.pixelSize: 24
+                            font.pixelSize: 28
                             font.bold: true
                             color: HusTheme.Primary.colorTextPrimary
                         }
@@ -158,7 +158,7 @@ ScrollView {
                         Layout.fillWidth: true
                         Layout.maximumWidth: 560
                         text: qsTr("装配方案「剑圣孤影 · 断绝不死」已装载。物理硬链接零拷贝投影就绪，随时可出征苇名。")
-                        font.pixelSize: 12
+                        font.pixelSize: 14
                         color: HusTheme.Primary.colorTextTertiary
                         wrapMode: Text.WordWrap
                     }
@@ -229,7 +229,7 @@ ScrollView {
                         HusText {
                             Layout.fillWidth: true
                             text: qsTr("物理投影效能")
-                            font.pixelSize: 13
+                            font.pixelSize: 15
                             font.bold: true
                             color: HusTheme.Primary.colorTextPrimary
                         }
@@ -249,14 +249,14 @@ ScrollView {
 
                             HusText {
                                 text: smmBackend ? String(smmBackend.deployedFiles) : "0"
-                                font.pixelSize: 24
+                                font.pixelSize: 28
                                 font.bold: true
                                 color: HusTheme.Primary.colorTextPrimary
                             }
 
                             HusText {
                                 text: qsTr("胜出投影文件")
-                                font.pixelSize: 11
+                                font.pixelSize: 13
                                 color: HusTheme.Primary.colorTextQuaternary
                             }
                         }
@@ -266,14 +266,14 @@ ScrollView {
 
                             HusText {
                                 text: rootView.formatBytes(smmBackend ? smmBackend.bytesSaved : 0)
-                                font.pixelSize: 24
+                                font.pixelSize: 28
                                 font.bold: true
                                 color: HusTheme.Primary.colorTextPrimary
                             }
 
                             HusText {
                                 text: qsTr("磁盘空间节省")
-                                font.pixelSize: 11
+                                font.pixelSize: 13
                                 color: HusTheme.Primary.colorTextQuaternary
                             }
                         }
@@ -298,7 +298,7 @@ ScrollView {
                         HusText {
                             Layout.fillWidth: true
                             text: qsTr("语义冲突仲裁")
-                            font.pixelSize: 13
+                            font.pixelSize: 15
                             font.bold: true
                             color: HusTheme.Primary.colorTextPrimary
                         }
@@ -315,7 +315,7 @@ ScrollView {
                     HusText {
                         Layout.fillWidth: true
                         text: qsTr("引擎按优先级自动排序投射，低顺位模组的重合文件被自动遮罩，无需手动干预。")
-                        font.pixelSize: 12
+                        font.pixelSize: 14
                         color: HusTheme.Primary.colorTextTertiary
                         wrapMode: Text.WordWrap
                     }

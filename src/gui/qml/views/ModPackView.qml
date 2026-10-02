@@ -27,6 +27,20 @@ ColumnLayout {
         }
     }
 
+    FileDialog {
+        id: exportPackDialog
+        title: qsTr("导出 .smmpack 整合包")
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["SMM Pack (*.smmpack)"]
+        property string targetPresetId: ""
+        onAccepted: {
+            if (selectedFile && targetPresetId !== "") {
+                const path = selectedFile.toString().replace("file:///", "");
+                smmBackend.exportModPack(targetPresetId, path);
+            }
+        }
+    }
+
     // ---------------------------------- 工具栏 ----------------------------------
     RowLayout {
         Layout.fillWidth: true
@@ -37,14 +51,14 @@ ColumnLayout {
 
             HusText {
                 text: qsTr("整合包预设")
-                font.pixelSize: 18
+                font.pixelSize: 20
                 font.bold: true
                 color: HusTheme.Primary.colorTextPrimary
             }
 
             HusText {
                 text: qsTr("把当前模组的启用状态与裁决顺位打包为一体化预设，一键切换整套配装。")
-                font.pixelSize: 12
+                font.pixelSize: 14
                 color: HusTheme.Primary.colorTextTertiary
             }
         }
@@ -98,7 +112,7 @@ ColumnLayout {
         clip: true
         visible: smmBackend && smmBackend.presetListModel.count > 0
         cellWidth: Math.max(1, (packGrid.width - rootView.scrollBarSpace) / 2)
-        cellHeight: 224
+        cellHeight: 236
         rightMargin: rootView.scrollBarSpace
         model: smmBackend ? smmBackend.presetListModel : null
 
@@ -140,7 +154,7 @@ ColumnLayout {
                     HusText {
                         Layout.fillWidth: true
                         text: packWrapper.model.description
-                        font.pixelSize: 12
+                        font.pixelSize: 14
                         color: HusTheme.Primary.colorTextSecondary
                         elide: Text.ElideRight
                     }
@@ -148,7 +162,7 @@ ColumnLayout {
                     HusText {
                         Layout.fillWidth: true
                         text: packWrapper.model.descriptionEn
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         color: HusTheme.Primary.colorTextQuaternary
                         elide: Text.ElideRight
                     }
@@ -178,9 +192,13 @@ ColumnLayout {
                         }
 
                         HusButton {
-                            implicitHeight: 30
+                            implicitHeight: 32
                             text: qsTr("导出")
-                            onClicked: smmBackend.exportModPack(packWrapper.model.id, "")
+                            onClicked: {
+                                exportPackDialog.targetPresetId = packWrapper.model.id;
+                                exportPackDialog.currentFile = "file:///" + (packWrapper.model.name ? (packWrapper.model.name + ".smmpack") : "SekiroModPack.smmpack");
+                                exportPackDialog.open();
+                            }
                         }
 
                         HusButton {

@@ -66,6 +66,11 @@ public:
     Q_INVOKABLE void setPriority(int row, quint32 priority);
     Q_INVOKABLE void swapPriority(int rowA, int rowB);
     Q_INVOKABLE void moveRow(int from, int to);
+    Q_INVOKABLE QStringList allModIds() const {
+        QStringList list;
+        for (const auto& m : mods_) list.append(m.id);
+        return list;
+    }
 
 signals:
     void countChanged();
@@ -269,6 +274,8 @@ public:
                                        const QString& version, const QString& category,
                                        const QString& description, const QString& sourceUrl);
     Q_INVOKABLE void deleteMod(const QString& modId);
+    Q_INVOKABLE void deleteMods(const QStringList& modIds);
+    Q_INVOKABLE void setModsEnabled(const QStringList& modIds, bool enabled);
     Q_INVOKABLE void exportSingleMod(const QString& modId, const QString& outputPath = {});
     Q_INVOKABLE void openUrl(const QString& url);
     Q_INVOKABLE void copyToClipboard(const QString& text);

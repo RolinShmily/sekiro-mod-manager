@@ -86,24 +86,39 @@ git clone --recurse-submodules https://github.com/RoL1n-SrP/sekiro-mods.git
 cd sekiro-mods
 ```
 
-### Build via CMake Presets (Ninja / MSVC)
+### Build Instructions
+
+#### Option 1: Standard Terminal Direct Build (Recommended · No environment setup needed)
+Uses the Visual Studio 2022 generator. CMake and MSBuild automatically locate the Windows SDK and MSVC runtime paths out of the box in any standard PowerShell, Git Bash, or CMD:
 
 ```bash
-# Debug Build with Live QML Hot-Reload Support
-cmake --preset msvc-x64-debug
-cmake --build --preset build-debug
+# Debug Build
+cmake --preset vs2022-x64
+cmake --build --preset build-vs2022-debug
 
-# Release Build (Optimized standalone binary)
+# Release Build (Optimized standalone release)
+cmake --preset vs2022-x64
+cmake --build --preset build-vs2022-release
+```
+
+#### Option 2: Build inside VS Code
+With the **CMake Tools** extension installed:
+1. Press `Ctrl+Shift+P` -> `CMake: Select Configure Preset` -> Choose `msvc-x64-debug` or `msvc-x64-release`.
+2. Press `F7` to build or `F5` to debug with live QML hot-reloading.
+*(VS Code automatically injects the MSVC environment for Ninja in the background)*
+
+#### Option 3: Terminal Ninja Build (Requires MSVC Developer Environment)
+> ⚠️ **Note**: Ninja is a lightweight build system that does not detect SDK include paths on its own. When running directly in a standalone terminal, load the MSVC environment first (otherwise `filesystem` or `windows.h` will not be found):
+
+```powershell
+# 1. Activate MSVC x64 Developer Environment
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+
+# 2. Build via Ninja presets
 cmake --preset msvc-x64-release
 cmake --build --preset build-release
 ```
-
-### Build via Visual Studio Solution
-
-```bash
-cmake -B build -S . -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/6.11.2/msvc2022_64"
-cmake --build build --config Release --target smm_gui
-```
+*(Or launch the **x64 Native Tools Command Prompt for VS 2022** from your Windows Start Menu)*
 
 ---
 

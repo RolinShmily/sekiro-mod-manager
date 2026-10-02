@@ -182,7 +182,9 @@ public:
     void deploy();
     void restore();
     void setupEngine();
-    void savePreset(const QString& name, const QString& description);
+    QString stagingDir() const { return stagingDir_; }
+    void savePreset(const QString& name, const QString& description,
+                    const QString& nameEn = {}, const QString& descriptionEn = {});
     void applyPreset(const QString& presetId);
     void deletePreset(const QString& presetId);
     void saveConfig(const QString& stagingDir, const QString& gameDir);

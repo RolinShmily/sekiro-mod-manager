@@ -89,24 +89,39 @@ git clone --recurse-submodules https://github.com/RoL1n-SrP/sekiro-mods.git
 cd sekiro-mods
 ```
 
-### 使用 CMake Presets 构建（Ninja / MSVC）
+### 编译与构建 (Build Instructions)
+
+#### 推荐方式 1：普通终端直接构建（开箱即用，无需配置环境）
+利用 Visual Studio 2022 预设，CMake 会全自动寻址 Windows SDK 与 MSVC 运行库，可在普通 PowerShell、Git Bash 或 CMD 中直接运行：
 
 ```bash
-# Debug 构建（支持 QML 源码热重载）
-cmake --preset msvc-x64-debug
-cmake --build --preset build-debug
+# Debug 构建
+cmake --preset vs2022-x64
+cmake --build --preset build-vs2022-debug
 
-# Release 构建（高度优化的独立发布版本）
+# Release 构建（独立发布版）
+cmake --preset vs2022-x64
+cmake --build --preset build-vs2022-release
+```
+
+#### 推荐方式 2：VS Code 内部一键构建
+在 VS Code 中安装 **CMake Tools** 扩展：
+1. 按 `Ctrl+Shift+P` -> 输入 `CMake: Select Configure Preset` -> 选择 `msvc-x64-debug` 或 `msvc-x64-release`；
+2. 按 `F7` 即可一键并行编译，或按 `F5` 启动 GUI 调试并享受 QML 毫秒级热重载。
+*(VS Code 会自动在后台为 Ninja 注入 MSVC 编译环境变量)*
+
+#### 进阶方式 3：终端极速 Ninja 构建（需激活 MSVC 开发人员环境）
+> ⚠️ **注意**：Ninja 是极简构建调度器，不会主动探测 Windows SDK 头文件目录。在**外部独立终端**中直接使用 Ninja 预设前，必须先加载 MSVC 开发人员环境（否则会提示找不到 `<filesystem>` / `<windows.h>`）：
+
+```powershell
+# 1. 激活 MSVC x64 开发环境（路径视具体 VS / BuildTools 安装位置而定）
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+
+# 2. 执行 Ninja 预设极速构建
 cmake --preset msvc-x64-release
 cmake --build --preset build-release
 ```
-
-### 使用 Visual Studio 构建
-
-```bash
-cmake -B build -S . -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/6.11.2/msvc2022_64"
-cmake --build build --config Release --target smm_gui
-```
+*（也可以直接从 Windows 开始菜单打开 **“x64 Native Tools Command Prompt for VS 2022”** 执行上述 cmake 命令）*
 
 ---
 
