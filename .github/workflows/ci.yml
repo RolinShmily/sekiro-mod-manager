@@ -3,12 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - master
       - main
       - refactor/*
   pull_request:
     branches:
-      - master
       - main
 
 concurrency:
@@ -41,7 +39,6 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
-          modules: 'qtquickcontrols2'
 
       - name: Configure CMake
         run: |
