@@ -169,6 +169,8 @@ Rectangle {
             id: backdropImage
             anchors.fill: parent
             source: rootCard.previewImagePath
+            sourceSize.width: 480
+            sourceSize.height: 270
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             cache: false
@@ -451,6 +453,8 @@ Rectangle {
                 Image {
                     anchors.fill: parent
                     source: rootCard.previewImagePath
+                    sourceSize.width: 120
+                    sourceSize.height: 76
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: false

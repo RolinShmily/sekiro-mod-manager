@@ -91,7 +91,18 @@ jobs:
           Copy-Item "README.md" -Destination "$guiDir/"
           Copy-Item "README.zh-CN.md" -Destination "$guiDir/"
 
-          & "$qtBin/windeployqt.exe" --qmldir "src/gui/qml" --release --no-translations --compiler-runtime "$guiDir/SekiroModManager.exe"
+          & "$qtBin/windeployqt.exe" --qmldir "src/gui/qml" --release --no-translations --no-opengl-sw --compiler-runtime "$guiDir/SekiroModManager.exe"
+
+          # Slim down bundle by pruning unused software rasterizers, redundant styles, and system-inbox DLLs
+          Remove-Item -Path "$guiDir/opengl32sw.dll" -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "$guiDir/D3Dcompiler_47.dll" -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "$guiDir/Qt6OpenGL.dll" -Force -ErrorAction SilentlyContinue
+
+          $unusedStyles = @("FluentWinUI3", "Imagine", "Material", "Universal", "Fusion")
+          foreach ($style in $unusedStyles) {
+              Remove-Item -Path "$guiDir/qml/QtQuick/Controls/$style" -Recurse -Force -ErrorAction SilentlyContinue
+              Remove-Item -Path "$guiDir/Qt6QuickControls2$style.dll" -Force -ErrorAction SilentlyContinue
+          }
 
           $guiZip = "dist/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-gui.zip"
           Compress-Archive -Path "$guiDir" -DestinationPath $guiZip -Force

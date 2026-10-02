@@ -106,8 +106,6 @@ qt_add_resources(smm_gui "smm_images"
         resources/images/sekiro_calligraphy_crimson.png
         resources/images/sekiro_calligraphy_gold.png
         resources/images/sekiro_hero_art.png
-        resources/images/sekiro_silvergrass.png
-        resources/images/sekiro_mortal_blade.png
         resources/images/icon_nexus.png
         resources/images/icon_banana.png
         resources/images/icon_3dm.png

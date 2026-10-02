@@ -16,6 +16,8 @@ summary; `git log` remains the authoritative record.
 - **Mod Metadata Full Editing**: Added full editing for Mod ID, display name, author, and description in `ModDrawer` with automatic safe folder renaming in staging.
 - **Domain-Matched Source Icons**: Added automatic platform icon recognition for Nexus Mods, GameBanana, 3DM Mods, Bilibili, and GitHub with official brand assets.
 - **Streamlined Workflow Layout**: Relocated "Save Setup as Mod Pack" directly into the Armoury view toolbar next to batch operations.
+- **50% Package Size Slimming**: Pruned 20MB software rasterizer (`opengl32sw.dll`), 15MB redundant QtQuick Controls styles (FluentWinUI3, Imagine, Material, Universal, Fusion), and unreferenced embedded assets; reduced portable bundle from 135MB down to ~59MB (Release ZIP down to ~23MB).
+- **QML Image Memory Downsampling (`sourceSize`)**: Constrained decoded bitmap dimensions in `ModCard` and `LaunchHubView`, avoiding full 1080p/2K image uncompressed RAM allocation and saving up to 96% per-card image memory.
 
 ## [0.3.1] - 2026-10-02
 

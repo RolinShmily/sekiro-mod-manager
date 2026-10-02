@@ -57,6 +57,7 @@ ScrollView {
                     id: heroBgImage
                     anchors.fill: parent
                     source: "qrc:/images/sekiro_hero_art.png"
+                    sourceSize.width: 1040
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     autoTransform: true
