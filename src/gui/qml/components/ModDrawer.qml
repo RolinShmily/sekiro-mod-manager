@@ -122,12 +122,13 @@ HusDrawer {
                     anchors.fill: parent
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
-                    cache: false
+                    cache: true
+                    sourceSize.width: 960
+                    sourceSize.height: 540
                     source: {
                         if (!smmBackend || !smmBackend.currentModPreview) return "";
-                        const sDir = smmBackend.stagingDir.replace(/\\/g, "/");
                         const rev = smmBackend.previewRevision;
-                        return "file:///" + sDir + "/" + smmBackend.currentModId + "/" + smmBackend.currentModPreview + "?rev=" + rev;
+                        return "image://modpreview/" + smmBackend.currentModId + "?rev=" + rev;
                     }
                 }
 

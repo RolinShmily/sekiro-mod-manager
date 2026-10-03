@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Templates as T
@@ -16,6 +17,8 @@ HusModal {
     property string pendingStagingDir: ""
     property string pendingGameDir: ""
     property string pendingLanguage: "zh-CN"
+    property string pendingFontFamily: "Segoe UI"
+    property string pendingTheme: "dark"
 
     function cleanLocalPath(urlVal) {
         if (!urlVal) return "";
@@ -33,6 +36,8 @@ HusModal {
         pendingStagingDir = cleanLocalPath(smmBackend ? smmBackend.stagingDir : "");
         pendingGameDir = cleanLocalPath(smmBackend ? smmBackend.sekiroDir : "");
         pendingLanguage = smmBackend ? smmBackend.language : "zh-CN";
+        pendingFontFamily = smmBackend ? smmBackend.fontFamily : "Segoe UI";
+        pendingTheme = smmBackend ? smmBackend.themeMode : "dark";
     }
 
     // HusPopup 主题把 colorShadow 取作 @colorTextBase，而暗色主题下 colorTextBase 接近白色，
@@ -59,6 +64,7 @@ HusModal {
 
     footerDelegate: Item {
         implicitHeight: 34
+        height: implicitHeight
         width: parent.width
 
         RowLayout {
@@ -79,7 +85,9 @@ HusModal {
                         smmBackend.saveSettings(
                             rootModal.cleanLocalPath(rootModal.pendingStagingDir.trim()),
                             rootModal.cleanLocalPath(rootModal.pendingGameDir.trim()),
-                            rootModal.pendingLanguage
+                            rootModal.pendingLanguage,
+                            rootModal.pendingFontFamily,
+                            rootModal.pendingTheme
                         );
                     }
                     rootModal.close();
@@ -88,201 +96,316 @@ HusModal {
         }
     }
 
-    bodyDelegate: ColumnLayout {
+    bodyDelegate: ScrollView {
+        id: settingsScrollView
         width: parent.width
-        spacing: 20
+        implicitHeight: Math.min(bodyColumn.implicitHeight, Math.max(300, (rootModal.parent ? rootModal.parent.height : 760) - 200))
+        height: implicitHeight
+        contentWidth: width
+        contentHeight: bodyColumn.implicitHeight
+        clip: true
 
-        FolderDialog {
-            id: gameDirDialog
-            title: qsTr("选择只狼游戏安装根目录")
-            onAccepted: {
-                if (selectedFolder) {
-                    rootModal.pendingGameDir = rootModal.cleanLocalPath(selectedFolder);
-                }
-            }
+        ScrollBar.vertical: HusScrollBar {
+            policy: ScrollBar.AsNeeded
         }
 
-        FolderDialog {
-            id: stagingDirDialog
-            title: qsTr("选择模组暂存区目录")
-            onAccepted: {
-                if (selectedFolder) {
-                    rootModal.pendingStagingDir = rootModal.cleanLocalPath(selectedFolder);
-                }
-            }
-        }
-
-        // ------------------------------ 游戏目录 ------------------------------
         ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
+            id: bodyColumn
+            width: parent.width - (settingsScrollView.ScrollBar.vertical.visible ? 12 : 4)
+            spacing: 18
 
-            HusText {
-                text: qsTr("只狼游戏安装根目录")
-                font.pixelSize: 15
-                font.bold: true
-                color: HusTheme.Primary.colorTextPrimary
+            FolderDialog {
+                id: gameDirDialog
+                title: qsTr("选择只狼游戏安装根目录")
+                onAccepted: {
+                    if (selectedFolder) {
+                        rootModal.pendingGameDir = rootModal.cleanLocalPath(selectedFolder);
+                    }
+                }
             }
 
-            HusText {
-                Layout.fillWidth: true
-                text: qsTr("目录中应包含 sekiro.exe 与 dinput8.dll 注入钩子。")
-                font.pixelSize: 13
-                color: HusTheme.Primary.colorTextTertiary
-                wrapMode: Text.WordWrap
+            FolderDialog {
+                id: stagingDirDialog
+                title: qsTr("选择模组暂存区目录")
+                onAccepted: {
+                    if (selectedFolder) {
+                        rootModal.pendingStagingDir = rootModal.cleanLocalPath(selectedFolder);
+                    }
+                }
             }
 
-            RowLayout {
+            // ------------------------------ 游戏目录 ------------------------------
+            ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 8
 
-                HusInput {
-                    id: gameDirInput
+                HusText {
+                    text: qsTr("只狼游戏安装根目录")
+                    font.pixelSize: 15
+                    font.bold: true
+                    color: HusTheme.Primary.colorTextPrimary
+                }
+
+                HusText {
                     Layout.fillWidth: true
-                    text: rootModal.pendingGameDir
-                    onTextChanged: {
-                        if (text !== rootModal.pendingGameDir) {
-                            rootModal.pendingGameDir = text;
+                    text: qsTr("目录中应包含 sekiro.exe 与 dinput8.dll 注入钩子。")
+                    font.pixelSize: 13
+                    color: HusTheme.Primary.colorTextTertiary
+                    wrapMode: Text.WordWrap
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    HusInput {
+                        id: gameDirInput
+                        Layout.fillWidth: true
+                        text: rootModal.pendingGameDir
+                        onTextChanged: {
+                            if (text !== rootModal.pendingGameDir) {
+                                rootModal.pendingGameDir = text;
+                            }
                         }
                     }
-                }
 
-                HusButton {
-                    text: qsTr("浏览")
-                    onClicked: gameDirDialog.open()
-                }
-
-                HusButton {
-                    text: qsTr("打开")
-                    visible: rootModal.pendingGameDir.trim() !== ""
-                    onClicked: {
-                        if (smmBackend) smmBackend.openFolder(rootModal.pendingGameDir);
+                    HusButton {
+                        text: qsTr("浏览")
+                        onClicked: gameDirDialog.open()
                     }
-                }
 
-                HusButton {
-                    text: qsTr("自动探测")
-                    onClicked: {
-                        if (smmBackend) {
-                            const detected = smmBackend.detectSekiroDir();
-                            if (detected && detected !== "") {
-                                rootModal.pendingGameDir = rootModal.cleanLocalPath(detected);
-                            } else {
-                                smmBackend.autoDetectGameDir();
+                    HusButton {
+                        text: qsTr("打开")
+                        visible: rootModal.pendingGameDir.trim() !== ""
+                        onClicked: {
+                            if (smmBackend) smmBackend.openFolder(rootModal.pendingGameDir);
+                        }
+                    }
+
+                    HusButton {
+                        text: qsTr("自动探测")
+                        onClicked: {
+                            if (smmBackend) {
+                                const detected = smmBackend.detectSekiroDir();
+                                if (detected && detected !== "") {
+                                    rootModal.pendingGameDir = rootModal.cleanLocalPath(detected);
+                                } else {
+                                    smmBackend.autoDetectGameDir();
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        HusDivider {
-            Layout.fillWidth: true
-        }
-
-        // ------------------------------ 暂存区 ------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
-
-            HusText {
-                text: qsTr("模组暂存区目录")
-                font.pixelSize: 15
-                font.bold: true
-                color: HusTheme.Primary.colorTextPrimary
-            }
-
-            HusText {
+            HusDivider {
                 Layout.fillWidth: true
-                text: qsTr("解压与归一化后的模组资产保存在此。建议与游戏置于同一 NTFS 驱动器。")
-                font.pixelSize: 13
-                color: HusTheme.Primary.colorTextTertiary
-                wrapMode: Text.WordWrap
             }
 
-            RowLayout {
+            // ------------------------------ 暂存区 ------------------------------
+            ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 8
 
-                HusInput {
-                    id: stagingDirInput
-                    Layout.fillWidth: true
-                    text: rootModal.pendingStagingDir
-                    onTextChanged: {
-                        if (text !== rootModal.pendingStagingDir) {
-                            rootModal.pendingStagingDir = text;
-                        }
-                    }
-                }
-
-                HusButton {
-                    text: qsTr("浏览")
-                    onClicked: stagingDirDialog.open()
-                }
-
-                HusButton {
-                    text: qsTr("打开")
-                    visible: rootModal.pendingStagingDir.trim() !== ""
-                    onClicked: {
-                        if (smmBackend) smmBackend.openFolder(rootModal.pendingStagingDir);
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 8
-
-                HusTag {
-                    Layout.alignment: Qt.AlignVCenter
-                    tagState: smmBackend && smmBackend.isNtfsMatched
-                              ? HusTag.State_Success
-                              : HusTag.State_Warning
-                    text: smmBackend && smmBackend.isNtfsMatched
-                          ? qsTr("同卷匹配")
-                          : qsTr("未匹配")
+                HusText {
+                    text: qsTr("模组暂存区目录")
+                    font.pixelSize: 15
+                    font.bold: true
+                    color: HusTheme.Primary.colorTextPrimary
                 }
 
                 HusText {
                     Layout.fillWidth: true
-                    text: smmBackend && smmBackend.isNtfsMatched
-                          ? qsTr("已启用 NTFS 零拷贝硬链接部署加速。")
-                          : qsTr("驱动器卷不匹配，部署时将回退为普通文件复制。")
+                    text: qsTr("解压与归一化后的模组资产保存在此。建议与游戏置于同一 NTFS 驱动器。")
                     font.pixelSize: 13
                     color: HusTheme.Primary.colorTextTertiary
                     wrapMode: Text.WordWrap
                 }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    HusInput {
+                        id: stagingDirInput
+                        Layout.fillWidth: true
+                        text: rootModal.pendingStagingDir
+                        onTextChanged: {
+                            if (text !== rootModal.pendingStagingDir) {
+                                rootModal.pendingStagingDir = text;
+                            }
+                        }
+                    }
+
+                    HusButton {
+                        text: qsTr("浏览")
+                        onClicked: stagingDirDialog.open()
+                    }
+
+                    HusButton {
+                        text: qsTr("打开")
+                        visible: rootModal.pendingStagingDir.trim() !== ""
+                        onClicked: {
+                            if (smmBackend) smmBackend.openFolder(rootModal.pendingStagingDir);
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    HusTag {
+                        Layout.alignment: Qt.AlignVCenter
+                        tagState: smmBackend && smmBackend.isNtfsMatched
+                                  ? HusTag.State_Success
+                                  : HusTag.State_Warning
+                        text: smmBackend && smmBackend.isNtfsMatched
+                              ? qsTr("同卷匹配")
+                              : qsTr("未匹配")
+                    }
+
+                    HusText {
+                        Layout.fillWidth: true
+                        text: smmBackend && smmBackend.isNtfsMatched
+                              ? qsTr("已启用 NTFS 零拷贝硬链接部署加速。")
+                              : qsTr("驱动器卷不匹配，部署时将回退为普通文件复制。")
+                        font.pixelSize: 13
+                        color: HusTheme.Primary.colorTextTertiary
+                        wrapMode: Text.WordWrap
+                    }
+                }
             }
-        }
 
-        HusDivider {
-            Layout.fillWidth: true
-        }
-
-        // ------------------------------ 界面语言 ------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
-
-            HusText {
-                text: qsTr("界面语言")
-                font.pixelSize: 15
-                font.bold: true
-                color: HusTheme.Primary.colorTextPrimary
-            }
-
-            HusSegmented {
-                id: languageSegmented
+            HusDivider {
                 Layout.fillWidth: true
-                block: true
-                // 语言名称必须写原生字面量（不可加 qsTr），避免翻译时重入叠印导致字符错乱
-                options: [
-                    { label: "简体中文", value: "zh-CN" },
-                    { label: "English", value: "en-US" }
-                ]
-                currentIndex: rootModal.pendingLanguage === "en-US" ? 1 : 0
-                onCurrentIndexChanged: {
-                    rootModal.pendingLanguage = (currentIndex === 1 ? "en-US" : "zh-CN");
+            }
+
+            // ------------------------------ 外观与个性化 (主题与语言) ------------------------------
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 16
+
+                // 主题模式选择
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    HusText {
+                        text: qsTr("界面主题")
+                        font.pixelSize: 15
+                        font.bold: true
+                        color: HusTheme.Primary.colorTextPrimary
+                    }
+
+                    HusSegmented {
+                        id: themeSegmented
+                        Layout.fillWidth: true
+                        block: true
+                        options: [
+                            { label: qsTr("暗色主题"), value: "dark" },
+                            { label: qsTr("亮色主题"), value: "light" },
+                            { label: qsTr("跟随系统"), value: "system" }
+                        ]
+                        currentIndex: {
+                            if (rootModal.pendingTheme === "light") return 1;
+                            if (rootModal.pendingTheme === "system") return 2;
+                            return 0;
+                        }
+                        onCurrentIndexChanged: {
+                            if (currentIndex === 1) rootModal.pendingTheme = "light";
+                            else if (currentIndex === 2) rootModal.pendingTheme = "system";
+                            else rootModal.pendingTheme = "dark";
+                        }
+                    }
+                }
+
+                // 界面语言选择
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    HusText {
+                        text: qsTr("界面语言")
+                        font.pixelSize: 15
+                        font.bold: true
+                        color: HusTheme.Primary.colorTextPrimary
+                    }
+
+                    HusSegmented {
+                        id: languageSegmented
+                        Layout.fillWidth: true
+                        block: true
+                        // 语言名称必须写原生字面量（不可加 qsTr），避免翻译时重入叠印导致字符错乱
+                        options: [
+                            { label: "简体中文", value: "zh-CN" },
+                            { label: "English", value: "en-US" }
+                        ]
+                        currentIndex: rootModal.pendingLanguage === "en-US" ? 1 : 0
+                        onCurrentIndexChanged: {
+                            rootModal.pendingLanguage = (currentIndex === 1 ? "en-US" : "zh-CN");
+                        }
+                    }
+                }
+            }
+
+            HusDivider {
+                Layout.fillWidth: true
+            }
+
+            // ------------------------------ 界面字体 ------------------------------
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                HusText {
+                    text: qsTr("界面字体")
+                    font.pixelSize: 15
+                    font.bold: true
+                    color: HusTheme.Primary.colorTextPrimary
+                }
+
+                HusText {
+                    Layout.fillWidth: true
+                    text: qsTr("选用 Windows 系统原生字体排版。默认推荐 Segoe UI，兼顾优雅西文字形与原生中文字符渲染。")
+                    font.pixelSize: 13
+                    color: HusTheme.Primary.colorTextTertiary
+                    wrapMode: Text.WordWrap
+                }
+
+                HusSelect {
+                    id: fontSelect
+                    Layout.fillWidth: true
+                    implicitHeight: 32
+                    textRole: "label"
+                    valueRole: "value"
+                    model: smmBackend ? smmBackend.availableFonts : []
+                    displayText: {
+                        if (!model || model.length === 0) return rootModal.pendingFontFamily;
+                        for (let i = 0; i < model.length; ++i) {
+                            const it = model[i];
+                            if (it && it.value === rootModal.pendingFontFamily) {
+                                return it.label;
+                            }
+                        }
+                        if (currentIndex >= 0 && currentIndex < model.length && model[currentIndex]) {
+                            return model[currentIndex].label;
+                        }
+                        return rootModal.pendingFontFamily;
+                    }
+                    currentIndex: {
+                        if (!model || model.length === 0) return 0;
+                        for (let i = 0; i < model.length; ++i) {
+                            const it = model[i];
+                            if (it && it.value === rootModal.pendingFontFamily) return i;
+                        }
+                        return 0;
+                    }
+                    onActivated: (index) => {
+                        if (model && model[index]) {
+                            rootModal.pendingFontFamily = model[index].value;
+                        }
+                    }
                 }
             }
         }

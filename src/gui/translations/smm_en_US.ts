@@ -661,6 +661,30 @@
       <source>驱动器卷不匹配，部署时将回退为普通文件复制。</source>
       <translation>Volumes differ; deployment falls back to plain file copies.</translation>
     </message>
+    <message>
+      <source>界面主题</source>
+      <translation>Theme</translation>
+    </message>
+    <message>
+      <source>暗色主题</source>
+      <translation>Dark Theme</translation>
+    </message>
+    <message>
+      <source>亮色主题</source>
+      <translation>Light Theme</translation>
+    </message>
+    <message>
+      <source>跟随系统</source>
+      <translation>Follow System</translation>
+    </message>
+    <message>
+      <source>界面字体</source>
+      <translation>Interface Font</translation>
+    </message>
+    <message>
+      <source>选用 Windows 系统原生字体排版。默认推荐 Segoe UI，兼顾优雅西文字形与原生中文字符渲染。</source>
+      <translation>Use Windows native system fonts. Segoe UI is recommended by default, balancing elegant Western typography with native Chinese rendering.</translation>
+    </message>
   </context>
   <context>
     <name>UpdateModal</name>

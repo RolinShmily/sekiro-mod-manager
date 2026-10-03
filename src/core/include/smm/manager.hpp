@@ -22,12 +22,20 @@ public:
     static ModInfo set_asset_enabled(const fs::path& staging_dir, const std::string& mod_id,
                                      const std::string& rel_path, bool enabled);
 
-    /// Sets or updates the mod's preview background image by copying image_path into staging.
+    /// Sets or updates the mod's preview background image by copying image_path into staging and compressing to preview.webp.
     static ModInfo set_mod_preview(const fs::path& staging_dir, const std::string& mod_id,
                                    const fs::path& image_src_path);
 
-    /// Ensures preview image in mod_dir is in standard decodable PNG format, converting WebP if needed.
+    /// Compresses and normalizes any image (PNG, JPG, BMP, WebP) into standard preview.webp.
+    static bool compress_image_to_webp(const fs::path& src_path, const fs::path& dst_path,
+                                       int max_width = 1920, int max_height = 1080, int quality = 82);
+
+    /// Ensures preview image in mod_dir is converted and compressed into preview.webp.
     static bool normalize_preview_image(const fs::path& mod_dir, std::string& preview_name);
+
+    /// Scans staging directory and optimizes all mod preview images to preview.webp.
+    /// Returns {optimized_count, bytes_saved}.
+    static std::pair<size_t, uint64_t> optimize_all_previews(const fs::path& staging_dir);
 
     /// Applies user-editable metadata fields (never id, never root_path).
     static ModInfo update_mod_info(const fs::path& staging_dir, const std::string& mod_id, const ModInfo& updated);

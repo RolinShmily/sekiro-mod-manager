@@ -45,6 +45,8 @@ qt_add_executable(smm_gui
     backend/Models.cpp
     backend/UpdateManager.hpp
     backend/UpdateManager.cpp
+    backend/ModPreviewImageProvider.hpp
+    backend/ModPreviewImageProvider.cpp
     ${SMM_GUI_RC}
 )
 

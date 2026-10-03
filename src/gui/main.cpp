@@ -9,6 +9,8 @@
 #include <QDebug>
 #include <QFont>
 #include <QFontDatabase>
+#include <QImageReader>
+#include <QSettings>
 
 #ifdef BUILD_HUSKARUI_STATIC_LIBRARY
 #include <QtQml/qqmlextensionplugin.h>
@@ -19,6 +21,7 @@ Q_IMPORT_QML_PLUGIN(HuskarUI_BasicPlugin)
 #include <QTimer>
 #include <QTranslator>
 #include "backend/Models.hpp"
+#include "backend/ModPreviewImageProvider.hpp"
 
 #include <theme/hustheme.h>
 #include <husapp.h>
@@ -32,36 +35,19 @@ int main(int argc, char* argv[]) {
     app.setOrganizationName("SekiroModManager");
     app.setApplicationName("SMM");
 
-    // 全局中文字体与字重优化：选用 Windows 标准无衬线中文字体「微软雅黑」，
-    // 并将应用基准字重提升至 DemiBold (600) 适度加粗，消除暗色战术主题下常规体 (400) 笔画单薄发虚、
-    // 以及未配置中文字体时 DirectWrite 回退到细宋体 (SimSun) 的问题。
-    const auto installedFamilies = QFontDatabase::families();
-    QString primaryFontFamily = QStringLiteral("Microsoft YaHei UI");
-    const QStringList fontCandidates = {
-        QStringLiteral("Microsoft YaHei UI"),
-        QStringLiteral("Microsoft YaHei"),
-        QStringLiteral("微软雅黑"),
-        QStringLiteral("PingFang SC"),
-        QStringLiteral("Noto Sans SC"),
-        QStringLiteral("Segoe UI")
-    };
-    for (const auto& fam : fontCandidates) {
-        if (installedFamilies.contains(fam)) {
-            primaryFontFamily = fam;
-            break;
-        }
-    }
+    // 从持久化设置读取字体与主题（默认 Segoe UI 与暗色主题）
+    QSettings preSettings(QStringLiteral("SekiroModManager"), QStringLiteral("SMM"));
+    QString initialFont = preSettings.value(QStringLiteral("fontFamily"), QStringLiteral("Segoe UI")).toString();
+    if (initialFont.trimmed().isEmpty()) initialFont = QStringLiteral("Segoe UI");
 
-    QFont defaultFont(primaryFontFamily);
-    defaultFont.setStyleHint(QFont::SansSerif);
-    defaultFont.setWeight(QFont::DemiBold);
-    app.setFont(defaultFont);
-
-    // 「苇名城」战术暗色调为默认启动基调（避免浅色主题下的白底不可读）
+    QString savedTheme = preSettings.value(QStringLiteral("themeMode"), QStringLiteral("dark")).toString().trimmed().toLower();
+    auto themeMode = (savedTheme == QLatin1String("light"))
+                         ? HusTheme::DarkMode::Light
+                         : (savedTheme == QLatin1String("system")
+                                ? HusTheme::DarkMode::System
+                                : HusTheme::DarkMode::Dark);
 
     bool devMode = false;
-    // 默认「苇名城」战术暗色调；可用 --theme=dark|light|system 覆盖
-    auto themeMode = HusTheme::DarkMode::Dark;
     for (int i = 1; i < argc; ++i) {
         const QString arg = QString::fromLocal8Bit(argv[i]);
         if (arg == "--dev") {
@@ -80,16 +66,27 @@ int main(int argc, char* argv[]) {
     devMode = true;
 #endif
 
+    // 全局字体规范化：基准字重使用 Normal (400)，彻底解决字重偏粗、字体发胀的问题
+    QFont defaultFont(initialFont);
+    defaultFont.setStyleHint(QFont::SansSerif);
+    defaultFont.setWeight(QFont::Normal);
+    app.setFont(defaultFont);
+
     // 启用系统原生次像素渲染引擎 (DirectWrite/ClearType)，提升字形清晰度与边缘饱满度
     HusTheme::instance()->setTextRenderType(HusTheme::TextRenderType::NativeRendering);
     // 必须在 QML 引擎加载前完成主题安装，避免首帧闪烁与配色错乱
     HusTheme::instance()->setDarkMode(themeMode);
     // 水墨泥金：经典金碧水墨与和风素雅强调色（替代过艳的深红，呈现淡雅沉稳质感）
     HusTheme::instance()->installThemePrimaryColorBase(QColor(QStringLiteral("#c29f5d")));
-    // 采用全兼容 Windows 标准原生无衬线字体栈，优先锁定微软雅黑，杜绝西文字体触发细宋体 fallback
-    HusTheme::instance()->installThemePrimaryFontFamiliesBase(
-        QStringLiteral("'Microsoft YaHei UI', 'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', 'Segoe UI', sans-serif"));
-    HusTheme::instance()->installThemePrimaryFontSizeBase(16);
+    // 安装以初始字体为先导的原生字体栈，兜底 Segoe UI 与微软雅黑
+    QString initStack;
+    if (initialFont.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
+        initStack = QStringLiteral("'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif");
+    } else {
+        initStack = QString("'%1', 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif").arg(initialFont);
+    }
+    HusTheme::instance()->installThemePrimaryFontFamiliesBase(initStack);
+    HusTheme::instance()->installThemePrimaryFontSizeBase(14);
 
     QQmlApplicationEngine engine;
 
@@ -107,6 +104,7 @@ int main(int argc, char* argv[]) {
 
     smm::gui::GuiController controller;
     engine.rootContext()->setContextProperty("smmBackend", &controller);
+    engine.addImageProvider(QStringLiteral("modpreview"), new smm::gui::ModPreviewImageProvider(&controller));
 
     // 语言初始化与动态切换。采用 std::unique_ptr 智能指针管理，
     // 保证重复切换及程序退出时 100% RAII 自动安全回收，彻底杜绝内存泄漏。
@@ -162,6 +160,7 @@ int main(int argc, char* argv[]) {
 
         QObject::connect(reloadTimer, &QTimer::timeout, &app, [&engine, mainQmlUrl]() {
             qInfo() << "[LiveReload] Reloading QML scene...";
+            smm::gui::ModPreviewImageProvider::clearCache();
             engine.clearComponentCache();
             for (auto* obj : engine.rootObjects()) {
                 obj->deleteLater();

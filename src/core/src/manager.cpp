@@ -210,6 +210,91 @@ ModInfo ModManager::set_asset_enabled(const fs::path& staging_dir, const std::st
     return info;
 }
 
+#ifdef _WIN32
+static bool run_silent_cmd(const std::wstring& cmd) {
+    STARTUPINFOW si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+
+    std::vector<wchar_t> cmd_buf(cmd.begin(), cmd.end());
+    cmd_buf.push_back(L'\0');
+
+    if (!CreateProcessW(NULL, cmd_buf.data(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+        return false;
+    }
+
+    WaitForSingleObject(pi.hProcess, 15000);
+    DWORD exit_code = 1;
+    GetExitCodeProcess(pi.hProcess, &exit_code);
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    return exit_code == 0;
+}
+#endif
+
+bool ModManager::compress_image_to_webp(const fs::path& src_path, const fs::path& dst_path,
+                                       int max_width, int max_height, int quality) {
+    std::error_code ec;
+    if (!fs::exists(src_path, ec)) return false;
+
+    const fs::path temp_dst = dst_path.wstring() + L".tmp.webp";
+    fs::remove(temp_dst, ec);
+
+#ifdef _WIN32
+    // 方案 1: ImageMagick (magick) 优先，支持所有常见格式自动降采样高质量编码 WebP
+    const std::wstring magick_cmd = L"magick \"" + src_path.wstring() + L"\" -auto-orient -resize "
+                                  + std::to_wstring(max_width) + L"x" + std::to_wstring(max_height)
+                                  + L"> -quality " + std::to_wstring(quality) + L" \"" + temp_dst.wstring() + L"\"";
+    if (run_silent_cmd(magick_cmd) && fs::exists(temp_dst, ec) && fs::file_size(temp_dst, ec) > 0) {
+        fs::rename(temp_dst, dst_path, ec);
+        if (!ec) return true;
+        fs::copy_file(temp_dst, dst_path, fs::copy_options::overwrite_existing, ec);
+        fs::remove(temp_dst, ec);
+        return !ec;
+    }
+
+    // 方案 2: FFmpeg (ffmpeg)，同样原生内置 libwebp 编码支持
+    const std::wstring ffmpeg_cmd = L"ffmpeg -y -i \"" + src_path.wstring() + L"\" -vf \"scale='min("
+                                  + std::to_wstring(max_width) + L",iw)':-1\" -c:v libwebp -quality "
+                                  + std::to_wstring(quality) + L" \"" + temp_dst.wstring() + L"\"";
+    if (run_silent_cmd(ffmpeg_cmd) && fs::exists(temp_dst, ec) && fs::file_size(temp_dst, ec) > 0) {
+        fs::rename(temp_dst, dst_path, ec);
+        if (!ec) return true;
+        fs::copy_file(temp_dst, dst_path, fs::copy_options::overwrite_existing, ec);
+        fs::remove(temp_dst, ec);
+        return !ec;
+    }
+
+    // 方案 3: cwebp (官方 WebP 独立 CLI)
+    const std::wstring cwebp_cmd = L"cwebp -resize " + std::to_wstring(max_width) + L" 0 -q "
+                                 + std::to_wstring(quality) + L" \"" + src_path.wstring() + L"\" -o \"" + temp_dst.wstring() + L"\"";
+    if (run_silent_cmd(cwebp_cmd) && fs::exists(temp_dst, ec) && fs::file_size(temp_dst, ec) > 0) {
+        fs::rename(temp_dst, dst_path, ec);
+        if (!ec) return true;
+        fs::copy_file(temp_dst, dst_path, fs::copy_options::overwrite_existing, ec);
+        fs::remove(temp_dst, ec);
+        return !ec;
+    }
+#endif
+
+    // 兜底保障：若源图片本身已是 WebP，直接规范化拷贝
+    const std::string ext = to_lower_ascii(path_to_utf8(src_path.extension()));
+    if (ext == ".webp" || is_webp_header(src_path)) {
+        if (!fs::equivalent(src_path, dst_path, ec)) {
+            fs::copy_file(src_path, dst_path, fs::copy_options::overwrite_existing, ec);
+        }
+        return !ec;
+    }
+
+    return false;
+}
+
 ModInfo ModManager::set_mod_preview(const fs::path& staging_dir, const std::string& mod_id,
                                     const fs::path& image_src_path) {
     const fs::path mod_dir = find_mod_dir(staging_dir, mod_id);
@@ -219,60 +304,37 @@ ModInfo ModManager::set_mod_preview(const fs::path& staging_dir, const std::stri
     }
 
     ModInfo info = ModLoader::load_mod_info(mod_dir);
-    // 记录旧预览图路径，用于后续清理，确保仅保留一张要显示的图片
-    fs::path old_img_path;
-    if (info.preview_image.has_value() && !info.preview_image->empty()) {
-        old_img_path = mod_dir / *info.preview_image;
-    }
 
-    // 优先保留原图片的文件名，不再写死为 preview
-    std::string filename = path_to_utf8(image_src_path.filename());
-    if (filename.empty()) {
-        filename = "preview.png";
-    }
+    // 统一改名为 preview.webp
+    const fs::path dst_path = mod_dir / "preview.webp";
 
-    const std::string ext = to_lower_ascii(path_to_utf8(image_src_path.extension()));
-
-#ifdef _WIN32
-    bool converted = false;
-    if (ext == ".webp" || is_webp_header(image_src_path)) {
-        filename = path_to_utf8(image_src_path.stem()) + ".png";
-        const fs::path dst_path = mod_dir / filename;
-        converted = convert_to_standard_png_wic(image_src_path, dst_path);
-        if (converted) {
-            // 如果源文件在 mod_dir 内且不同于目标 PNG，删除原 WebP 图片
-            if (fs::exists(image_src_path, ec) && !fs::equivalent(image_src_path, dst_path, ec)) {
-                if (image_src_path.parent_path() == mod_dir) {
-                    fs::remove(image_src_path, ec);
-                }
-            }
-        }
-    }
+    bool converted = compress_image_to_webp(image_src_path, dst_path);
     if (!converted) {
-        const fs::path dst_path = mod_dir / filename;
         if (!fs::equivalent(image_src_path, dst_path, ec)) {
             fs::copy_file(image_src_path, dst_path, fs::copy_options::overwrite_existing, ec);
         }
     }
-#else
-    const fs::path dst_path = mod_dir / filename;
-    if (!fs::equivalent(image_src_path, dst_path, ec)) {
-        fs::copy_file(image_src_path, dst_path, fs::copy_options::overwrite_existing, ec);
-    }
-#endif
+
     if (ec) {
-        fail(ErrorCode::Io, "Failed to copy preview image to staging: " + ec.message(), mod_dir / filename);
+        fail(ErrorCode::Io, "Failed to copy preview image to staging: " + ec.message(), dst_path);
     }
 
-    // 清理旧预览图，保证仅保留一张要显示的图片
-    if (!old_img_path.empty() && fs::exists(old_img_path, ec)) {
-        const fs::path new_img_path = mod_dir / filename;
-        if (!fs::equivalent(old_img_path, new_img_path, ec)) {
-            fs::remove(old_img_path, ec);
+    // 清理该 mod 目录下除 preview.webp 外的所有旧背景图，确保 mod 根目录绝对整洁
+    for (const auto& entry : fs::directory_iterator(mod_dir, ec)) {
+        if (!entry.is_regular_file(ec)) continue;
+        const auto p = entry.path();
+        if (p.filename() == "preview.webp") continue;
+        const std::string fn_ext = to_lower_ascii(path_to_utf8(p.extension()));
+        if (fn_ext == ".png" || fn_ext == ".jpg" || fn_ext == ".jpeg" || fn_ext == ".bmp" || fn_ext == ".webp") {
+            const std::string stem = to_lower_ascii(path_to_utf8(p.stem()));
+            if (stem.find("preview") != std::string::npos || stem.find("cover") != std::string::npos ||
+                stem.find("banner") != std::string::npos || (info.preview_image && *info.preview_image == path_to_utf8(p.filename()))) {
+                fs::remove(p, ec);
+            }
         }
     }
 
-    info.preview_image = filename;
+    info.preview_image = "preview.webp";
     save_mod_info(mod_dir, info);
     info.root_path = mod_dir;
     return info;
@@ -386,23 +448,91 @@ bool ModManager::normalize_preview_image(const fs::path& mod_dir, std::string& p
     const fs::path img_path = mod_dir / preview_name;
     if (!fs::exists(img_path, ec)) return false;
 
-#ifdef _WIN32
-    const std::string ext = to_lower_ascii(path_to_utf8(img_path.extension()));
-    if (ext == ".webp" || is_webp_header(img_path)) {
-        // 基于原文件名（保留 stem）转为标准 PNG，不再强制写死改名为 preview.png
-        const std::string new_name = path_to_utf8(img_path.stem()) + ".png";
-        const fs::path png_path = mod_dir / new_name;
-        if (convert_to_standard_png_wic(img_path, png_path)) {
-            // 转码成功后，删除原图 WebP，确保仅保留一张要显示的图片
-            if (!fs::equivalent(img_path, png_path, ec)) {
-                fs::remove(img_path, ec);
+    const fs::path target_webp = mod_dir / "preview.webp";
+
+    // 若已经是 preview.webp 且大小在 350KB 以下，无需重复压缩
+    if (preview_name == "preview.webp" && fs::file_size(img_path, ec) < 350 * 1024) {
+        return true;
+    }
+
+    if (compress_image_to_webp(img_path, target_webp)) {
+        if (!fs::equivalent(img_path, target_webp, ec)) {
+            fs::remove(img_path, ec);
+        }
+        preview_name = "preview.webp";
+        return true;
+    }
+
+    return true;
+}
+
+std::pair<size_t, uint64_t> ModManager::optimize_all_previews(const fs::path& staging_dir) {
+    size_t count = 0;
+    uint64_t saved_bytes = 0;
+    std::error_code ec;
+
+    if (!fs::exists(staging_dir, ec) || !fs::is_directory(staging_dir, ec)) {
+        return {0, 0};
+    }
+
+    for (const auto& entry : fs::directory_iterator(staging_dir, ec)) {
+        if (!entry.is_directory(ec)) continue;
+        const fs::path mod_dir = entry.path();
+        const std::string mod_name = path_to_utf8(mod_dir.filename());
+        if (mod_name.empty() || mod_name[0] == '.') continue;
+
+        fs::path meta_path = mod_dir / ".smm_mod.json";
+        if (!fs::exists(meta_path, ec)) {
+            meta_path = mod_dir / "mod.json";
+        }
+        if (!fs::exists(meta_path, ec)) continue;
+
+        ModInfo info = ModLoader::load_mod_info(mod_dir);
+        std::string current_preview;
+        if (info.preview_image && !info.preview_image->empty()) {
+            current_preview = *info.preview_image;
+        } else {
+            for (const char* cand : {"preview.png", "preview.jpg", "preview.jpeg", "preview.webp",
+                                     "cover.png", "cover.jpg", "banner.png", "banner.jpg"}) {
+                if (fs::exists(mod_dir / cand, ec)) {
+                    current_preview = cand;
+                    break;
+                }
             }
-            preview_name = new_name;
-            return true;
+        }
+
+        if (current_preview.empty()) {
+            for (const auto& f : fs::directory_iterator(mod_dir, ec)) {
+                if (!f.is_regular_file(ec)) continue;
+                const std::string fext = to_lower_ascii(path_to_utf8(f.path().extension()));
+                if (fext == ".png" || fext == ".jpg" || fext == ".jpeg" || fext == ".bmp" || fext == ".webp") {
+                    current_preview = path_to_utf8(f.path().filename());
+                    break;
+                }
+            }
+        }
+
+        if (!current_preview.empty()) {
+            const fs::path orig_file = mod_dir / current_preview;
+            const uint64_t orig_sz = fs::exists(orig_file, ec) ? fs::file_size(orig_file, ec) : 0;
+
+            std::string norm_preview = current_preview;
+            if (normalize_preview_image(mod_dir, norm_preview)) {
+                const fs::path new_file = mod_dir / "preview.webp";
+                const uint64_t new_sz = fs::exists(new_file, ec) ? fs::file_size(new_file, ec) : 0;
+
+                info.preview_image = "preview.webp";
+                save_mod_info(mod_dir, info);
+
+                if (orig_sz > new_sz) {
+                    saved_bytes += (orig_sz - new_sz);
+                }
+                count++;
+            }
         }
     }
-#endif
-    return true;
+
+    return {count, saved_bytes};
 }
 
 } // namespace smm

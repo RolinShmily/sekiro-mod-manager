@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.3.4] - 2026-10-03
+
+### Added
+
+- **Native Windows Typography Settings & Segoe UI Default**: Re-engineered UI typography system to eliminate excessive bold rendering (`Normal 400` baseline with `14px` standard desktop scale). Added native Windows font selector in Global Settings with Segoe UI (default recommended), Microsoft YaHei UI, DengXian, SimHei, KaiTi, and Cascadia Code support.
+- **HuskarUI Dual Theme Support**: Added theme mode switcher in Global Settings with full support for HuskarUI Dark, Light, and Follow-System themes with real-time palette adaptation.
+- **Unified `preview.webp` Backdrop Specification**: All mod preview backdrop images (whether imported, uploaded, or replaced) are now strictly normalized, compressed, and saved exclusively as `preview.webp`.
+- **WIC Hardware-Accelerated Image Provider (`ModPreviewImageProvider`)**: Built custom `image://modpreview/` protocol in C++ leveraging native Windows Imaging Component (WIC) hardware decoding, async on-demand downsampling (480x270 for cards, 960x540 for drawer), and LRU memory cache, saving over 90% GPU texture memory.
+- **Batch Mod Backdrop WebP Migration**: Automatically batch-converted all existing backdrops in the staging repository to optimized WebP, reducing repository image storage by over 93% (from 65MB to 4.5MB).
+
+### Fixed
+
+- **Settings Modal Layout & ComboBox Display**: Resolved `ScrollView` type resolution in QML, fixed ComboBox blank label display for JavaScript object models, and wrapped preferences content in a self-adaptive scroll container to prevent dialog clipping.
+
 ## [0.3.3] - 2026-10-03
 
 ### Added

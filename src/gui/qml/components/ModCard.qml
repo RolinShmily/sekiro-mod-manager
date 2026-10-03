@@ -151,7 +151,7 @@ Rectangle {
             sourceSize.height: 270
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
-            cache: false
+            cache: true
             autoTransform: true
             mipmap: true
             smooth: true
@@ -435,7 +435,7 @@ Rectangle {
                     sourceSize.height: 76
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
-                    cache: false
+                    cache: true
                     autoTransform: true
                     mipmap: true
                     smooth: true

@@ -195,6 +195,10 @@ class GuiController : public QObject {
     Q_PROPERTY(QString statusText READ statusText NOTIFY statusTextChanged)
 
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
+    Q_PROPERTY(QString fontFamily READ fontFamily WRITE setFontFamily NOTIFY fontFamilyChanged)
+    Q_PROPERTY(QVariantList availableFonts READ availableFonts NOTIFY languageChanged)
+    Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY themeModeChanged)
+    Q_PROPERTY(QVariantList availableThemes READ availableThemes NOTIFY languageChanged)
 
     Q_PROPERTY(QString sekiroDir READ sekiroDir WRITE setSekiroDir NOTIFY sekiroDirChanged)
     Q_PROPERTY(QString stagingDir READ stagingDir WRITE setStagingDir NOTIFY stagingDirChanged)
@@ -240,6 +244,18 @@ public:
     QString language() const { return language_; }
     void setLanguage(const QString& code);
 
+    QString fontFamily() const { return fontFamily_; }
+    void setFontFamily(const QString& family);
+
+    QString themeMode() const { return themeMode_; }
+    void setThemeMode(const QString& mode);
+
+    QVariantList availableFonts() const;
+    QVariantList availableThemes() const;
+
+    static void applyFontFamily(const QString& family);
+    static void applyThemeMode(const QString& mode);
+
     QString sekiroDir() const { return sekiroDir_; }
     void setSekiroDir(const QString& dir);
 
@@ -283,9 +299,12 @@ public:
     Q_INVOKABLE void launchGame();
     Q_INVOKABLE void autoDetectGameDir();
     Q_INVOKABLE QString detectSekiroDir() const;
-    Q_INVOKABLE void saveSettings(const QString& staging, const QString& game, const QString& lang = {});
+    Q_INVOKABLE void saveSettings(const QString& staging, const QString& game,
+                                 const QString& lang = {}, const QString& font = {},
+                                 const QString& theme = {});
     Q_INVOKABLE void openModDetail(const QString& modId);
     Q_INVOKABLE void setModPreview(const QString& modId, const QString& imagePath);
+    Q_INVOKABLE void optimizeAllPreviews();
     Q_INVOKABLE void setModSourceUrl(const QString& modId, const QString& url);
     Q_INVOKABLE void updateModMetadata(const QString& modId, const QString& newId,
                                        const QString& name, const QString& author,
@@ -321,6 +340,8 @@ signals:
     void busyChanged();
     void statusTextChanged();
     void languageChanged(const QString& code);
+    void fontFamilyChanged(const QString& family);
+    void themeModeChanged(const QString& mode);
     void sekiroDirChanged();
     void stagingDirChanged();
     void ntfsMatchedChanged();
@@ -343,6 +364,8 @@ private:
 
     QString statusText_{"Ready"};
     QString language_{"zh-CN"};
+    QString fontFamily_{QStringLiteral("Segoe UI")};
+    QString themeMode_{QStringLiteral("dark")};
     QString sekiroDir_;
     QString stagingDir_;
     bool isNtfsMatched_{false};

@@ -3,10 +3,16 @@
 #include <QClipboard>
 #include <QDir>
 #include <QFileInfo>
+#include <QFont>
+#include <QFontDatabase>
 #include <QGuiApplication>
 #include <QProcess>
 #include <QSettings>
+#include <QThreadPool>
 #include <fstream>
+
+#include "ModPreviewImageProvider.hpp"
+#include <theme/hustheme.h>
 
 #include <smm/doctor.hpp>
 #include <smm/loader.hpp>
@@ -157,10 +163,7 @@ QVariant ModListModel::data(const QModelIndex& index, int role) const {
         case PreviewImageRole: return m.previewImage;
         case PreviewImagePathRole: {
             if (!m.previewImage.isEmpty() && !m.rootPath.isEmpty()) {
-                const QString full = QDir(m.rootPath).filePath(m.previewImage);
-                if (QFileInfo::exists(full)) {
-                    return QUrl::fromLocalFile(full).toString();
-                }
+                return QStringLiteral("image://modpreview/") + m.id;
             }
             return QString{};
         }
@@ -410,6 +413,12 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
     stagingDir_ = settings.value("stagingDir").toString();
     sekiroDir_ = settings.value("sekiroDir").toString();
     language_ = settings.value("language", QStringLiteral("zh-CN")).toString();
+    fontFamily_ = settings.value("fontFamily", QStringLiteral("Segoe UI")).toString();
+    if (fontFamily_.trimmed().isEmpty()) fontFamily_ = QStringLiteral("Segoe UI");
+
+    themeMode_ = settings.value("themeMode", QStringLiteral("dark")).toString();
+    if (themeMode_.trimmed().isEmpty()) themeMode_ = QStringLiteral("dark");
+
     equippedPackId_ = settings.value("equippedPresetId").toString();
     if (!equippedPackId_.isEmpty()) {
         presetListModel_.setEquippedId(equippedPackId_);
@@ -417,6 +426,9 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
 
     if (!stagingDir_.isEmpty()) client_.setStagingDir(stagingDir_);
     if (!sekiroDir_.isEmpty()) client_.setGameDir(sekiroDir_);
+
+    applyFontFamily(fontFamily_);
+    applyThemeMode(themeMode_);
 
     checkVolumeMatch();
     refreshAll();
@@ -550,6 +562,128 @@ void GuiController::setLanguage(const QString& code) {
     emit languageChanged(language_);
 }
 
+void GuiController::setFontFamily(const QString& family) {
+    if (fontFamily_ == family) {
+        return;
+    }
+    fontFamily_ = family;
+    applyFontFamily(fontFamily_);
+    QSettings settings("SekiroModManager", "SMM");
+    settings.setValue("fontFamily", fontFamily_);
+    emit fontFamilyChanged(fontFamily_);
+}
+
+void GuiController::setThemeMode(const QString& mode) {
+    if (themeMode_ == mode) {
+        return;
+    }
+    themeMode_ = mode;
+    applyThemeMode(themeMode_);
+    QSettings settings("SekiroModManager", "SMM");
+    settings.setValue("themeMode", themeMode_);
+    emit themeModeChanged(themeMode_);
+}
+
+void GuiController::applyFontFamily(const QString& family) {
+    QString targetFamily = family.trimmed();
+    if (targetFamily.isEmpty()) {
+        targetFamily = QStringLiteral("Segoe UI");
+    }
+
+    // 全局 QFont：基准字重使用 Normal (400)，彻底解决界面过粗发胀的问题
+    QFont defaultFont(targetFamily);
+    defaultFont.setStyleHint(QFont::SansSerif);
+    defaultFont.setWeight(QFont::Normal);
+    QGuiApplication::setFont(defaultFont);
+
+    // 构建层级无衬线字体回退栈，优先选定字体，兜底使用 Segoe UI 与微软雅黑
+    QString fontStack;
+    if (targetFamily.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
+        fontStack = QStringLiteral("'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif");
+    } else if (targetFamily.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
+               targetFamily.compare(QLatin1String("Microsoft YaHei"), Qt::CaseInsensitive) == 0) {
+        fontStack = QStringLiteral("'Microsoft YaHei UI', 'Microsoft YaHei', 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif");
+    } else {
+        fontStack = QString("'%1', 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif").arg(targetFamily);
+    }
+
+    HusTheme::instance()->installThemePrimaryFontFamiliesBase(fontStack);
+    HusTheme::instance()->installThemePrimaryFontSizeBase(14);
+}
+
+void GuiController::applyThemeMode(const QString& mode) {
+    const QString m = mode.trimmed().toLower();
+    if (m == QLatin1String("light")) {
+        HusTheme::instance()->setDarkMode(HusTheme::DarkMode::Light);
+    } else if (m == QLatin1String("system")) {
+        HusTheme::instance()->setDarkMode(HusTheme::DarkMode::System);
+    } else {
+        HusTheme::instance()->setDarkMode(HusTheme::DarkMode::Dark);
+    }
+}
+
+QVariantList GuiController::availableFonts() const {
+    const auto installed = QFontDatabase::families();
+    const bool isEn = (language_ == QLatin1String("en-US"));
+
+    struct FontOption {
+        QString family;
+        QString nameZh;
+        QString nameEn;
+    };
+
+    const QVector<FontOption> candidates = {
+        {QStringLiteral("Segoe UI"), QStringLiteral("Segoe UI (默认推荐)"), QStringLiteral("Segoe UI (Default / Recommended)")},
+        {QStringLiteral("Microsoft YaHei UI"), QStringLiteral("微软雅黑 UI (系统界面)"), QStringLiteral("Microsoft YaHei UI (Interface)")},
+        {QStringLiteral("Microsoft YaHei"), QStringLiteral("微软雅黑 (经典中文字体)"), QStringLiteral("Microsoft YaHei (Classic)")},
+        {QStringLiteral("DengXian"), QStringLiteral("等线 (Win10/11 现代屏显)"), QStringLiteral("DengXian (Modern Sans)")},
+        {QStringLiteral("SimHei"), QStringLiteral("黑体 (传统工整黑体)"), QStringLiteral("SimHei (Traditional Sans)")},
+        {QStringLiteral("KaiTi"), QStringLiteral("楷体 (水墨书法雅致)"), QStringLiteral("KaiTi (Calligraphy)")},
+        {QStringLiteral("Cascadia Code"), QStringLiteral("Cascadia Code (等宽代码体)"), QStringLiteral("Cascadia Code (Monospace)")},
+        {QStringLiteral("Consolas"), QStringLiteral("Consolas (经典西文等宽)"), QStringLiteral("Consolas (Monospace)")},
+        {QStringLiteral("PingFang SC"), QStringLiteral("苹方 (PingFang SC)"), QStringLiteral("PingFang SC")},
+        {QStringLiteral("Noto Sans SC"), QStringLiteral("思源黑体 (Noto Sans SC)"), QStringLiteral("Noto Sans SC")},
+        {QStringLiteral("HarmonyOS Sans SC"), QStringLiteral("鸿蒙黑体 (HarmonyOS Sans SC)"), QStringLiteral("HarmonyOS Sans SC")}
+    };
+
+    QVariantList result;
+    for (const auto& item : candidates) {
+        if (item.family == QLatin1String("Segoe UI") ||
+            item.family == QLatin1String("Microsoft YaHei UI") ||
+            installed.contains(item.family)) {
+            QVariantMap opt;
+            opt[QStringLiteral("label")] = isEn ? item.nameEn : item.nameZh;
+            opt[QStringLiteral("value")] = item.family;
+            result.append(opt);
+        }
+    }
+    return result;
+}
+
+QVariantList GuiController::availableThemes() const {
+    const bool isEn = (language_ == QLatin1String("en-US"));
+    QVariantList result;
+    {
+        QVariantMap opt;
+        opt[QStringLiteral("label")] = isEn ? QStringLiteral("Dark Theme (Default)") : QStringLiteral("暗色主题 (默认)");
+        opt[QStringLiteral("value")] = QStringLiteral("dark");
+        result.append(opt);
+    }
+    {
+        QVariantMap opt;
+        opt[QStringLiteral("label")] = isEn ? QStringLiteral("Light Theme") : QStringLiteral("亮色主题");
+        opt[QStringLiteral("value")] = QStringLiteral("light");
+        result.append(opt);
+    }
+    {
+        QVariantMap opt;
+        opt[QStringLiteral("label")] = isEn ? QStringLiteral("Follow System") : QStringLiteral("跟随系统");
+        opt[QStringLiteral("value")] = QStringLiteral("system");
+        result.append(opt);
+    }
+    return result;
+}
+
 void GuiController::refreshAll() {
     client_.refreshEnvironment();
     client_.refreshMods();
@@ -652,15 +786,25 @@ void GuiController::autoDetectGameDir() {
     emit notification("warning", tr("Could not auto-detect Sekiro in default Steam libraries. Please select manually."));
 }
 
-void GuiController::saveSettings(const QString& staging, const QString& game, const QString& lang) {
+void GuiController::saveSettings(const QString& staging, const QString& game,
+                                const QString& lang, const QString& font,
+                                const QString& theme) {
     const QString cleanStaging = staging.trimmed();
     const QString cleanGame = game.trimmed();
     const QString cleanLang = lang.trimmed();
+    const QString cleanFont = font.trimmed();
+    const QString cleanTheme = theme.trimmed();
 
     setStagingDir(cleanStaging);
     setSekiroDir(cleanGame);
     if (!cleanLang.isEmpty()) {
         setLanguage(cleanLang);
+    }
+    if (!cleanFont.isEmpty()) {
+        setFontFamily(cleanFont);
+    }
+    if (!cleanTheme.isEmpty()) {
+        setThemeMode(cleanTheme);
     }
 
     client_.saveConfig(cleanStaging, cleanGame);
@@ -670,6 +814,12 @@ void GuiController::saveSettings(const QString& staging, const QString& game, co
     settings.setValue("sekiroDir", cleanGame);
     if (!cleanLang.isEmpty()) {
         settings.setValue("language", cleanLang);
+    }
+    if (!cleanFont.isEmpty()) {
+        settings.setValue("fontFamily", cleanFont);
+    }
+    if (!cleanTheme.isEmpty()) {
+        settings.setValue("themeMode", cleanTheme);
     }
     settings.sync();
 
@@ -693,8 +843,31 @@ void GuiController::setModPreview(const QString& modId, const QString& imagePath
     cleanPath = QDir::toNativeSeparators(cleanPath);
 
     client_.setModPreview(modId, cleanPath);
+    ModPreviewImageProvider::clearCache();
     previewRevision_++;
     emit previewRevisionChanged();
+    refreshAll();
+    openModDetail(modId);
+}
+
+void GuiController::optimizeAllPreviews() {
+    if (stagingDir_.isEmpty()) return;
+    const std::filesystem::path stagingPath = client_.stagingDir().toStdWString();
+
+    QThreadPool::globalInstance()->start([this, stagingPath]() {
+        const auto [count, saved] = smm::ModManager::optimize_all_previews(stagingPath);
+        ModPreviewImageProvider::clearCache();
+        QMetaObject::invokeMethod(this, [this, count, saved]() {
+            previewRevision_++;
+            emit previewRevisionChanged();
+            refreshAll();
+
+            const double savedMb = static_cast<double>(saved) / (1024.0 * 1024.0);
+            emit notification(QStringLiteral("success"),
+                              tr("背景图压缩优化完成：共压缩 %1 个模组背景图，释放了 %2 MB 空间！")
+                              .arg(count).arg(QString::number(savedMb, 'f', 1)));
+        });
+    });
 }
 
 void GuiController::saveModPack(const QString& nameZh, const QString& descZh,
