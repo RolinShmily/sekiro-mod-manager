@@ -151,7 +151,7 @@ ScrollView {
 
                         HusTag {
                             Layout.alignment: Qt.AlignVCenter
-                            text: "STEAM v1.06"
+                            text: "v1.06"
                         }
                     }
 

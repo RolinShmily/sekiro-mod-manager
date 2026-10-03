@@ -207,13 +207,12 @@ ModPackItem pack_item_from(const ModInfo& info, const StagedMod& staged) {
     return item;
 }
 
-/// Adds the metadata pair every SMM container carries and bundles the preview image if present.
+/// Adds the metadata container (.smm_mod.json) and bundles the preview image if present.
 void add_metadata(ZipWriter& writer, const std::string& prefix, const ModInfo& info, const fs::path& mod_dir = {}) {
     ModInfo portable = info;
     portable.root_path.reset();
     const std::string payload = json(portable).dump(2);
     writer.add_text(prefix + ".smm_mod.json", payload);
-    writer.add_text(prefix + "mod.json", payload);
 
     if (!mod_dir.empty() && info.preview_image.has_value() && !info.preview_image->empty()) {
         std::error_code ec;

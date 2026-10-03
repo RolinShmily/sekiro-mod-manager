@@ -247,6 +247,9 @@ void from_json(const json& j, ModInfo& m) {
     read_optional(j, "source_url", m.source_url);
     read_optional(j, "license", m.license);
     read_optional(j, "preview_image", m.preview_image);
+    if (!m.preview_image.has_value() || m.preview_image->empty()) {
+        read_optional(j, "preview", m.preview_image);
+    }
     m.enabled = read_bool(j, "enabled", true);
     m.priority = read_priority(j);
     if (const auto it = j.find("tags"); it != j.end() && it->is_array()) {

@@ -7,6 +7,8 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QDebug>
+#include <QFont>
+#include <QFontDatabase>
 
 #ifdef BUILD_HUSKARUI_STATIC_LIBRARY
 #include <QtQml/qqmlextensionplugin.h>
@@ -29,6 +31,31 @@ int main(int argc, char* argv[]) {
     app.setWindowIcon(QIcon(QStringLiteral(":/images/sekiro_icon_256.png")));
     app.setOrganizationName("SekiroModManager");
     app.setApplicationName("SMM");
+
+    // 全局中文字体与字重优化：选用 Windows 标准无衬线中文字体「微软雅黑」，
+    // 并将应用基准字重提升至 DemiBold (600) 适度加粗，消除暗色战术主题下常规体 (400) 笔画单薄发虚、
+    // 以及未配置中文字体时 DirectWrite 回退到细宋体 (SimSun) 的问题。
+    const auto installedFamilies = QFontDatabase::families();
+    QString primaryFontFamily = QStringLiteral("Microsoft YaHei UI");
+    const QStringList fontCandidates = {
+        QStringLiteral("Microsoft YaHei UI"),
+        QStringLiteral("Microsoft YaHei"),
+        QStringLiteral("微软雅黑"),
+        QStringLiteral("PingFang SC"),
+        QStringLiteral("Noto Sans SC"),
+        QStringLiteral("Segoe UI")
+    };
+    for (const auto& fam : fontCandidates) {
+        if (installedFamilies.contains(fam)) {
+            primaryFontFamily = fam;
+            break;
+        }
+    }
+
+    QFont defaultFont(primaryFontFamily);
+    defaultFont.setStyleHint(QFont::SansSerif);
+    defaultFont.setWeight(QFont::DemiBold);
+    app.setFont(defaultFont);
 
     // 「苇名城」战术暗色调为默认启动基调（避免浅色主题下的白底不可读）
 
@@ -53,13 +80,15 @@ int main(int argc, char* argv[]) {
     devMode = true;
 #endif
 
+    // 启用系统原生次像素渲染引擎 (DirectWrite/ClearType)，提升字形清晰度与边缘饱满度
+    HusTheme::instance()->setTextRenderType(HusTheme::TextRenderType::NativeRendering);
     // 必须在 QML 引擎加载前完成主题安装，避免首帧闪烁与配色错乱
     HusTheme::instance()->setDarkMode(themeMode);
     // 水墨泥金：经典金碧水墨与和风素雅强调色（替代过艳的深红，呈现淡雅沉稳质感）
     HusTheme::instance()->installThemePrimaryColorBase(QColor(QStringLiteral("#c29f5d")));
-    // 采用 Windows 标准原生无衬线字体栈，呈现最清晰自然的阅读体验
+    // 采用全兼容 Windows 标准原生无衬线字体栈，优先锁定微软雅黑，杜绝西文字体触发细宋体 fallback
     HusTheme::instance()->installThemePrimaryFontFamiliesBase(
-        QStringLiteral("'Microsoft YaHei UI', 'Segoe UI', sans-serif"));
+        QStringLiteral("'Microsoft YaHei UI', 'Microsoft YaHei', '微软雅黑', 'PingFang SC', 'Noto Sans SC', 'Segoe UI', sans-serif"));
     HusTheme::instance()->installThemePrimaryFontSizeBase(16);
 
     QQmlApplicationEngine engine;

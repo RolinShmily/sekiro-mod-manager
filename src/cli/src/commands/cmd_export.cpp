@@ -21,7 +21,7 @@ nlohmann::json run_export(CliContext& ctx) {
     }
 
     ExportOptions options;
-    options.include_source = !ctx.has("--no-source");
+    options.include_source = ctx.has("--include-source");
 
     const fs::path output = ctx.has_option("--output") ? fs::path(ctx.option("--output"))
                                                        : fs::path("exports");
@@ -53,9 +53,9 @@ nlohmann::json run_export(CliContext& ctx) {
     if (!ctx.json_mode) {
         std::cout << terminal::green("Exported", ctx.use_color) << " " << produced.string()
                   << "\n";
-        if (!options.include_source) {
+        if (options.include_source) {
             std::cout << "  " << terminal::dim(
-                                     "original downloads were not included (--no-source)",
+                                     "original downloads included (--include-source)",
                                      ctx.use_color)
                       << "\n";
         }

@@ -4,7 +4,9 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QProcess>
 #include <QSettings>
+#include <fstream>
 
 #include <smm/doctor.hpp>
 #include <smm/loader.hpp>
@@ -481,6 +483,7 @@ void GuiController::initSignals() {
 
     connect(&client_, &SmmClient::restoreFinished, this, [this](const RestoreSummary& summary) {
         deployedFiles_ = 0;
+        bytesSaved_ = 0;
         emit telemetryChanged();
         emit notification("info", tr("Restored: %1 links safely unlinked.").arg(summary.removedFiles));
     });
@@ -518,6 +521,7 @@ void GuiController::setSekiroDir(const QString& dir) {
         sekiroDir_ = dir;
         client_.setGameDir(dir);
         checkVolumeMatch();
+        updateDeploymentTelemetry();
         emit sekiroDirChanged();
     }
 }
@@ -553,6 +557,7 @@ void GuiController::refreshAll() {
     client_.refreshPlan();
     client_.refreshPresets();
     client_.refreshDoctor();
+    updateDeploymentTelemetry();
 }
 
 void GuiController::deploy() {
@@ -569,9 +574,64 @@ void GuiController::restore() {
 }
 
 void GuiController::launchGame() {
-    // 优先通过 Steam 协议拉起 Sekiro (AppID 814380)
-    QDesktopServices::openUrl(QUrl("steam://rungameid/814380"));
-    emit notification("info", tr("Launched Sekiro via Steam (AppID 814380)"));
+    // 1. 优先尝试直接启动本地配置的游戏可执行文件 sekiro.exe，脱离 Steam 依赖
+    QString gameDir = sekiroDir_;
+    if (gameDir.isEmpty() || !QDir(gameDir).exists()) {
+        const QString detected = detectSekiroDir();
+        if (!detected.isEmpty()) {
+            gameDir = detected;
+        }
+    }
+
+    if (!gameDir.isEmpty()) {
+        const QString exePath = QDir(gameDir).filePath(QStringLiteral("sekiro.exe"));
+        if (QFile::exists(exePath)) {
+            bool started = QProcess::startDetached(exePath, QStringList{}, gameDir);
+            if (started) {
+                emit notification("success", tr("已直接启动只狼游戏 (sekiro.exe)"));
+                return;
+            }
+        }
+    }
+
+    // 2. 本地 sekiro.exe 未找到时，再尝试通过 Steam 协议拉起 Sekiro (AppID 814380)
+    bool opened = QDesktopServices::openUrl(QUrl("steam://rungameid/814380"));
+    if (opened) {
+        emit notification("info", tr("未在本地路径找到独立程序，已通过 Steam 协议拉起 (AppID 814380)"));
+    } else {
+        emit notification("warning", tr("启动失败：未检测到 sekiro.exe，且无法通过 Steam 拉起。请先在全局配置中指定只狼游戏目录。"));
+    }
+}
+
+void GuiController::updateDeploymentTelemetry() {
+    deployedFiles_ = 0;
+    bytesSaved_ = 0;
+
+    if (!sekiroDir_.isEmpty()) {
+        fs::path modsDir = smm::utf8_to_path(sekiroDir_.toStdString());
+        if (modsDir.filename() != "mods") {
+            modsDir /= "mods";
+        }
+        const fs::path manifestPath = modsDir / ".smm_manifest.json";
+        std::error_code ec;
+        if (fs::exists(manifestPath, ec)) {
+            try {
+                std::ifstream f(manifestPath, std::ios::binary);
+                if (f) {
+                    nlohmann::json j;
+                    f >> j;
+                    if (j.contains("files") && j["files"].is_array()) {
+                        deployedFiles_ = static_cast<int>(j["files"].size());
+                    }
+                    if (j.contains("total_bytes") && j["total_bytes"].is_number()) {
+                        bytesSaved_ = j["total_bytes"].get<quint64>();
+                    }
+                }
+            } catch (...) {
+            }
+        }
+    }
+    emit telemetryChanged();
 }
 
 QString GuiController::detectSekiroDir() const {

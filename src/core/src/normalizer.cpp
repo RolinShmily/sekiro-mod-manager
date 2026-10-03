@@ -291,7 +291,8 @@ bool Normalizer::is_ignored_file(const fs::path& path, const fs::path& canonical
 
     // Preview screenshots sitting beside the assets are documentation, not game content.
     const bool is_image = ends_with(lower, ".jpg") || ends_with(lower, ".png") ||
-                          ends_with(lower, ".jpeg");
+                          ends_with(lower, ".jpeg") || ends_with(lower, ".webp") ||
+                          ends_with(lower, ".bmp");
     if (is_image && path.parent_path() == canonical_root) {
         return true;
     }

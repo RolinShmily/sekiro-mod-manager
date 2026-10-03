@@ -382,7 +382,47 @@ void materialize_mod(const NormalizationResult& normalized, const fs::path& unpa
         }
     }
 
-    ModManager::save_mod_info(build_dir, info);
+    // 预览图处理：若指定了 preview_image 或在解压包中自动探测到了图片，将其拷贝至 build_dir 并规范化
+    ModInfo final_info = info;
+    std::string preview_file;
+    if (final_info.preview_image.has_value() && !final_info.preview_image->empty()) {
+        const fs::path src_img = unpack_dir / *final_info.preview_image;
+        if (fs::exists(src_img, ec)) {
+            const fs::path dst_img = build_dir / *final_info.preview_image;
+            fs::copy_file(src_img, dst_img, fs::copy_options::overwrite_existing, ec);
+            if (!ec) {
+                preview_file = *final_info.preview_image;
+            }
+        }
+    }
+    if (preview_file.empty()) {
+        constexpr std::string_view candidates[] = {
+            "preview.png", "preview.jpg", "preview.jpeg", "preview.webp",
+            "cover.png", "cover.jpg", "cover.jpeg", "cover.webp",
+            "banner.png", "banner.jpg"
+        };
+        for (const auto cand : candidates) {
+            const fs::path src_img = unpack_dir / cand;
+            if (fs::exists(src_img, ec)) {
+                const fs::path dst_img = build_dir / cand;
+                fs::copy_file(src_img, dst_img, fs::copy_options::overwrite_existing, ec);
+                if (!ec) {
+                    preview_file = std::string(cand);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!preview_file.empty()) {
+        final_info.preview_image = preview_file;
+        std::string norm_name = preview_file;
+        if (ModManager::normalize_preview_image(build_dir, norm_name)) {
+            final_info.preview_image = norm_name;
+        }
+    }
+
+    ModManager::save_mod_info(build_dir, final_info);
 }
 
 /// Moves the finished layout into place, preferring a rename so the mod appears atomically.

@@ -110,39 +110,17 @@ Rectangle {
     }
 
     // -------------------------------------------------------------------------
-    // 批量管理复选框
+    // 批量管理复选框：优先采用 HuskarUI 原生 HusCheckBox 组件
     // -------------------------------------------------------------------------
-    Rectangle {
+    HusCheckBox {
         id: selectionBox
         visible: rootCard.batchMode
         anchors.top: parent.top
         anchors.left: parent.left
-        anchors.margins: rootCard.compact ? 6 : 8
-        width: 20
-        height: 20
-        radius: 4
+        anchors.margins: rootCard.compact ? 4 : 6
         z: 50
-        color: rootCard.isSelected
-               ? HusTheme.Primary.colorPrimary
-               : (HusTheme.isDark ? Qt.rgba(0.20, 0.20, 0.25, 0.92) : Qt.rgba(1, 1, 1, 0.95))
-        border.color: rootCard.isSelected
-                      ? HusTheme.Primary.colorPrimary
-                      : HusTheme.Primary.colorBorder
-        border.width: 1.5
-
-        HusIconText {
-            visible: rootCard.isSelected
-            anchors.centerIn: parent
-            iconSource: HusIcon.CheckOutlined
-            font.pixelSize: 12
-            color: "#ffffff"
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: rootCard.toggleSelected()
-        }
+        checked: rootCard.isSelected
+        onClicked: rootCard.toggleSelected()
     }
 
     // -------------------------------------------------------------------------

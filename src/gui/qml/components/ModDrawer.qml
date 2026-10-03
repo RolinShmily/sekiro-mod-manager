@@ -262,10 +262,12 @@ HusDrawer {
                     Layout.alignment: Qt.AlignTop
                 }
 
-                HusInput {
+                HusTextArea {
                     id: modDescInput
                     Layout.fillWidth: true
-                    implicitHeight: 32
+                    autoSize: true
+                    minRows: 2
+                    maxRows: 4
                     text: smmBackend ? smmBackend.currentModDesc : ""
                     placeholderText: qsTr("模组功能说明与备注…")
                 }

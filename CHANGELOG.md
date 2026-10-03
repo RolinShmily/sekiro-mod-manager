@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.3.3] - 2026-10-03
+
+### Added
+
+- **Standalone `sekiro.exe` Direct Launch**: Decoupled game launch from Steam protocol (`steam://rungameid/814380`). SMM now detects and prioritizes direct process execution (`QProcess::startDetached`) with the game root working directory for offline, standalone, or DRM-free installations.
+- **Dynamic Telemetry & Manifest-Aware Stats**: Deployment metrics (linked files and disk space saved) now initialize to zero (`0` files, `0 B` saved) instead of mock defaults, accurately reflect live `.smm_manifest.json` data, and instantly zero out on environment restore.
+- **HuskarUI-First Component Alignment**: Upgraded batch selection checkboxes to `HusCheckBox`, converted mod description inputs to auto-sizing `HusTextArea`, added popconfirm dialogs (`HusPopconfirm`) for mod pack preset deletion, and improved Chinese typography rendering (DemiBold 600 weight with DirectWrite NativeRendering).
+
+### Changed
+
+- **Standardized Metadata (`.smm_mod.json`)**: Migrated legacy `mod.json` staging metadata exclusively to `.smm_mod.json`, automatically purging old files upon normalization.
+- **Archive Staging Backup (`.smm_source`)**: Preserved imported `.zip` / `.7z` archives in `.smm_source` inside each mod staging directory for lossless archive re-export.
+- **Clean Export Pipeline**: Mod packs and standalone mod exports exclude internal `.smm_source` backup archives by default (`ExportOptions::include_source = false`), ensuring compact, distribution-ready output packages.
+- **Custom Image Stem Normalization**: Preserved original image stem names for preview assets while automatically transcoding WebP/BMP formats to single standalone PNG files.
+
 ## [0.3.2] - 2026-10-02
 
 ### Added

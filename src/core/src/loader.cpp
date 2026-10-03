@@ -63,6 +63,8 @@ ModInfo ModLoader::load_mod_info(const fs::path& mod_dir) {
     }
     info.root_path = mod_dir;
 
+    bool metadata_changed = false;
+
     // Auto-detect preview image if not explicitly configured in metadata
     if (!info.preview_image.has_value() || info.preview_image->empty()) {
         constexpr std::string_view candidates[] = {
@@ -73,13 +75,25 @@ ModInfo ModLoader::load_mod_info(const fs::path& mod_dir) {
         for (const auto cand : candidates) {
             if (fs::exists(mod_dir / cand, ec)) {
                 info.preview_image = std::string(cand);
+                metadata_changed = true;
                 break;
             }
         }
     }
 
     if (info.preview_image.has_value() && !info.preview_image->empty()) {
-        ModManager::normalize_preview_image(mod_dir, *info.preview_image);
+        std::string current_preview = *info.preview_image;
+        if (ModManager::normalize_preview_image(mod_dir, current_preview)) {
+            if (current_preview != *info.preview_image) {
+                info.preview_image = current_preview;
+                metadata_changed = true;
+            }
+        }
+    }
+
+    // 若图片标准化、自动探测到预览图，或原读取自遗留 mod.json，统一持久化为 .smm_mod.json 并清理旧文件
+    if (metadata_changed || meta_path.filename() == "mod.json") {
+        ModManager::save_mod_info(mod_dir, info);
     }
 
     return info;

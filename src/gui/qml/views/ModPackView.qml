@@ -236,10 +236,24 @@ ColumnLayout {
                         }
 
                         HusButton {
+                            id: deletePackBtn
                             implicitHeight: 32
                             text: qsTr("删除")
-                            onClicked: {
-                                if (smmBackend) smmBackend.deleteModPack(packWrapper.model.id);
+                            onClicked: deleteConfirmPop.open()
+
+                            HusPopconfirm {
+                                id: deleteConfirmPop
+                                width: 230
+                                x: -width + deletePackBtn.width
+                                y: -height - 6
+                                title: qsTr("确认删除此整合包？")
+                                description: qsTr("确定要删除预设「%1」吗？此操作不可撤销。").arg(packWrapper.model.name)
+                                confirmText: qsTr("删除")
+                                cancelText: qsTr("取消")
+                                onConfirm: {
+                                    if (smmBackend) smmBackend.deleteModPack(packWrapper.model.id);
+                                    deleteConfirmPop.close();
+                                }
                             }
                         }
                     }

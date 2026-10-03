@@ -347,13 +347,14 @@ private:
     QString stagingDir_;
     bool isNtfsMatched_{false};
 
-    int deployedFiles_{16};
-    quint64 bytesSaved_{4820000000ULL};
+    int deployedFiles_{0};
+    quint64 bytesSaved_{0};
     int conflictCount_{0};
     int previewRevision_{0};
     QString equippedPackId_;
 
     void updateEquippedModIds();
+    void updateDeploymentTelemetry();
 
     QString currentModId_;
     QString currentModName_;

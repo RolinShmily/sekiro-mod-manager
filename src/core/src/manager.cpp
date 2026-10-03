@@ -20,6 +20,14 @@
 
 namespace {
 
+std::string to_lower_ascii(std::string_view text) {
+    std::string lower(text);
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    return lower;
+}
+
 bool is_webp_header(const smm::fs::path& p) {
     std::ifstream f(p, std::ios::binary);
     if (!f) return false;
@@ -210,34 +218,60 @@ ModInfo ModManager::set_mod_preview(const fs::path& staging_dir, const std::stri
         fail(ErrorCode::Io, "Preview image file does not exist: " + path_to_utf8(image_src_path), image_src_path);
     }
 
-    std::string ext = path_to_utf8(image_src_path.extension());
-    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-    });
+    ModInfo info = ModLoader::load_mod_info(mod_dir);
+    // 记录旧预览图路径，用于后续清理，确保仅保留一张要显示的图片
+    fs::path old_img_path;
+    if (info.preview_image.has_value() && !info.preview_image->empty()) {
+        old_img_path = mod_dir / *info.preview_image;
+    }
 
-    std::string filename = "preview.png";
+    // 优先保留原图片的文件名，不再写死为 preview
+    std::string filename = path_to_utf8(image_src_path.filename());
+    if (filename.empty()) {
+        filename = "preview.png";
+    }
+
+    const std::string ext = to_lower_ascii(path_to_utf8(image_src_path.extension()));
+
 #ifdef _WIN32
     bool converted = false;
     if (ext == ".webp" || is_webp_header(image_src_path)) {
-        converted = convert_to_standard_png_wic(image_src_path, mod_dir / filename);
+        filename = path_to_utf8(image_src_path.stem()) + ".png";
+        const fs::path dst_path = mod_dir / filename;
+        converted = convert_to_standard_png_wic(image_src_path, dst_path);
+        if (converted) {
+            // 如果源文件在 mod_dir 内且不同于目标 PNG，删除原 WebP 图片
+            if (fs::exists(image_src_path, ec) && !fs::equivalent(image_src_path, dst_path, ec)) {
+                if (image_src_path.parent_path() == mod_dir) {
+                    fs::remove(image_src_path, ec);
+                }
+            }
+        }
     }
     if (!converted) {
-        if (ext == ".jpg" || ext == ".jpeg") {
-            filename = "preview" + ext;
+        const fs::path dst_path = mod_dir / filename;
+        if (!fs::equivalent(image_src_path, dst_path, ec)) {
+            fs::copy_file(image_src_path, dst_path, fs::copy_options::overwrite_existing, ec);
         }
-        fs::copy_file(image_src_path, mod_dir / filename, fs::copy_options::overwrite_existing, ec);
     }
 #else
-    if (!ext.empty()) {
-        filename = "preview" + ext;
+    const fs::path dst_path = mod_dir / filename;
+    if (!fs::equivalent(image_src_path, dst_path, ec)) {
+        fs::copy_file(image_src_path, dst_path, fs::copy_options::overwrite_existing, ec);
     }
-    fs::copy_file(image_src_path, mod_dir / filename, fs::copy_options::overwrite_existing, ec);
 #endif
     if (ec) {
         fail(ErrorCode::Io, "Failed to copy preview image to staging: " + ec.message(), mod_dir / filename);
     }
 
-    ModInfo info = ModLoader::load_mod_info(mod_dir);
+    // 清理旧预览图，保证仅保留一张要显示的图片
+    if (!old_img_path.empty() && fs::exists(old_img_path, ec)) {
+        const fs::path new_img_path = mod_dir / filename;
+        if (!fs::equivalent(old_img_path, new_img_path, ec)) {
+            fs::remove(old_img_path, ec);
+        }
+    }
+
     info.preview_image = filename;
     save_mod_info(mod_dir, info);
     info.root_path = mod_dir;
@@ -306,42 +340,43 @@ void ModManager::save_mod_info(const fs::path& mod_dir, const ModInfo& info) {
 
     const std::string payload = json(portable).dump(2);
 
-    // Written twice on purpose: .smm_mod.json is SMM's own record, mod.json is what the wider
-    // modding ecosystem reads. Both must always agree.
-    for (const char* filename : {".smm_mod.json", "mod.json"}) {
-        const fs::path meta_path = mod_dir / filename;
-        const fs::path tmp_path = mod_dir / ("." + std::string(filename) + ".tmp");
+    // 统一使用 .smm_mod.json 作为权威元数据载体
+    const fs::path meta_path = mod_dir / ".smm_mod.json";
+    const fs::path tmp_path = mod_dir / "._smm_mod.json.tmp";
 
-        std::error_code ec;
-        {
-            std::ofstream stream(tmp_path, std::ios::binary | std::ios::trunc);
-            if (stream) {
-                stream << payload;
-                stream.flush();
-            }
-            if (!stream) {
-                ec = std::make_error_code(std::errc::io_error);
-            }
-        }
-
-        if (!ec) {
-            fs::remove(meta_path, ec);
-            ec.clear();
-            fs::rename(tmp_path, meta_path, ec);
-        }
-
-        if (ec) {
-            // Some filesystems or a locked target defeat the atomic path; a direct write
-            // still gets the metadata onto disk.
-            std::error_code cleanup_ec;
-            fs::remove(tmp_path, cleanup_ec);
-            std::ofstream stream(meta_path, std::ios::binary | std::ios::trunc);
+    std::error_code ec;
+    {
+        std::ofstream stream(tmp_path, std::ios::binary | std::ios::trunc);
+        if (stream) {
             stream << payload;
             stream.flush();
-            if (!stream) {
-                fail(ErrorCode::Io, "Failed to write mod metadata: " + path_to_utf8(meta_path), meta_path);
-            }
         }
+        if (!stream) {
+            ec = std::make_error_code(std::errc::io_error);
+        }
+    }
+
+    if (!ec) {
+        fs::remove(meta_path, ec);
+        ec.clear();
+        fs::rename(tmp_path, meta_path, ec);
+    }
+
+    if (ec) {
+        std::error_code cleanup_ec;
+        fs::remove(tmp_path, cleanup_ec);
+        std::ofstream stream(meta_path, std::ios::binary | std::ios::trunc);
+        stream << payload;
+        stream.flush();
+        if (!stream) {
+            fail(ErrorCode::Io, "Failed to write mod metadata: " + path_to_utf8(meta_path), meta_path);
+        }
+    }
+
+    // 清理历史遗留的 mod.json，避免双元数据文件冲突
+    const fs::path legacy = mod_dir / "mod.json";
+    if (fs::exists(legacy, ec)) {
+        fs::remove(legacy, ec);
     }
 }
 
@@ -352,10 +387,17 @@ bool ModManager::normalize_preview_image(const fs::path& mod_dir, std::string& p
     if (!fs::exists(img_path, ec)) return false;
 
 #ifdef _WIN32
-    if (preview_name.size() >= 5 && preview_name.substr(preview_name.size() - 5) == ".webp" || is_webp_header(img_path)) {
-        const fs::path png_path = mod_dir / "preview.png";
+    const std::string ext = to_lower_ascii(path_to_utf8(img_path.extension()));
+    if (ext == ".webp" || is_webp_header(img_path)) {
+        // 基于原文件名（保留 stem）转为标准 PNG，不再强制写死改名为 preview.png
+        const std::string new_name = path_to_utf8(img_path.stem()) + ".png";
+        const fs::path png_path = mod_dir / new_name;
         if (convert_to_standard_png_wic(img_path, png_path)) {
-            preview_name = "preview.png";
+            // 转码成功后，删除原图 WebP，确保仅保留一张要显示的图片
+            if (!fs::equivalent(img_path, png_path, ec)) {
+                fs::remove(img_path, ec);
+            }
+            preview_name = new_name;
             return true;
         }
     }

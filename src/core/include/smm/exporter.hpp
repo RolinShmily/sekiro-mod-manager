@@ -49,9 +49,8 @@ void from_json(const json& j, ModPackManifest& m);
 /// What an export should carry.
 struct ExportOptions {
     /// Include the .smm_source payload (the untouched original download) when present.
-    /// This is what makes an export a true backup: re-importing it reproduces the staged mod
-    /// exactly, including the archive the user originally downloaded.
-    bool include_source{true};
+    /// By default false: normal mod export and modpack export do not include .smm_source.
+    bool include_source{false};
 };
 
 using ExportProgressCallback =
