@@ -1,6 +1,15 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <vector>
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <shellapi.h>
+#endif
 
 #include "commands/commands.hpp"
 #include "json_output.hpp"
@@ -25,6 +34,34 @@ void print_error(const std::string& text) {
 int main(int argc, char** argv) {
     smm::cli::terminal::initialize();
 
+#ifdef _WIN32
+    int wargc = 0;
+    LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+    std::vector<std::string> utf8_args;
+    std::vector<char*> utf8_argv;
+    if (wargv) {
+        utf8_args.reserve(wargc);
+        utf8_argv.reserve(wargc + 1);
+        for (int i = 0; i < wargc; ++i) {
+            int len = WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, nullptr, 0, nullptr, nullptr);
+            if (len > 0) {
+                std::string s(len - 1, 0);
+                WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, &s[0], len, nullptr, nullptr);
+                utf8_args.push_back(std::move(s));
+            } else {
+                utf8_args.emplace_back();
+            }
+        }
+        LocalFree(wargv);
+        for (auto& s : utf8_args) {
+            utf8_argv.push_back(&s[0]);
+        }
+        utf8_argv.push_back(nullptr);
+        argv = utf8_argv.data();
+        argc = wargc;
+    }
+#endif
+
     smm::cli::CliContext ctx;
     try {
         ctx = smm::cli::parse_arguments(argc, argv);
@@ -37,7 +74,7 @@ int main(int argc, char** argv) {
     }
 
     if (ctx.has("--version") || ctx.has("-V")) {
-        std::cout << "smm (Sekiro Mod Manager) 0.3.4\n";
+        std::cout << "smm (Sekiro Mod Manager) 0.3.5\n";
         return kExitSuccess;
     }
 

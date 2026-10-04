@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.3.5] - 2026-10-04
+
+### Fixed
+
+- **Mod Pack Preset Dialog Scoped Resolution**: Resolved critical `ReferenceError: packNameInput is not defined` in `SavePackModal` by lifting state properties (`packName`, `packDesc`, `packNameEn`, `packDescEn`) to root modal scope and synchronizing text inputs via bindings, fixing non-responsive "Save Preset" action and enabling Enter key quick submission.
+- **Empty Presets File Resilience**: Added 0-byte file guard in `PresetManager::list_presets` to prevent `[json.exception.parse_error.101]` parser crashes, and ensured pre-serialization before file truncation in `save_preset` and `delete_preset`.
+- **Windows CLI Unicode Argument Parsing**: Converted command-line arguments to UTF-8 using `CommandLineToArgvW` on Windows, eliminating JSON encoding failures when passing non-ASCII names via CLI.
+
 ## [0.3.4] - 2026-10-03
 
 ### Added

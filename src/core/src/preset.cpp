@@ -41,7 +41,7 @@ fs::path PresetManager::presets_path(const fs::path& staging_dir) {
 std::vector<ModPreset> PresetManager::list_presets(const fs::path& staging_dir) {
     const fs::path path = presets_path(staging_dir);
     std::error_code ec;
-    if (!fs::exists(path, ec)) {
+    if (!fs::exists(path, ec) || fs::file_size(path, ec) == 0) {
         return {};
     }
 
@@ -102,13 +102,15 @@ ModPreset PresetManager::save_preset(const fs::path& staging_dir, const ModPrese
         presets.push_back(saved);
     }
 
+    const std::string content = json(presets).dump(2);
+
     std::error_code ec;
     fs::create_directories(staging_dir, ec);
     std::ofstream stream(presets_path(staging_dir), std::ios::binary | std::ios::trunc);
     if (!stream) {
         fail(ErrorCode::Io, "Cannot write presets file in " + staging_dir.string(), staging_dir);
     }
-    stream << json(presets).dump(2);
+    stream << content;
     stream.flush();
     if (!stream) {
         fail(ErrorCode::Io, "Failed to write presets file in " + staging_dir.string(), staging_dir);
@@ -192,11 +194,12 @@ void PresetManager::delete_preset(const fs::path& staging_dir, const std::string
         fail(ErrorCode::ModNotFound, "Preset '" + preset_id + "' not found", staging_dir);
     }
 
+    const std::string content = json(presets).dump(2);
     std::ofstream stream(presets_path(staging_dir), std::ios::binary | std::ios::trunc);
     if (!stream) {
         fail(ErrorCode::Io, "Cannot write presets file in " + staging_dir.string(), staging_dir);
     }
-    stream << json(presets).dump(2);
+    stream << content;
     stream.flush();
     if (!stream) {
         fail(ErrorCode::Io, "Failed to write presets file in " + staging_dir.string(), staging_dir);

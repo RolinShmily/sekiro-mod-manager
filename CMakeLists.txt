@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 # C is enabled because the vendored miniz is a C library; everything first-party is C++17.
-project(sekiro_mod_manager VERSION 0.3.4 LANGUAGES C CXX)
+project(sekiro_mod_manager VERSION 0.3.5 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

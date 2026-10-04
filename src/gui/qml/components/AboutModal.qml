@@ -68,7 +68,7 @@ HusModal {
                             color: HusTheme.Primary.colorTextPrimary
                         }
                         HusTag {
-                            text: "v0.3.4"
+                            text: "v0.3.5"
                         }
                         HusButton {
                             implicitHeight: 22
