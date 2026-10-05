@@ -94,7 +94,7 @@ ColumnLayout {
         spacing: 12
 
         ColumnLayout {
-            spacing: 2
+            spacing: 4
 
             HusText {
                 text: qsTr("模组管理")
@@ -114,6 +114,7 @@ ColumnLayout {
 
         HusButton {
             visible: smmBackend && smmBackend.hasEquippedPack
+            implicitHeight: 32
             type: (smmBackend && smmBackend.modListModel.onlyEquippedPackMods)
                   ? HusButton.Type_Primary
                   : HusButton.Type_Default
@@ -128,11 +129,13 @@ ColumnLayout {
         }
 
         HusButton {
+            implicitHeight: 32
             text: qsTr("当前配置存为整合包")
             onClicked: rootView.requestSavePack()
         }
 
         HusButton {
+            implicitHeight: 32
             type: rootView.batchMode ? HusButton.Type_Primary : HusButton.Type_Default
             text: rootView.batchMode ? qsTr("退出批量") : qsTr("批量管理")
             onClicked: {
@@ -142,6 +145,7 @@ ColumnLayout {
         }
 
         HusButton {
+            implicitHeight: 32
             type: HusButton.Type_Primary
             text: qsTr("导入压缩包")
             onClicked: archiveDialog.open()
@@ -154,7 +158,8 @@ ColumnLayout {
         spacing: 10
 
         HusInput {
-            Layout.preferredWidth: 200
+            Layout.preferredWidth: 220
+            implicitHeight: 30
             placeholderText: qsTr("搜索模组、作者…")
             onTextChanged: {
                 if (smmBackend)
@@ -181,7 +186,7 @@ ColumnLayout {
                     delegate: HusButton {
                         id: catBtn
                         required property string modelData
-                        implicitHeight: 28
+                        implicitHeight: 30
                         type: (smmBackend && smmBackend.modListModel.selectedCategory === catBtn.modelData)
                               ? HusButton.Type_Primary
                               : HusButton.Type_Default
@@ -322,7 +327,7 @@ ColumnLayout {
         cellWidth: rootView.viewMode === "grid"
                    ? Math.max(1, (modGrid.width - rootView.scrollBarSpace) / 2)
                    : Math.max(1, modGrid.width - rootView.scrollBarSpace)
-        cellHeight: rootView.viewMode === "grid" ? 180 : 66
+        cellHeight: rootView.viewMode === "grid" ? 184 : 64
         rightMargin: rootView.scrollBarSpace
         model: smmBackend ? smmBackend.modListModel : null
 

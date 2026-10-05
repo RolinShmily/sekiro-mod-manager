@@ -152,7 +152,7 @@ HusDrawer {
                         text: smmBackend && smmBackend.currentModPreview !== ""
                               ? smmBackend.currentModPreview
                               : qsTr("暂无预览图")
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         color: "#ffffff"
                         elide: Text.ElideMiddle
                     }
@@ -461,7 +461,7 @@ HusDrawer {
 
                         HusText {
                             text: assetRow.model.formattedSize
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             color: HusTheme.Primary.colorTextQuaternary
                         }
                     }

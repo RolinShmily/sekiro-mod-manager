@@ -246,7 +246,7 @@ Rectangle {
             Layout.maximumWidth: 260
             Layout.alignment: Qt.AlignVCenter
             text: rootCard.modName
-            font.pixelSize: 15
+            font.pixelSize: 14
             font.bold: true
             color: rootCard.textPrimary
             elide: Text.ElideRight
@@ -267,7 +267,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
             text: `${rootCard.modAuthor} · v${rootCard.modVersion}`
-            font.pixelSize: 11
+            font.pixelSize: 12
             color: rootCard.textTertiary
             elide: Text.ElideRight
         }
@@ -294,8 +294,8 @@ Rectangle {
     // -------------------------------------------------------------------------
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 14
-        spacing: 6
+        anchors.margins: 13
+        spacing: 7
         visible: !rootCard.compact
         z: 1
 
@@ -343,7 +343,7 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 text: rootCard.modName
-                font.pixelSize: 14
+                font.pixelSize: 15
                 font.bold: true
                 color: rootCard.textPrimary
                 elide: Text.ElideRight
@@ -379,7 +379,7 @@ Rectangle {
             HusText {
                 Layout.alignment: Qt.AlignVCenter
                 text: `${rootCard.modAuthor} · v${rootCard.modVersion}`
-                font.pixelSize: 11
+                font.pixelSize: 12
                 color: rootCard.textTertiary
             }
 
@@ -396,18 +396,18 @@ Rectangle {
                 readonly property var dInfo: rootCard.getDomainInfo(rootCard.modSourceUrl)
 
                 Image {
-                    Layout.preferredWidth: 12
-                    Layout.preferredHeight: 12
+                    Layout.preferredWidth: 13
+                    Layout.preferredHeight: 13
                     Layout.alignment: Qt.AlignVCenter
                     source: parent.dInfo.icon
                     visible: parent.dInfo.icon !== ""
                 }
 
                 HusButton {
-                    implicitHeight: 22
+                    implicitHeight: 24
                     type: HusButton.Type_Text
                     text: parent.dInfo.icon !== "" ? parent.dInfo.label : ("🌐 " + parent.dInfo.label)
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     onClicked: Qt.openUrlExternally(rootCard.modSourceUrl)
                 }
             }
@@ -420,8 +420,8 @@ Rectangle {
             // 规整等比例微缩预览图
             Rectangle {
                 visible: rootCard.previewImagePath !== ""
-                implicitWidth: 60
-                implicitHeight: 38
+                implicitWidth: 64
+                implicitHeight: 40
                 radius: 4
                 clip: true
                 color: HusTheme.Primary.colorFillTertiary
@@ -431,8 +431,8 @@ Rectangle {
                 Image {
                     anchors.fill: parent
                     source: rootCard.previewImagePath
-                    sourceSize.width: 120
-                    sourceSize.height: 76
+                    sourceSize.width: 128
+                    sourceSize.height: 80
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: true
@@ -445,7 +445,8 @@ Rectangle {
             HusText {
                 Layout.fillWidth: true
                 text: rootCard.modDesc
-                font.pixelSize: 14
+                font.pixelSize: 13
+                lineHeight: 1.25
                 color: rootCard.textSecondary
                 elide: Text.ElideRight
                 maximumLineCount: 2
@@ -462,7 +463,7 @@ Rectangle {
             HusText {
                 Layout.alignment: Qt.AlignVCenter
                 text: qsTr("裁决顺位")
-                font.pixelSize: 11
+                font.pixelSize: 12
                 color: rootCard.textTertiary
             }
 
@@ -481,6 +482,7 @@ Rectangle {
                 implicitHeight: 28
                 type: HusButton.Type_Text
                 text: qsTr("详情")
+                font.pixelSize: 13
                 onClicked: rootCard.requestDetails()
             }
         }

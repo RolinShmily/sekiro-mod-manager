@@ -413,8 +413,8 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
     stagingDir_ = settings.value("stagingDir").toString();
     sekiroDir_ = settings.value("sekiroDir").toString();
     language_ = settings.value("language", QStringLiteral("zh-CN")).toString();
-    fontFamily_ = settings.value("fontFamily", QStringLiteral("Segoe UI")).toString();
-    if (fontFamily_.trimmed().isEmpty()) fontFamily_ = QStringLiteral("Segoe UI");
+    fontFamily_ = settings.value("fontFamily", QStringLiteral("Microsoft YaHei UI")).toString();
+    if (fontFamily_.trimmed().isEmpty()) fontFamily_ = QStringLiteral("Microsoft YaHei UI");
 
     themeMode_ = settings.value("themeMode", QStringLiteral("dark")).toString();
     if (themeMode_.trimmed().isEmpty()) themeMode_ = QStringLiteral("dark");
@@ -587,24 +587,34 @@ void GuiController::setThemeMode(const QString& mode) {
 void GuiController::applyFontFamily(const QString& family) {
     QString targetFamily = family.trimmed();
     if (targetFamily.isEmpty()) {
-        targetFamily = QStringLiteral("Segoe UI");
+        targetFamily = QStringLiteral("Microsoft YaHei UI");
     }
 
-    // 全局 QFont：基准字重使用 Normal (400)，彻底解决界面过粗发胀的问题
+    // 全局 QFont：基准字重使用 Normal (400)，并设置完善的回退栈
     QFont defaultFont(targetFamily);
     defaultFont.setStyleHint(QFont::SansSerif);
     defaultFont.setWeight(QFont::Normal);
+    QStringList fontFamilies;
+    if (targetFamily.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
+        targetFamily.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
+        fontFamilies << QStringLiteral("Microsoft YaHei UI") << QStringLiteral("Segoe UI")
+                     << QStringLiteral("Microsoft YaHei") << QStringLiteral("PingFang SC")
+                     << QStringLiteral("Noto Sans SC");
+    } else {
+        fontFamilies << targetFamily << QStringLiteral("Microsoft YaHei UI")
+                     << QStringLiteral("Segoe UI") << QStringLiteral("Microsoft YaHei")
+                     << QStringLiteral("sans-serif");
+    }
+    defaultFont.setFamilies(fontFamilies);
     QGuiApplication::setFont(defaultFont);
 
-    // 构建层级无衬线字体回退栈，优先选定字体，兜底使用 Segoe UI 与微软雅黑
+    // 构建层级无衬线字体回退栈，优先选定字体，兜底使用微软雅黑与 Segoe UI
     QString fontStack;
-    if (targetFamily.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
-        fontStack = QStringLiteral("'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif");
-    } else if (targetFamily.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
-               targetFamily.compare(QLatin1String("Microsoft YaHei"), Qt::CaseInsensitive) == 0) {
-        fontStack = QStringLiteral("'Microsoft YaHei UI', 'Microsoft YaHei', 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif");
+    if (targetFamily.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
+        targetFamily.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
+        fontStack = QStringLiteral("'Microsoft YaHei UI', 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif");
     } else {
-        fontStack = QString("'%1', 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif").arg(targetFamily);
+        fontStack = QString("'%1', 'Microsoft YaHei UI', 'Segoe UI', 'Microsoft YaHei', sans-serif").arg(targetFamily);
     }
 
     HusTheme::instance()->installThemePrimaryFontFamiliesBase(fontStack);
@@ -633,8 +643,8 @@ QVariantList GuiController::availableFonts() const {
     };
 
     const QVector<FontOption> candidates = {
-        {QStringLiteral("Segoe UI"), QStringLiteral("Segoe UI (默认推荐)"), QStringLiteral("Segoe UI (Default / Recommended)")},
-        {QStringLiteral("Microsoft YaHei UI"), QStringLiteral("微软雅黑 UI (系统界面)"), QStringLiteral("Microsoft YaHei UI (Interface)")},
+        {QStringLiteral("Microsoft YaHei UI"), QStringLiteral("微软雅黑 UI (系统推荐 / 最佳屏显)"), QStringLiteral("Microsoft YaHei UI (Recommended / Best Display)")},
+        {QStringLiteral("Segoe UI"), QStringLiteral("Segoe UI (微软经典西文)"), QStringLiteral("Segoe UI (Classic Western)")},
         {QStringLiteral("Microsoft YaHei"), QStringLiteral("微软雅黑 (经典中文字体)"), QStringLiteral("Microsoft YaHei (Classic)")},
         {QStringLiteral("DengXian"), QStringLiteral("等线 (Win10/11 现代屏显)"), QStringLiteral("DengXian (Modern Sans)")},
         {QStringLiteral("SimHei"), QStringLiteral("黑体 (传统工整黑体)"), QStringLiteral("SimHei (Traditional Sans)")},

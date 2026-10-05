@@ -68,7 +68,7 @@ HusModal {
                             color: HusTheme.Primary.colorTextPrimary
                         }
                         HusTag {
-                            text: "v0.3.5"
+                            text: "v0.3.6"
                         }
                         HusButton {
                             implicitHeight: 22
@@ -84,7 +84,7 @@ HusModal {
 
                     HusText {
                         text: "Sekiro Mod Manager · Powered by C++17 & HuskarUI"
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         color: HusTheme.Primary.colorTextTertiary
                     }
                 }
@@ -140,7 +140,7 @@ HusModal {
                     implicitHeight: 26
                     type: HusButton.Type_Text
                     text: qsTr("访问博客 ↗")
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     onClicked: Qt.openUrlExternally("https://blog.srprolin.top")
                 }
             }
@@ -169,7 +169,7 @@ HusModal {
                     implicitHeight: 26
                     type: HusButton.Type_Text
                     text: qsTr("GitHub ↗")
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     onClicked: Qt.openUrlExternally("https://github.com/RolinShmily/sekiro-mod-manager")
                 }
             }
@@ -189,7 +189,7 @@ HusModal {
                 HusText {
                     Layout.fillWidth: true
                     text: "Qt 6.11 · QML · HuskarUI · C++17 · NTFS Hardlink Engine"
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     color: HusTheme.Primary.colorTextTertiary
                     elide: Text.ElideRight
                 }

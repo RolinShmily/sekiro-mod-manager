@@ -36,7 +36,7 @@ HusModal {
         pendingStagingDir = cleanLocalPath(smmBackend ? smmBackend.stagingDir : "");
         pendingGameDir = cleanLocalPath(smmBackend ? smmBackend.sekiroDir : "");
         pendingLanguage = smmBackend ? smmBackend.language : "zh-CN";
-        pendingFontFamily = smmBackend ? smmBackend.fontFamily : "Segoe UI";
+        pendingFontFamily = smmBackend ? smmBackend.fontFamily : "Microsoft YaHei UI";
         pendingTheme = smmBackend ? smmBackend.themeMode : "dark";
     }
 
@@ -367,7 +367,7 @@ HusModal {
 
                 HusText {
                     Layout.fillWidth: true
-                    text: qsTr("选用 Windows 系统原生字体排版。默认推荐 Segoe UI，兼顾优雅西文字形与原生中文字符渲染。")
+                    text: qsTr("选用 Windows 系统原生字体排版。推荐使用微软雅黑 UI (Microsoft YaHei UI)，具备最平滑的矢量抗锯齿与中西文字符间距。")
                     font.pixelSize: 13
                     color: HusTheme.Primary.colorTextTertiary
                     wrapMode: Text.WordWrap

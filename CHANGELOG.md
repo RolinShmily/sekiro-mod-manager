@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.3.6] - 2026-10-05
+
+### Changed
+
+- **QtRendering Antialiasing & Color Fringing Elimination**: Switched global text rendering engine from DirectWrite ClearType (`NativeRendering`) to distance-field grayscale antialiasing (`QtRendering`). Completely eliminated red/blue subpixel chromatic aberration (color fringing) and broken pixel artifacts on dark backgrounds and transparent alpha viewports.
+- **Default UI Font Upgrade to Microsoft YaHei UI**: Set default interface font to `Microsoft YaHei UI` across `main.cpp`, `Models.cpp`, and preferences. Established unified CJK/Western typography fallback chain (`Microsoft YaHei UI` ➔ `Segoe UI` ➔ `PingFang SC` ➔ `Noto Sans SC`), avoiding glyph fragmentation and fallback baseline jumps.
+- **High-DPI PassThrough & 4x MSAA**: Enforced `PassThrough` high-DPI scaling policy and 4x MSAA surface format to prevent fractional pixel viewport blur and viewport jitter on 125%/150% Windows scaling.
+- **Card Hierarchy & Layout Proportions**:
+  - Elevated card title to `15px bold` for clearer focal point.
+  - Eliminated jagged `11px` micro-text across the UI, normalizing all author, version, source, and footnote labels to `12px`.
+  - Refined mod description to `13px` with `lineHeight: 1.25` for improved reading density.
+  - Standardized toolbar action buttons to `32px` height, aligned search and category filter capsules to `30px`, and expanded grid cell height to `184px`.
+
 ## [0.3.5] - 2026-10-04
 
 ### Fixed

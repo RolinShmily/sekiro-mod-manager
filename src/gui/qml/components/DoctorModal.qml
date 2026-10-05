@@ -61,7 +61,7 @@ HusModal {
 
                     HusText {
                         text: qsTr("综合健康评级")
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         color: HusTheme.Primary.colorTextTertiary
                     }
 
@@ -84,7 +84,7 @@ HusModal {
                                   .arg(smmBackend.healthOkCount)
                                   .arg(smmBackend.healthWarnCount)
                                   .arg(smmBackend.healthErrorCount) : ""
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             color: HusTheme.Primary.colorTextTertiary
                         }
                     }
@@ -191,7 +191,7 @@ HusModal {
                                     anchors.fill: parent
                                     anchors.margins: 6
                                     text: qsTr("修复建议: ") + (itemCard.modelData.remediation || "")
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     color: HusTheme.Primary.colorWarning
                                     wrapMode: Text.WordWrap
                                 }
