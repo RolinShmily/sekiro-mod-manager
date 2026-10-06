@@ -15,6 +15,13 @@ ColumnLayout {
     property bool showBackdrop: true
     property bool batchMode: false
     property var selectedModIds: []
+    readonly property var rankOptions: {
+        const count = smmBackend ? smmBackend.modListModel.count : 1;
+        const options = [];
+        for (let rank = 1; rank <= Math.max(1, count); ++rank)
+            options.push({ label: qsTr("第 %1 顺位").arg(rank), value: rank });
+        return options;
+    }
 
     function isModSelected(id) {
         return selectedModIds.indexOf(id) >= 0;
@@ -158,12 +165,18 @@ ColumnLayout {
         spacing: 10
 
         HusInput {
+            id: modSearchInput
             Layout.preferredWidth: 220
             implicitHeight: 30
             placeholderText: qsTr("搜索模组、作者…")
-            onTextChanged: {
-                if (smmBackend)
-                    smmBackend.modListModel.filterText = text;
+            onTextChanged: searchDebounce.restart()
+
+            Timer {
+                id: searchDebounce
+                interval: 120
+                onTriggered: {
+                    if (smmBackend) smmBackend.modListModel.filterText = modSearchInput.text;
+                }
             }
         }
 
@@ -333,6 +346,7 @@ ColumnLayout {
 
         // 模型 moveRow() 走 beginMoveRows/endMoveRows，这两个过渡把重排动画补上
         move: Transition {
+            enabled: HusTheme.animationEnabled
             NumberAnimation {
                 properties: "x,y"
                 duration: 180
@@ -340,6 +354,7 @@ ColumnLayout {
             }
         }
         moveDisplaced: Transition {
+            enabled: HusTheme.animationEnabled
             NumberAnimation {
                 properties: "x,y"
                 duration: 180
@@ -378,7 +393,12 @@ ColumnLayout {
                 modEnabled: cardWrapper.model.enabled
                 modRank: cardWrapper.model.rank
                 rankCount: smmBackend ? smmBackend.modListModel.count : 1
-                previewImagePath: cardWrapper.model.previewImagePath
+                rankModel: rootView.rankOptions
+                previewImagePath: {
+                    const source = cardWrapper.model.previewImagePath;
+                    const revision = smmBackend ? smmBackend.previewRevision : 0;
+                    return source ? source + "?rev=" + revision : "";
+                }
                 showBackdrop: rootView.showBackdrop
                 compact: rootView.viewMode === "list"
                 batchMode: rootView.batchMode

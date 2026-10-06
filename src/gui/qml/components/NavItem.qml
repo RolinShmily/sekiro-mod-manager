@@ -16,13 +16,15 @@ Rectangle {
     implicitHeight: 42
     radius: HusTheme.Primary.radiusPrimary
 
-    scale: navHover.pressed ? 0.985 : 1.0
+    scale: navHover.pressed && HusTheme.animationEnabled ? 0.985 : 1.0
     opacity: navHover.pressed ? 0.92 : 1.0
 
     Behavior on scale {
+        enabled: HusTheme.animationEnabled
         NumberAnimation { duration: 80; easing.type: Easing.OutQuad }
     }
     Behavior on opacity {
+        enabled: HusTheme.animationEnabled
         NumberAnimation { duration: 80; easing.type: Easing.OutQuad }
     }
 
@@ -41,6 +43,7 @@ Rectangle {
     }
 
     Behavior on color {
+        enabled: HusTheme.animationEnabled
         ColorAnimation { duration: HusTheme.Primary.durationFast }
     }
 
@@ -90,6 +93,19 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: navItem.clicked()
+    }
+
+    activeFocusOnTab: true
+    Keys.onSpacePressed: clicked()
+    Keys.onReturnPressed: clicked()
+    Keys.onEnterPressed: clicked()
+
+    Rectangle {
+        anchors.fill: parent
+        color: "transparent"
+        radius: navItem.radius
+        border.width: navItem.activeFocus ? 2 : 0
+        border.color: HusTheme.Primary.colorPrimary
     }
 
     Accessible.role: Accessible.Button

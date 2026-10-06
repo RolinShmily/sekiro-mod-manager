@@ -18,6 +18,7 @@ Rectangle {
     property bool modEnabled: true
     property int modRank: 1
     property int rankCount: 1
+    property var rankModel: []
     property string previewImagePath: ""
     property bool showBackdrop: true
     property bool compact: false
@@ -34,13 +35,15 @@ Rectangle {
 
     readonly property bool isDragging: (rootCard.compact ? compactGripArea.drag.active : gripArea.drag.active)
 
-    scale: isDragging ? 1.025 : 1.0
+    scale: isDragging && HusTheme.animationEnabled ? 1.025 : 1.0
     opacity: isDragging ? 0.90 : 1.0
 
     Behavior on scale {
+        enabled: HusTheme.animationEnabled
         NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
     }
     Behavior on opacity {
+        enabled: HusTheme.animationEnabled
         NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
     }
 
@@ -81,19 +84,6 @@ Rectangle {
         return { label: qsTr("来源"), icon: "", color: HusTheme.Primary.colorPrimary };
     }
 
-    /// 裁决顺位可选项数量需覆盖当前全部模组，否则高顺位无法表达。
-    function rankOptions() {
-        const options = [];
-        const total = Math.max(1, rootCard.rankCount);
-        for (let i = 1; i <= total; ++i) {
-            options.push({
-                label: qsTr("第 %1 顺位").arg(i),
-                value: i
-            });
-        }
-        return options;
-    }
-
     implicitHeight: rootCard.compact ? 52 : 156
     radius: rootCard.compact ? HusTheme.Primary.radiusPrimary : HusTheme.Primary.radiusPrimaryLG
     clip: true
@@ -106,6 +96,7 @@ Rectangle {
                      : HusTheme.Primary.colorBorderSecondary)
 
     Behavior on border.color {
+        enabled: HusTheme.animationEnabled
         ColorAnimation { duration: HusTheme.Primary.durationFast }
     }
 
@@ -146,7 +137,7 @@ Rectangle {
         Image {
             id: backdropImage
             anchors.fill: parent
-            source: rootCard.previewImagePath
+            source: rootCard.hasBackdrop ? rootCard.previewImagePath : ""
             sourceSize.width: 480
             sourceSize.height: 270
             fillMode: Image.PreserveAspectCrop
@@ -158,6 +149,7 @@ Rectangle {
             opacity: cardMouseArea.containsMouse ? 0.35 : 0.22
 
             Behavior on opacity {
+                enabled: HusTheme.animationEnabled
                 NumberAnimation { duration: 180 }
             }
         }
@@ -235,10 +227,7 @@ Rectangle {
         HusSwitch {
             Layout.alignment: Qt.AlignVCenter
             checked: rootCard.modEnabled
-            onCheckedChanged: {
-                if (checked !== rootCard.modEnabled)
-                    rootCard.toggleActive(checked);
-            }
+            onToggled: rootCard.toggleActive(checked)
         }
 
         HusText {
@@ -276,7 +265,7 @@ Rectangle {
             implicitWidth: 120
             implicitHeight: 28
             textRole: "label"
-            model: rootCard.rankOptions()
+            model: rootCard.rankModel
             currentIndex: Math.max(0, Math.min(rootCard.modRank - 1, rootCard.rankCount - 1))
             onActivated: (index) => rootCard.prioritySelected(index + 1)
         }
@@ -365,10 +354,7 @@ Rectangle {
             HusSwitch {
                 Layout.alignment: Qt.AlignVCenter
                 checked: rootCard.modEnabled
-                onCheckedChanged: {
-                    if (checked !== rootCard.modEnabled)
-                        rootCard.toggleActive(checked);
-                }
+                onToggled: rootCard.toggleActive(checked)
             }
         }
 
@@ -430,7 +416,7 @@ Rectangle {
 
                 Image {
                     anchors.fill: parent
-                    source: rootCard.previewImagePath
+                    source: !rootCard.compact ? rootCard.previewImagePath : ""
                     sourceSize.width: 128
                     sourceSize.height: 80
                     fillMode: Image.PreserveAspectCrop
@@ -471,7 +457,7 @@ Rectangle {
                 implicitWidth: 124
                 implicitHeight: 28
                 textRole: "label"
-                model: rootCard.rankOptions()
+                model: rootCard.rankModel
                 currentIndex: Math.max(0, Math.min(rootCard.modRank - 1, rootCard.rankCount - 1))
                 onActivated: (index) => rootCard.prioritySelected(index + 1)
             }

@@ -9,6 +9,7 @@
 #include <QProcess>
 #include <QSettings>
 #include <QThreadPool>
+#include <algorithm>
 #include <fstream>
 
 #include "ModPreviewImageProvider.hpp"
@@ -70,12 +71,13 @@ int ModListModel::rowCount(const QModelIndex& parent) const {
     return visibleIndices_.size();
 }
 
-void ModListModel::rebuildFilter() {
-    visibleIndices_.clear();
+QVector<int> ModListModel::filteredIndices(const QVector<ModEntry>& mods) const {
+    QVector<int> indices;
+    indices.reserve(mods.size());
     const QString f = filterText_.trimmed();
     const QString cat = selectedCategory_.trimmed();
-    for (int i = 0; i < mods_.size(); ++i) {
-        const auto& m = mods_[i];
+    for (int i = 0; i < mods.size(); ++i) {
+        const auto& m = mods[i];
         if (onlyEquippedPackMods_) {
             if (!equippedModIds_.contains(m.id)) {
                 continue;
@@ -95,8 +97,13 @@ void ModListModel::rebuildFilter() {
                 continue;
             }
         }
-        visibleIndices_.append(i);
+        indices.append(i);
     }
+    return indices;
+}
+
+void ModListModel::rebuildFilter() {
+    visibleIndices_ = filteredIndices(mods_);
 }
 
 void ModListModel::setSelectedCategory(const QString& cat) {
@@ -196,13 +203,21 @@ QHash<int, QByteArray> ModListModel::roleNames() const {
 }
 
 void ModListModel::setMods(const QVector<ModEntry>& mods) {
-    beginResetModel();
-    mods_ = mods;
-    std::sort(mods_.begin(), mods_.end(), [](const ModEntry& a, const ModEntry& b) {
+    QVector<ModEntry> sorted = mods;
+    std::sort(sorted.begin(), sorted.end(), [](const ModEntry& a, const ModEntry& b) {
         if (a.priority != b.priority) return a.priority < b.priority;
         return a.id < b.id;
     });
-    rebuildFilter();
+    const bool sameOrder = sorted.size() == mods_.size() &&
+        std::equal(sorted.cbegin(), sorted.cend(), mods_.cbegin(), [](const ModEntry& a, const ModEntry& b) {
+            return a.id == b.id;
+        });
+    // Metadata edits can change search/category membership even when IDs stay ordered.
+    QVector<int> updatedIndices = filteredIndices(sorted);
+    const bool resetRequired = !sameOrder || updatedIndices != visibleIndices_;
+    if (resetRequired) beginResetModel();
+    mods_ = std::move(sorted);
+    visibleIndices_ = std::move(updatedIndices);
 
     QStringList cats;
     cats.append(QStringLiteral("all"));
@@ -211,11 +226,16 @@ void ModListModel::setMods(const QVector<ModEntry>& mods) {
             cats.append(m.category);
         }
     }
+    const bool categoriesChanged = availableCategories_ != cats;
     availableCategories_ = cats;
 
-    endResetModel();
-    emit countChanged();
-    emit availableCategoriesChanged();
+    if (resetRequired) {
+        endResetModel();
+        emit countChanged();
+    } else if (rowCount() > 0) {
+        emit dataChanged(index(0), index(rowCount() - 1));
+    }
+    if (categoriesChanged) emit availableCategoriesChanged();
 }
 
 const ModEntry* ModListModel::findMod(const QString& id) const {
@@ -271,7 +291,7 @@ void ModListModel::moveRow(int from, int to) {
     const int realTo = visibleIndices_.at(to);
     if (realFrom < 0 || realFrom >= mods_.size() || realTo < 0 || realTo >= mods_.size()) return;
 
-    beginResetModel();
+    if (!beginMoveRows({}, from, from, {}, to > from ? to + 1 : to)) return;
     mods_.move(realFrom, realTo);
     QMap<QString, quint32> batch;
     for (int i = 0; i < mods_.size(); ++i) {
@@ -279,7 +299,8 @@ void ModListModel::moveRow(int from, int to) {
         batch.insert(mods_[i].id, mods_[i].priority);
     }
     rebuildFilter();
-    endResetModel();
+    endMoveRows();
+    emit dataChanged(index(0), index(rowCount() - 1), {PriorityRole, RankRole});
 
     emit batchPrioritiesChanged(batch);
 }
@@ -413,8 +434,14 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
     stagingDir_ = settings.value("stagingDir").toString();
     sekiroDir_ = settings.value("sekiroDir").toString();
     language_ = settings.value("language", QStringLiteral("zh-CN")).toString();
-    fontFamily_ = settings.value("fontFamily", QStringLiteral("Microsoft YaHei UI")).toString();
-    if (fontFamily_.trimmed().isEmpty()) fontFamily_ = QStringLiteral("Microsoft YaHei UI");
+    fontFamily_ = settings.value("fontFamily", defaultFontFamily()).toString().trimmed();
+    if (fontFamily_.isEmpty()) fontFamily_ = defaultFontFamily();
+    reducedMotion_ = settings.value("reducedMotion", false).toBool();
+    HusTheme::instance()->setAnimationEnabled(!reducedMotion_);
+    connect(qGuiApp, &QGuiApplication::fontDatabaseChanged, this, [this]() {
+        availableFontsCache_.clear();
+        emit availableFontsChanged();
+    });
 
     themeMode_ = settings.value("themeMode", QStringLiteral("dark")).toString();
     if (themeMode_.trimmed().isEmpty()) themeMode_ = QStringLiteral("dark");
@@ -502,8 +529,7 @@ void GuiController::initSignals() {
 
     connect(&client_, &SmmClient::operationSucceeded, this, [this](const QString& title, const QString& detail) {
         emit notification("success", QString("%1: %2").arg(title, detail));
-        client_.refreshMods();
-        client_.refreshPlan();
+        // Mutating client operations refresh their own affected models.
     });
 
     connect(&client_, &SmmClient::operationFailed, this, [this](const QString& title, const QString& message) {
@@ -559,14 +585,17 @@ void GuiController::setLanguage(const QString& code) {
     language_ = code;
     QSettings settings("SekiroModManager", "SMM");
     settings.setValue("language", language_);
+    availableFontsCache_.clear();
     emit languageChanged(language_);
+    emit availableFontsChanged();
 }
 
 void GuiController::setFontFamily(const QString& family) {
-    if (fontFamily_ == family) {
+    const QString cleanFamily = family.trimmed();
+    if (cleanFamily.isEmpty() || fontFamily_ == cleanFamily) {
         return;
     }
-    fontFamily_ = family;
+    fontFamily_ = cleanFamily;
     applyFontFamily(fontFamily_);
     QSettings settings("SekiroModManager", "SMM");
     settings.setValue("fontFamily", fontFamily_);
@@ -584,40 +613,45 @@ void GuiController::setThemeMode(const QString& mode) {
     emit themeModeChanged(themeMode_);
 }
 
-void GuiController::applyFontFamily(const QString& family) {
-    QString targetFamily = family.trimmed();
-    if (targetFamily.isEmpty()) {
-        targetFamily = QStringLiteral("Microsoft YaHei UI");
+QString GuiController::defaultFontFamily() {
+    const QStringList installed = QFontDatabase::families();
+    const QStringList preferred = {QStringLiteral("Noto Sans SC"), QStringLiteral("Source Han Sans SC"),
+                                   QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Segoe UI")};
+    for (const QString& family : preferred) {
+        if (installed.contains(family, Qt::CaseInsensitive)) return family;
     }
+    return QFontDatabase::systemFont(QFontDatabase::GeneralFont).family();
+}
 
-    // 全局 QFont：基准字重使用 Normal (400)，并设置完善的回退栈
-    QFont defaultFont(targetFamily);
+void GuiController::setReducedMotion(bool reduced) {
+    if (reducedMotion_ == reduced) return;
+    reducedMotion_ = reduced;
+    HusTheme::instance()->setAnimationEnabled(!reducedMotion_);
+    QSettings settings("SekiroModManager", "SMM");
+    settings.setValue("reducedMotion", reducedMotion_);
+    emit reducedMotionChanged();
+}
+
+void GuiController::applyFontFamily(const QString& family) {
+    const QString targetFamily = family.trimmed().isEmpty() ? defaultFontFamily() : family.trimmed();
+    QStringList fontFamilies = {targetFamily, QStringLiteral("Noto Sans SC"),
+                               QStringLiteral("Source Han Sans SC"), QStringLiteral("Microsoft YaHei UI"),
+                               QStringLiteral("Segoe UI"), QStringLiteral("Microsoft YaHei")};
+    fontFamilies.removeDuplicates();
+    QFont defaultFont = QGuiApplication::font();
     defaultFont.setStyleHint(QFont::SansSerif);
     defaultFont.setWeight(QFont::Normal);
-    QStringList fontFamilies;
-    if (targetFamily.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
-        targetFamily.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
-        fontFamilies << QStringLiteral("Microsoft YaHei UI") << QStringLiteral("Segoe UI")
-                     << QStringLiteral("Microsoft YaHei") << QStringLiteral("PingFang SC")
-                     << QStringLiteral("Noto Sans SC");
-    } else {
-        fontFamilies << targetFamily << QStringLiteral("Microsoft YaHei UI")
-                     << QStringLiteral("Segoe UI") << QStringLiteral("Microsoft YaHei")
-                     << QStringLiteral("sans-serif");
-    }
     defaultFont.setFamilies(fontFamilies);
     QGuiApplication::setFont(defaultFont);
 
-    // 构建层级无衬线字体回退栈，优先选定字体，兜底使用微软雅黑与 Segoe UI
-    QString fontStack;
-    if (targetFamily.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
-        targetFamily.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
-        fontStack = QStringLiteral("'Microsoft YaHei UI', 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif");
-    } else {
-        fontStack = QString("'%1', 'Microsoft YaHei UI', 'Segoe UI', 'Microsoft YaHei', sans-serif").arg(targetFamily);
+    // HuskarUI resolves this family list against the installed font database.
+    // Keep the user's exact selection first, including Segoe UI.
+    QStringList themeFamilies;
+    for (const QString& fontFamily : fontFamilies) {
+        themeFamilies.append(fontFamily);
     }
-
-    HusTheme::instance()->installThemePrimaryFontFamiliesBase(fontStack);
+    themeFamilies.append(QStringLiteral("sans-serif"));
+    HusTheme::instance()->installThemePrimaryFontFamiliesBase(themeFamilies.join(QStringLiteral(", ")));
     HusTheme::instance()->installThemePrimaryFontSizeBase(14);
 }
 
@@ -633,41 +667,38 @@ void GuiController::applyThemeMode(const QString& mode) {
 }
 
 QVariantList GuiController::availableFonts() const {
-    const auto installed = QFontDatabase::families();
-    const bool isEn = (language_ == QLatin1String("en-US"));
+    if (!availableFontsCache_.isEmpty()) return availableFontsCache_;
 
-    struct FontOption {
-        QString family;
-        QString nameZh;
-        QString nameEn;
-    };
-
-    const QVector<FontOption> candidates = {
-        {QStringLiteral("Microsoft YaHei UI"), QStringLiteral("微软雅黑 UI (系统推荐 / 最佳屏显)"), QStringLiteral("Microsoft YaHei UI (Recommended / Best Display)")},
-        {QStringLiteral("Segoe UI"), QStringLiteral("Segoe UI (微软经典西文)"), QStringLiteral("Segoe UI (Classic Western)")},
-        {QStringLiteral("Microsoft YaHei"), QStringLiteral("微软雅黑 (经典中文字体)"), QStringLiteral("Microsoft YaHei (Classic)")},
-        {QStringLiteral("DengXian"), QStringLiteral("等线 (Win10/11 现代屏显)"), QStringLiteral("DengXian (Modern Sans)")},
-        {QStringLiteral("SimHei"), QStringLiteral("黑体 (传统工整黑体)"), QStringLiteral("SimHei (Traditional Sans)")},
-        {QStringLiteral("KaiTi"), QStringLiteral("楷体 (水墨书法雅致)"), QStringLiteral("KaiTi (Calligraphy)")},
-        {QStringLiteral("Cascadia Code"), QStringLiteral("Cascadia Code (等宽代码体)"), QStringLiteral("Cascadia Code (Monospace)")},
-        {QStringLiteral("Consolas"), QStringLiteral("Consolas (经典西文等宽)"), QStringLiteral("Consolas (Monospace)")},
-        {QStringLiteral("PingFang SC"), QStringLiteral("苹方 (PingFang SC)"), QStringLiteral("PingFang SC")},
-        {QStringLiteral("Noto Sans SC"), QStringLiteral("思源黑体 (Noto Sans SC)"), QStringLiteral("Noto Sans SC")},
-        {QStringLiteral("HarmonyOS Sans SC"), QStringLiteral("鸿蒙黑体 (HarmonyOS Sans SC)"), QStringLiteral("HarmonyOS Sans SC")}
-    };
-
-    QVariantList result;
-    for (const auto& item : candidates) {
-        if (item.family == QLatin1String("Segoe UI") ||
-            item.family == QLatin1String("Microsoft YaHei UI") ||
-            installed.contains(item.family)) {
-            QVariantMap opt;
-            opt[QStringLiteral("label")] = isEn ? item.nameEn : item.nameZh;
-            opt[QStringLiteral("value")] = item.family;
-            result.append(opt);
-        }
+    QStringList installed = QFontDatabase::families();
+    installed.removeDuplicates();
+    const QStringList preferred = {QStringLiteral("Noto Sans SC"), QStringLiteral("Source Han Sans SC"),
+                                   QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Segoe UI")};
+    QStringList ordered;
+    for (const QString& preferredFamily : preferred) {
+        const auto it = std::find_if(installed.cbegin(), installed.cend(), [&preferredFamily](const QString& family) {
+            return family.compare(preferredFamily, Qt::CaseInsensitive) == 0;
+        });
+        if (it != installed.cend()) ordered.append(*it);
     }
-    return result;
+    for (const QString& family : installed) {
+        if (!ordered.contains(family)) ordered.append(family);
+    }
+
+    const bool isEn = language_ == QLatin1String("en-US");
+    for (const QString& family : ordered) {
+        if (family.startsWith(QLatin1Char('@')) || QFontDatabase::isPrivateFamily(family) ||
+            family.startsWith(QLatin1String("HuskarUI"), Qt::CaseInsensitive)) continue;
+        const bool recommended = family.compare(QLatin1String("Noto Sans SC"), Qt::CaseInsensitive) == 0;
+        QString label = family;
+        if (recommended) label += isEn ? QStringLiteral(" (Recommended)") : QStringLiteral("（思源黑体系列 · 推荐）");
+        else if (family == QLatin1String("Source Han Sans SC"))
+            label += isEn ? QStringLiteral(" (Source Han Sans)") : QStringLiteral("（思源黑体）");
+        else if (!isEn && family == QLatin1String("Microsoft YaHei UI")) label += QStringLiteral("（微软雅黑 UI）");
+        else if (!isEn && family == QLatin1String("Microsoft YaHei")) label += QStringLiteral("（微软雅黑）");
+        availableFontsCache_.append(QVariantMap{{QStringLiteral("label"), label},
+                                               {QStringLiteral("value"), family}});
+    }
+    return availableFontsCache_;
 }
 
 QVariantList GuiController::availableThemes() const {
@@ -696,9 +727,7 @@ QVariantList GuiController::availableThemes() const {
 
 void GuiController::refreshAll() {
     client_.refreshEnvironment();
-    client_.refreshMods();
-    client_.refreshConflicts();
-    client_.refreshPlan();
+    client_.refreshModState();
     client_.refreshPresets();
     client_.refreshDoctor();
     updateDeploymentTelemetry();
@@ -798,13 +827,15 @@ void GuiController::autoDetectGameDir() {
 
 void GuiController::saveSettings(const QString& staging, const QString& game,
                                 const QString& lang, const QString& font,
-                                const QString& theme) {
+                                const QString& theme, bool reducedMotion) {
     const QString cleanStaging = staging.trimmed();
     const QString cleanGame = game.trimmed();
     const QString cleanLang = lang.trimmed();
     const QString cleanFont = font.trimmed();
     const QString cleanTheme = theme.trimmed();
+    const bool pathsChanged = cleanStaging != stagingDir_ || cleanGame != sekiroDir_;
 
+    setReducedMotion(reducedMotion);
     setStagingDir(cleanStaging);
     setSekiroDir(cleanGame);
     if (!cleanLang.isEmpty()) {
@@ -817,7 +848,7 @@ void GuiController::saveSettings(const QString& staging, const QString& game,
         setThemeMode(cleanTheme);
     }
 
-    client_.saveConfig(cleanStaging, cleanGame);
+    if (pathsChanged) client_.saveConfig(cleanStaging, cleanGame);
 
     QSettings settings("SekiroModManager", "SMM");
     settings.setValue("stagingDir", cleanStaging);
@@ -833,7 +864,7 @@ void GuiController::saveSettings(const QString& staging, const QString& game,
     }
     settings.sync();
 
-    refreshAll();
+    if (pathsChanged) refreshAll();
 
     emit notification("success", tr("Preferences saved successfully."));
 }
@@ -856,8 +887,7 @@ void GuiController::setModPreview(const QString& modId, const QString& imagePath
     ModPreviewImageProvider::clearCache();
     previewRevision_++;
     emit previewRevisionChanged();
-    refreshAll();
-    openModDetail(modId);
+    // The client has already refreshed mod state and detail.
 }
 
 void GuiController::optimizeAllPreviews() {
@@ -887,19 +917,12 @@ void GuiController::saveModPack(const QString& nameZh, const QString& descZh,
 
 void GuiController::deleteMods(const QStringList& modIds) {
     if (modIds.isEmpty()) return;
-    for (const auto& id : modIds) {
-        client_.removeMod(id);
-    }
-    refreshAll();
-    emit notification(QStringLiteral("success"), tr("Deleted %1 mods successfully.").arg(modIds.size()));
+    client_.removeMods(modIds);
 }
 
 void GuiController::setModsEnabled(const QStringList& modIds, bool enabled) {
     if (modIds.isEmpty()) return;
-    for (const auto& id : modIds) {
-        client_.setModEnabled(id, enabled);
-    }
-    refreshAll();
+    client_.setModsEnabled(modIds, enabled);
 }
 
 void GuiController::applyModPack(const QString& packId) {

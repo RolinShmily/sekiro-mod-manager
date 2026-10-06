@@ -9,15 +9,46 @@ import HuskarUI.Basic
 
 HusModal {
     id: rootModal
+    objectName: "settingsModal"
 
     width: 640
     title: qsTr("全局配置")
     description: qsTr("指定只狼游戏目录与模组暂存区，二者位于同一 NTFS 卷时可启用零拷贝硬链接部署。")
 
+    enter: Transition {
+        ParallelAnimation {
+            NumberAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: HusTheme.animationEnabled ? 180 : 0
+                easing.type: Easing.OutCubic
+            }
+            NumberAnimation {
+                property: "scale"
+                from: 0.96
+                to: 1
+                duration: HusTheme.animationEnabled ? 180 : 0
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+
     property string pendingStagingDir: ""
     property string pendingGameDir: ""
     property string pendingLanguage: "zh-CN"
-    property string pendingFontFamily: "Segoe UI"
+    property string pendingFontFamily: ""
+    property bool pendingReducedMotion: false
+    property string fontSearchText: ""
+    readonly property var installedFonts: smmBackend ? smmBackend.availableFonts : []
+    readonly property var filteredFonts: {
+        const query = fontSearchText.trim().toLowerCase();
+        if (!query) return installedFonts;
+        return installedFonts.filter(option => option.label.toLowerCase().includes(query)
+                                             || option.value.toLowerCase().includes(query));
+    }
+    readonly property bool notoSansInstalled: installedFonts.some(option => option.value === "Noto Sans SC")
+    readonly property bool selectedFontInstalled: installedFonts.some(option => option.value === pendingFontFamily)
     property string pendingTheme: "dark"
 
     function cleanLocalPath(urlVal) {
@@ -38,6 +69,8 @@ HusModal {
         pendingLanguage = smmBackend ? smmBackend.language : "zh-CN";
         pendingFontFamily = smmBackend ? smmBackend.fontFamily : "Microsoft YaHei UI";
         pendingTheme = smmBackend ? smmBackend.themeMode : "dark";
+        pendingReducedMotion = smmBackend ? smmBackend.reducedMotion : false;
+        fontSearchText = "";
     }
 
     // HusPopup 主题把 colorShadow 取作 @colorTextBase，而暗色主题下 colorTextBase 接近白色，
@@ -87,7 +120,8 @@ HusModal {
                             rootModal.cleanLocalPath(rootModal.pendingGameDir.trim()),
                             rootModal.pendingLanguage,
                             rootModal.pendingFontFamily,
-                            rootModal.pendingTheme
+                            rootModal.pendingTheme,
+                            rootModal.pendingReducedMotion
                         );
                     }
                     rootModal.close();
@@ -98,6 +132,7 @@ HusModal {
 
     bodyDelegate: ScrollView {
         id: settingsScrollView
+        objectName: "settingsScrollView"
         width: parent.width
         implicitHeight: Math.min(bodyColumn.implicitHeight, Math.max(300, (rootModal.parent ? rootModal.parent.height : 760) - 200))
         height: implicitHeight
@@ -302,11 +337,22 @@ HusModal {
                         id: themeSegmented
                         Layout.fillWidth: true
                         block: true
+                        // Update labels in place so retranslation does not reset the selection.
                         options: [
-                            { label: qsTr("暗色主题"), value: "dark" },
-                            { label: qsTr("亮色主题"), value: "light" },
-                            { label: qsTr("跟随系统"), value: "system" }
+                            { label: "", value: "dark" },
+                            { label: "", value: "light" },
+                            { label: "", value: "system" }
                         ]
+                        function updateLabels() {
+                            setProperty(0, "label", qsTr("暗色主题"));
+                            setProperty(1, "label", qsTr("亮色主题"));
+                            setProperty(2, "label", qsTr("跟随系统"));
+                        }
+                        Component.onCompleted: updateLabels()
+                        Connections {
+                            target: smmBackend
+                            function onLanguageChanged() { Qt.callLater(themeSegmented.updateLabels); }
+                        }
                         currentIndex: {
                             if (rootModal.pendingTheme === "light") return 1;
                             if (rootModal.pendingTheme === "system") return 2;
@@ -367,45 +413,138 @@ HusModal {
 
                 HusText {
                     Layout.fillWidth: true
-                    text: qsTr("选用 Windows 系统原生字体排版。推荐使用微软雅黑 UI (Microsoft YaHei UI)，具备最平滑的矢量抗锯齿与中西文字符间距。")
+                    text: qsTr("搜索 Windows 已安装字体。推荐 Noto Sans SC（思源黑体系列），适合中英文界面；未安装时使用系统字体回退。")
                     font.pixelSize: 13
                     color: HusTheme.Primary.colorTextTertiary
                     wrapMode: Text.WordWrap
                 }
 
-                HusSelect {
-                    id: fontSelect
+                HusInput {
+                    id: fontSearchInput
+                    objectName: "fontSearchInput"
                     Layout.fillWidth: true
                     implicitHeight: 32
+                    placeholderText: qsTr("搜索字体名称，例如 Noto、思源、微软雅黑…")
+                    text: rootModal.fontSearchText
+                    onTextChanged: rootModal.fontSearchText = text
+                    Accessible.name: qsTr("搜索已安装字体")
+                }
+
+                HusSelect {
+                    id: fontSelect
+                    objectName: "fontSelect"
+                    Layout.fillWidth: true
+                    implicitHeight: 32
+                    clearEnabled: false
+                    Component.onCompleted: {
+                        popup.colorShadow = Qt.binding(() => Qt.rgba(0, 0, 0, HusTheme.isDark ? 0.62 : 0.20));
+                    }
+                    enabled: rootModal.filteredFonts.length > 0
                     textRole: "label"
                     valueRole: "value"
-                    model: smmBackend ? smmBackend.availableFonts : []
-                    displayText: {
-                        if (!model || model.length === 0) return rootModal.pendingFontFamily;
-                        for (let i = 0; i < model.length; ++i) {
-                            const it = model[i];
-                            if (it && it.value === rootModal.pendingFontFamily) {
-                                return it.label;
-                            }
-                        }
-                        if (currentIndex >= 0 && currentIndex < model.length && model[currentIndex]) {
-                            return model[currentIndex].label;
-                        }
-                        return rootModal.pendingFontFamily;
-                    }
-                    currentIndex: {
-                        if (!model || model.length === 0) return 0;
-                        for (let i = 0; i < model.length; ++i) {
-                            const it = model[i];
-                            if (it && it.value === rootModal.pendingFontFamily) return i;
-                        }
-                        return 0;
-                    }
+                    model: rootModal.filteredFonts
+                    displayText: rootModal.pendingFontFamily
+                    currentIndex: rootModal.filteredFonts.findIndex(option => option.value === rootModal.pendingFontFamily)
                     onActivated: (index) => {
-                        if (model && model[index]) {
-                            rootModal.pendingFontFamily = model[index].value;
+                        const option = rootModal.filteredFonts[index];
+                        if (option) rootModal.pendingFontFamily = option.value;
+                    }
+                    contentDescription: qsTr("选择界面字体")
+                }
+
+                HusText {
+                    Layout.fillWidth: true
+                    text: rootModal.filteredFonts.length === 0
+                          ? qsTr("没有匹配的已安装字体，请尝试其他名称。")
+                          : qsTr("匹配 %1 / %2 个已安装字体").arg(rootModal.filteredFonts.length).arg(rootModal.installedFonts.length)
+                    font.pixelSize: 12
+                    color: HusTheme.Primary.colorTextTertiary
+                    wrapMode: Text.WordWrap
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    HusButton {
+                        text: qsTr("使用推荐字体")
+                        enabled: rootModal.notoSansInstalled
+                        onClicked: {
+                            rootModal.pendingFontFamily = "Noto Sans SC";
+                            rootModal.fontSearchText = "";
                         }
                     }
+
+                    HusText {
+                        Layout.fillWidth: true
+                        visible: !rootModal.notoSansInstalled
+                        text: qsTr("尚未安装 Noto Sans SC，安装后会自动出现在列表中。")
+                        font.pixelSize: 12
+                        color: HusTheme.Primary.colorTextTertiary
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: fontPreview.implicitHeight + 24
+                    radius: HusTheme.Primary.radiusPrimary
+                    color: HusTheme.Primary.colorFillQuaternary
+                    border.width: 1
+                    border.color: HusTheme.Primary.colorBorderSecondary
+
+                    HusText {
+                        id: fontPreview
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        text: qsTr("只狼：影逝二度 · 字体预览 Aa 0123456789")
+                        font.family: rootModal.pendingFontFamily
+                        font.pixelSize: 16
+                        color: HusTheme.Primary.colorTextPrimary
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                HusText {
+                    Layout.fillWidth: true
+                    visible: !rootModal.selectedFontInstalled
+                    text: qsTr("当前字体未安装，显示时将回退到系统字体。")
+                    font.pixelSize: 12
+                    color: HusTheme.Primary.colorWarning
+                    wrapMode: Text.WordWrap
+                }
+            }
+
+            HusDivider { Layout.fillWidth: true }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    HusText {
+                        text: qsTr("减少动效")
+                        font.pixelSize: 15
+                        font.bold: true
+                        color: HusTheme.Primary.colorTextPrimary
+                    }
+
+                    HusText {
+                        Layout.fillWidth: true
+                        text: qsTr("关闭页面、弹窗与悬停过渡，减少视觉移动和渲染开销。")
+                        font.pixelSize: 13
+                        color: HusTheme.Primary.colorTextTertiary
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                HusSwitch {
+                    checked: rootModal.pendingReducedMotion
+                    onToggled: rootModal.pendingReducedMotion = checked
+                    contentDescription: qsTr("减少动效")
                 }
             }
         }

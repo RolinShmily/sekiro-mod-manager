@@ -49,6 +49,7 @@
   </context>
   <context>
     <name>ArmouryView</name>
+    <message><source>第 %1 顺位</source><translation>Rank %1</translation></message>
     <message>
       <source>人物外观</source>
       <translation>Character Skins</translation>
@@ -682,11 +683,55 @@
       <translation>Interface Font</translation>
     </message>
     <message>
-      <source>选用 Windows 系统原生字体排版。默认推荐 Segoe UI，兼顾优雅西文字形与原生中文字符渲染。</source>
-      <translation>Use Windows native system fonts. Segoe UI is recommended by default, balancing elegant Western typography with native Chinese rendering.</translation>
+      <source>搜索 Windows 已安装字体。推荐 Noto Sans SC（思源黑体系列），适合中英文界面；未安装时使用系统字体回退。</source>
+      <translation>Search fonts installed in Windows. Noto Sans SC (Source Han Sans family) is recommended for Chinese and English interfaces; system fonts provide a fallback when unavailable.</translation>
+    </message>
+    <message>
+      <source>搜索字体名称，例如 Noto、思源、微软雅黑…</source>
+      <translation>Search fonts, e.g. Noto, Source Han, Microsoft YaHei…</translation>
+    </message>
+    <message>
+      <source>搜索已安装字体</source>
+      <translation>Search installed fonts</translation>
+    </message>
+    <message>
+      <source>选择界面字体</source>
+      <translation>Choose interface font</translation>
+    </message>
+    <message>
+      <source>没有匹配的已安装字体，请尝试其他名称。</source>
+      <translation>No installed fonts match. Try a different name.</translation>
+    </message>
+    <message>
+      <source>匹配 %1 / %2 个已安装字体</source>
+      <translation>%1 / %2 installed fonts match</translation>
+    </message>
+    <message>
+      <source>使用推荐字体</source>
+      <translation>Use recommended font</translation>
+    </message>
+    <message>
+      <source>尚未安装 Noto Sans SC，安装后会自动出现在列表中。</source>
+      <translation>Noto Sans SC is not installed. It will appear here after installation.</translation>
+    </message>
+    <message>
+      <source>只狼：影逝二度 · 字体预览 Aa 0123456789</source>
+      <translation>Sekiro: Shadows Die Twice · Font preview Aa 0123456789</translation>
+    </message>
+    <message>
+      <source>当前字体未安装，显示时将回退到系统字体。</source>
+      <translation>The selected font is not installed. A system font will be used as fallback.</translation>
+    </message>
+    <message>
+      <source>减少动效</source>
+      <translation>Reduce motion</translation>
+    </message>
+    <message>
+      <source>关闭页面、弹窗与悬停过渡，减少视觉移动和渲染开销。</source>
+      <translation>Disable page, popup and hover transitions to reduce motion and rendering work.</translation>
     </message>
   </context>
   <context>
     <name>UpdateModal</name>
     <message><source>软件版本更新</source><translation>Software Update</translation></message><message><source>SEKIRO MOD MANAGER · 版本更新通知</source><translation>SEKIRO MOD MANAGER · Release Notification</translation></message><message><source>下载安装程序 (.exe)</source><translation>Download Installer (.exe)</translation></message><message><source>前往发布页面</source><translation>View Release Page</translation></message><message><source>官方推荐通过安装程序进行平滑升级；便携版用户可前往 GitHub 发布页下载最新压缩包解压使用。</source><translation>Recommended to upgrade seamlessly using the installer; portable users can download the zip package from GitHub Releases.</translation></message><message><source>稍后再说</source><translation>Remind Me Later</translation></message><message><source>重新检查</source><translation>Check Again</translation></message><message><source>完成</source><translation>Done</translation></message><message><source>检查中</source><translation>Checking</translation></message><message><source>正在连接 GitHub 校验最新版本清单...</source><translation>Connecting to GitHub to verify the latest release manifest...</translation></message><message><source>新版本可用</source><translation>New Version Available</translation></message><message><source>当前版本: v</source><translation>Current: v</translation></message><message><source>已是最新</source><translation>Up to Date</translation></message><message><source>当前版本 (v%1) 为最新发布版本，无需更新。</source><translation>Current version (v%1) is the latest release. No update needed.</translation></message><message><source>更新内容详情:</source><translation>Release Notes:</translation></message></context>
-<context><name>GuiController</name><message><source>整合包已取消应用，当前进入自由模组管理状态。</source><translation>Modpack deactivated. You are now in freeform mod management mode.</translation></message></context><context><name>SmmClient</name><message><source>Mod ID '%1' already exists.</source><translation>Mod ID '%1' already exists.</translation></message></context></TS>
+<context><name>GuiController</name><message><source>整合包已取消应用，当前进入自由模组管理状态。</source><translation>Modpack deactivated. You are now in freeform mod management mode.</translation></message></context><context><name>SmmClient</name><message><source>Updated %1 mods.</source><translation>Updated %1 mods.</translation></message><message><source>Deleted %1 mods successfully.</source><translation>Deleted %1 mods successfully.</translation></message><message><source>Mod ID '%1' already exists.</source><translation>Mod ID '%1' already exists.</translation></message></context></TS>

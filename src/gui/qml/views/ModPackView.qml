@@ -134,6 +134,7 @@ ColumnLayout {
                               : (cardHover.containsMouse ? HusTheme.Primary.colorPrimaryBorder : HusTheme.Primary.colorBorderSecondary)
 
                 Behavior on border.color {
+                    enabled: HusTheme.animationEnabled
                     ColorAnimation { duration: HusTheme.Primary.durationFast }
                 }
 

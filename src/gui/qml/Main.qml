@@ -20,7 +20,8 @@ HusWindow {
     color: HusTheme.Primary.colorBgBase
 
     Behavior on color {
-        ColorAnimation { duration: 240; easing.type: Easing.OutQuad }
+        enabled: HusTheme.animationEnabled
+        ColorAnimation { duration: 180; easing.type: Easing.OutQuad }
     }
 
     property string currentNav: "hub" // "hub" | "armoury" | "packs"
@@ -75,7 +76,8 @@ HusWindow {
             color: HusTheme.Primary.colorFillQuaternary
 
             Behavior on color {
-                ColorAnimation { duration: 240; easing.type: Easing.OutQuad }
+                enabled: HusTheme.animationEnabled
+                ColorAnimation { duration: 180; easing.type: Easing.OutQuad }
             }
 
             Rectangle {
@@ -245,33 +247,61 @@ HusWindow {
             Layout.margins: 20
             currentIndex: mainWindow.currentNav === "hub" ? 0 : (mainWindow.currentNav === "armoury" ? 1 : 2)
 
-            onCurrentIndexChanged: viewAnim.restart()
+            function animatePage() {
+                viewAnim.stop();
+                opacity = 1.0;
+                if (HusTheme.animationEnabled) viewAnim.restart();
+            }
+            onCurrentIndexChanged: animatePage()
 
             NumberAnimation {
                 id: viewAnim
                 target: stageStack
                 property: "opacity"
-                from: 0.45
+                from: 0.80
                 to: 1.0
                 duration: 180
                 easing.type: Easing.OutQuad
             }
 
-            LaunchHubView {
-                onNavigateToArmoury: mainWindow.currentNav = "armoury"
-                onNavigateToModPacks: mainWindow.currentNav = "packs"
-            }
-
-            ArmouryView {
-                onRequestOpenDrawer: (modId) => {
-                    smmBackend.openModDetail(modId);
-                    modDrawer.open();
+            Loader {
+                sourceComponent: LaunchHubView {
+                    onNavigateToArmoury: mainWindow.currentNav = "armoury"
+                    onNavigateToModPacks: mainWindow.currentNav = "packs"
                 }
-                onRequestSavePack: savePackModal.open()
             }
 
-            ModPackView {
-                onRequestSavePack: savePackModal.open()
+            Loader {
+                id: armouryLoader
+                objectName: "armouryLoader"
+                property bool visited: false
+                active: visited || StackLayout.isCurrentItem
+                asynchronous: true
+                onLoaded: {
+                    visited = true;
+                    if (StackLayout.isCurrentItem) stageStack.animatePage();
+                }
+                sourceComponent: ArmouryView {
+                    onRequestOpenDrawer: (modId) => {
+                        smmBackend.openModDetail(modId);
+                        modDrawer.open();
+                    }
+                    onRequestSavePack: savePackModal.open()
+                }
+            }
+
+            Loader {
+                objectName: "packsLoader"
+                property bool visited: false
+                active: visited || StackLayout.isCurrentItem
+                asynchronous: true
+                onLoaded: {
+                    visited = true;
+                    if (StackLayout.isCurrentItem) stageStack.animatePage();
+                }
+                sourceComponent: ModPackView {
+                    onRequestSavePack: savePackModal.open()
+                }
             }
         }
     }
@@ -307,7 +337,14 @@ HusWindow {
         id: toastBanner
         z: 99999
         anchors.top: mainWindow.captionBar.bottom
-        anchors.topMargin: toastVisible ? 12 : -50
+        anchors.topMargin: 12
+        transform: Translate {
+            y: toastBanner.toastVisible || !HusTheme.animationEnabled ? 0 : -16
+            Behavior on y {
+                enabled: HusTheme.animationEnabled
+                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+            }
+        }
         anchors.horizontalCenter: parent.horizontalCenter
         implicitHeight: 36
         implicitWidth: toastContent.implicitWidth + 32
@@ -324,11 +361,9 @@ HusWindow {
         property string toastType: "info"
         property string toastMessage: ""
 
-        Behavior on anchors.topMargin {
-            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
-        }
         Behavior on opacity {
-            NumberAnimation { duration: 180; easing.type: Easing.OutQuad }
+            enabled: HusTheme.animationEnabled
+            NumberAnimation { duration: 160; easing.type: Easing.OutQuad }
         }
 
         Timer {
@@ -364,6 +399,16 @@ HusWindow {
                 font.pixelSize: 12
                 font.bold: true
                 color: HusTheme.Primary.colorTextPrimary
+            }
+        }
+    }
+
+    Connections {
+        target: HusTheme
+        function onAnimationEnabledChanged() {
+            if (!HusTheme.animationEnabled) {
+                viewAnim.stop();
+                stageStack.opacity = 1.0;
             }
         }
     }

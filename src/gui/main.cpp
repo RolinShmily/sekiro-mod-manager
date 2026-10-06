@@ -44,10 +44,10 @@ int main(int argc, char* argv[]) {
     app.setOrganizationName("SekiroModManager");
     app.setApplicationName("SMM");
 
-    // 从持久化设置读取字体与主题（默认推荐 Microsoft YaHei UI 保证中西文最佳渲染）
+    // Prefer Noto Sans SC when installed; preserve an existing user selection.
     QSettings preSettings(QStringLiteral("SekiroModManager"), QStringLiteral("SMM"));
-    QString initialFont = preSettings.value(QStringLiteral("fontFamily"), QStringLiteral("Microsoft YaHei UI")).toString();
-    if (initialFont.trimmed().isEmpty()) initialFont = QStringLiteral("Microsoft YaHei UI");
+    QString initialFont = preSettings.value(QStringLiteral("fontFamily"), smm::gui::GuiController::defaultFontFamily()).toString().trimmed();
+    if (initialFont.isEmpty()) initialFont = smm::gui::GuiController::defaultFontFamily();
 
     QString savedTheme = preSettings.value(QStringLiteral("themeMode"), QStringLiteral("dark")).toString().trimmed().toLower();
     auto themeMode = (savedTheme == QLatin1String("light"))
@@ -75,40 +75,11 @@ int main(int argc, char* argv[]) {
     devMode = true;
 #endif
 
-    // 全局字体规范化：基准字重使用 Normal (400)，并配置完整中西文回退族栈
-    QFont defaultFont(initialFont);
-    defaultFont.setStyleHint(QFont::SansSerif);
-    defaultFont.setWeight(QFont::Normal);
-    QStringList fontFamilies;
-    if (initialFont.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
-        initialFont.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
-        fontFamilies << QStringLiteral("Microsoft YaHei UI") << QStringLiteral("Segoe UI")
-                     << QStringLiteral("Microsoft YaHei") << QStringLiteral("PingFang SC")
-                     << QStringLiteral("Noto Sans SC");
-    } else {
-        fontFamilies << initialFont << QStringLiteral("Microsoft YaHei UI")
-                     << QStringLiteral("Segoe UI") << QStringLiteral("Microsoft YaHei")
-                     << QStringLiteral("sans-serif");
-    }
-    defaultFont.setFamilies(fontFamilies);
-    app.setFont(defaultFont);
-
-    // 采用 QtRendering 灰度抗锯齿，彻底消除暗色背景下 DirectWrite ClearType 造成的红蓝毛刺与笔画断裂
     HusTheme::instance()->setTextRenderType(HusTheme::TextRenderType::QtRendering);
-    // 必须在 QML 引擎加载前完成主题安装，避免首帧闪烁与配色错乱
     HusTheme::instance()->setDarkMode(themeMode);
-    // 水墨泥金：经典金碧水墨与和风素雅强调色（替代过艳的深红，呈现淡雅沉稳质感）
+    HusTheme::instance()->setAnimationEnabled(!preSettings.value(QStringLiteral("reducedMotion"), false).toBool());
     HusTheme::instance()->installThemePrimaryColorBase(QColor(QStringLiteral("#c29f5d")));
-    // 安装以 Microsoft YaHei UI / Segoe UI 为先导的原生字体栈
-    QString initStack;
-    if (initialFont.compare(QLatin1String("Microsoft YaHei UI"), Qt::CaseInsensitive) == 0 ||
-        initialFont.compare(QLatin1String("Segoe UI"), Qt::CaseInsensitive) == 0) {
-        initStack = QStringLiteral("'Microsoft YaHei UI', 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif");
-    } else {
-        initStack = QString("'%1', 'Microsoft YaHei UI', 'Segoe UI', 'Microsoft YaHei', sans-serif").arg(initialFont);
-    }
-    HusTheme::instance()->installThemePrimaryFontFamiliesBase(initStack);
-    HusTheme::instance()->installThemePrimaryFontSizeBase(14);
+    smm::gui::GuiController::applyFontFamily(initialFont);
 
     QQmlApplicationEngine engine;
 
