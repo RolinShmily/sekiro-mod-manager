@@ -1,0 +1,30 @@
+{
+  "name": "sekiro-mod-manager-website",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python scripts/package_skill.py && next dev --hostname 127.0.0.1",
+    "build": "python scripts/package_skill.py && next build",
+    "preview": "node scripts/preview.mjs",
+    "lint": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@radix-ui/react-accordion": "1.2.21",
+    "@radix-ui/react-tabs": "1.1.22",
+    "lucide-react": "1.52.0",
+    "motion": "14.0.0",
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@types/node": "24.12.0"
+  }
+}

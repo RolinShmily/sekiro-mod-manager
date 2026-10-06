@@ -1,0 +1,72 @@
+name: Website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'skills/smm-cli/**'
+      - 'wrangler.toml'
+      - '.github/workflows/website.yml'
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'skills/smm-cli/**'
+      - 'wrangler.toml'
+      - '.github/workflows/website.yml'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy the verified static site to Cloudflare Workers'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned dependencies
+        working-directory: website
+        run: npm ci --ignore-scripts
+      - name: Refresh public release snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/RolinShmily/sekiro-mod-manager/releases/latest > website/public/release.json.new
+          mv website/public/release.json.new website/public/release.json
+      - name: Test release parsing and type-check
+        working-directory: website
+        run: |
+          npm test
+          npm run lint
+      - name: Export static website and skill ZIP
+        working-directory: website
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smm-website
+          path: website/out
+      - name: Deploy to Cloudflare Workers
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy))
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm exec --yes --ignore-scripts --package=wrangler@4.147.0 -- wrangler deploy --config wrangler.toml

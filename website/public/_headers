@@ -1,0 +1,10 @@
+/release.json
+  Cache-Control: no-cache
+/downloads/*
+  Cache-Control: no-cache
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
