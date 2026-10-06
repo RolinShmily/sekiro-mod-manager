@@ -156,6 +156,7 @@ public:
     // Reads
     void refreshEnvironment();
     void refreshMods();
+    void refreshModState();
     void refreshModDetail(const QString& modId);
     void refreshConflicts();
     void refreshPlan();
@@ -164,6 +165,8 @@ public:
 
     // Writes
     void setModEnabled(const QString& modId, bool enabled);
+    void setModsEnabled(const QStringList& modIds, bool enabled);
+    void removeMods(const QStringList& modIds);
     void setAssetEnabled(const QString& modId, const QString& relPath, bool enabled);
     void setModPreview(const QString& modId, const QString& imagePath);
     void setModPriority(const QString& modId, quint32 priority);

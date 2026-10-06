@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 
 # ---------------------------------------------------------------------------
-# The GUI never links smm_core. Every piece of business logic is reached by spawning the `smm`
-# CLI and reading its JSON. That is what keeps this layer a pure renderer, and it is why this
-# file contains no reference to the core library at all.
+# Both the GUI native client and the CLI link smm_core. Business logic stays in
+# the core library; the GUI adapts its results into Qt models without subprocess IPC.
 #
-#   core  <-  cli  <-  gui
+#   core  <-  cli
+#         <-  gui
 # ---------------------------------------------------------------------------
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick QuickControls2 Network LinguistTools)

@@ -130,26 +130,61 @@ void SmmClient::refreshEnvironment() {
 }
 
 void SmmClient::refreshMods() {
-    const fs::path stagingPath = toStdPath(stagingDir_);
-    if (stagingDir_.isEmpty() || !fs::exists(stagingPath)) {
-        emit modsLoaded({}, {}, stagingDir_);
-        return;
-    }
+    refreshModState();
+}
 
+void SmmClient::refreshModState() {
+    const fs::path stagingPath = toStdPath(stagingDir_);
     try {
+        if (stagingDir_.isEmpty() || !fs::exists(stagingPath)) {
+            emit modsLoaded({}, {}, stagingDir_);
+            emit conflictsLoaded({});
+            emit planLoaded({});
+            return;
+        }
+
+        // One filesystem snapshot keeps the list, conflicts and plan consistent.
         const auto outcome = smm::ModLoader::scan_mods_directory(stagingPath);
+        const auto report = smm::ConflictEngine::scan_conflicts(outcome.mods);
+        const auto plan = smm::DeploymentPlanner::build_plan("default", outcome.mods);
         QVector<ModEntry> entries;
         entries.reserve(static_cast<qsizetype>(outcome.mods.size()));
-        for (const auto& mod : outcome.mods) {
-            entries.append(toModEntry(mod));
-        }
-
+        for (const auto& mod : outcome.mods) entries.append(toModEntry(mod));
         QStringList failures;
-        for (const auto& f : outcome.failures) {
-            failures.append(toQString(f.path) + QStringLiteral(": ") + QString::fromStdString(f.message));
+        for (const auto& failure : outcome.failures) {
+            failures.append(toQString(failure.path) + QStringLiteral(": ") + QString::fromStdString(failure.message));
         }
-
+        QVector<ConflictEntry> conflicts;
+        conflicts.reserve(static_cast<qsizetype>(report.records.size()));
+        for (const auto& conflict : report.records) {
+            ConflictEntry entry;
+            entry.relativePath = QString::fromStdString(conflict.relative_path);
+            entry.severity = QString::fromStdString(smm::to_string(conflict.severity));
+            entry.winnerModId = QString::fromStdString(conflict.winner_mod_id);
+            for (const auto& shadowed : conflict.shadowed_mod_ids)
+                entry.shadowedModIds.append(QString::fromStdString(shadowed));
+            entry.message = QString::fromStdString(conflict.message);
+            conflicts.append(entry);
+        }
+        PlanInfo info;
+        info.profile = QString::fromStdString(plan.active_profile);
+        info.fileCount = static_cast<int>(plan.mappings.size());
+        info.mappings.reserve(static_cast<qsizetype>(plan.mappings.size()));
+        for (const auto& mapping : plan.mappings) {
+            PlanMapping entry;
+            entry.targetRelativePath = QString::fromStdString(mapping.target_relative_path);
+            entry.ownerModId = QString::fromStdString(mapping.owner_mod_id);
+            entry.priority = mapping.priority;
+            for (const auto& shadowed : mapping.shadowed_mods)
+                entry.shadowedMods.append(QString::fromStdString(shadowed));
+            info.mappings.append(entry);
+        }
+        info.totalConflicts = static_cast<int>(report.total_conflicts);
+        info.criticalConflict = report.has_critical_conflict;
+        info.warningConflict = report.has_warning_conflict;
         emit modsLoaded(entries, failures, stagingDir_);
+        emit conflictsLoaded(conflicts);
+        emit planLoaded(info);
     } catch (const std::exception& e) {
         emit operationFailed(tr("Mod Scan Failed"), QString::fromUtf8(e.what()));
     }
@@ -178,71 +213,11 @@ void SmmClient::refreshModDetail(const QString& modId) {
 }
 
 void SmmClient::refreshConflicts() {
-    const fs::path stagingPath = toStdPath(stagingDir_);
-    if (stagingDir_.isEmpty() || !fs::exists(stagingPath)) {
-        emit conflictsLoaded({});
-        return;
-    }
-
-    try {
-        const auto outcome = smm::ModLoader::scan_mods_directory(stagingPath);
-        const auto report = smm::ConflictEngine::scan_conflicts(outcome.mods);
-
-        QVector<ConflictEntry> entries;
-        entries.reserve(static_cast<qsizetype>(report.records.size()));
-        for (const auto& c : report.records) {
-            ConflictEntry ce;
-            ce.relativePath = QString::fromStdString(c.relative_path);
-            ce.severity = QString::fromStdString(smm::to_string(c.severity));
-            ce.winnerModId = QString::fromStdString(c.winner_mod_id);
-            for (const auto& s : c.shadowed_mod_ids) {
-                ce.shadowedModIds.append(QString::fromStdString(s));
-            }
-            ce.message = QString::fromStdString(c.message);
-            entries.append(ce);
-        }
-
-        emit conflictsLoaded(entries);
-    } catch (const std::exception& e) {
-        emit operationFailed(tr("Conflict Scan Failed"), QString::fromUtf8(e.what()));
-    }
+    refreshModState();
 }
 
 void SmmClient::refreshPlan() {
-    const fs::path stagingPath = toStdPath(stagingDir_);
-    if (stagingDir_.isEmpty() || !fs::exists(stagingPath)) {
-        emit planLoaded({});
-        return;
-    }
-
-    try {
-        const auto outcome = smm::ModLoader::scan_mods_directory(stagingPath);
-        const auto plan = smm::DeploymentPlanner::build_plan("default", outcome.mods);
-
-        PlanInfo pi;
-        pi.profile = QString::fromStdString(plan.active_profile);
-        pi.fileCount = static_cast<int>(plan.mappings.size());
-        pi.mappings.reserve(static_cast<qsizetype>(plan.mappings.size()));
-        for (const auto& m : plan.mappings) {
-            PlanMapping pm;
-            pm.targetRelativePath = QString::fromStdString(m.target_relative_path);
-            pm.ownerModId = QString::fromStdString(m.owner_mod_id);
-            pm.priority = m.priority;
-            for (const auto& s : m.shadowed_mods) {
-                pm.shadowedMods.append(QString::fromStdString(s));
-            }
-            pi.mappings.append(pm);
-        }
-
-        const auto report = smm::ConflictEngine::scan_conflicts(outcome.mods);
-        pi.totalConflicts = static_cast<int>(report.total_conflicts);
-        pi.criticalConflict = report.has_critical_conflict;
-        pi.warningConflict = report.has_warning_conflict;
-
-        emit planLoaded(pi);
-    } catch (const std::exception& e) {
-        emit operationFailed(tr("Plan Build Failed"), QString::fromUtf8(e.what()));
-    }
+    refreshModState();
 }
 
 void SmmClient::refreshDoctor() {
@@ -314,11 +289,47 @@ void SmmClient::setModEnabled(const QString& modId, bool enabled) {
     try {
         smm::ModManager::set_mod_enabled(stagingPath, modId.toStdString(), enabled);
         emit operationSucceeded(tr("Mod Updated"), tr("%1 is now %2").arg(modId, enabled ? QStringLiteral("enabled") : QStringLiteral("disabled")));
-        refreshMods();
-        refreshConflicts();
-        refreshPlan();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Update Failed"), QString::fromUtf8(e.what()));
+    }
+}
+
+void SmmClient::setModsEnabled(const QStringList& modIds, bool enabled) {
+    const fs::path stagingPath = toStdPath(stagingDir_);
+    int updated = 0;
+    QStringList uniqueIds = modIds;
+    uniqueIds.removeDuplicates();
+    for (const QString& id : uniqueIds) {
+        try {
+            smm::ModManager::set_mod_enabled(stagingPath, id.toStdString(), enabled);
+            ++updated;
+        } catch (const std::exception& e) {
+            emit operationFailed(tr("Update Failed"), id + QStringLiteral(": ") + QString::fromUtf8(e.what()));
+        }
+    }
+    if (updated > 0) {
+        refreshModState();
+        emit operationSucceeded(tr("Mod Updated"), tr("Updated %1 mods.").arg(updated));
+    }
+}
+
+void SmmClient::removeMods(const QStringList& modIds) {
+    const fs::path stagingPath = toStdPath(stagingDir_);
+    int removed = 0;
+    QStringList uniqueIds = modIds;
+    uniqueIds.removeDuplicates();
+    for (const QString& id : uniqueIds) {
+        try {
+            smm::ModManager::delete_mod(stagingPath, id.toStdString());
+            ++removed;
+        } catch (const std::exception& e) {
+            emit operationFailed(tr("Delete Failed"), id + QStringLiteral(": ") + QString::fromUtf8(e.what()));
+        }
+    }
+    if (removed > 0) {
+        refreshModState();
+        emit operationSucceeded(tr("Mod Deleted"), tr("Deleted %1 mods successfully.").arg(removed));
     }
 }
 
@@ -328,8 +339,7 @@ void SmmClient::setAssetEnabled(const QString& modId, const QString& relPath, bo
         smm::ModManager::set_asset_enabled(stagingPath, modId.toStdString(), relPath.toStdString(), enabled);
         emit operationSucceeded(tr("Asset Updated"), tr("%1 asset updated").arg(relPath));
         refreshModDetail(modId);
-        refreshConflicts();
-        refreshPlan();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Asset Update Failed"), QString::fromUtf8(e.what()));
     }
@@ -341,7 +351,7 @@ void SmmClient::setModPreview(const QString& modId, const QString& imagePath) {
         smm::ModManager::set_mod_preview(stagingPath, modId.toStdString(), toStdPath(imagePath));
         emit operationSucceeded(tr("Preview Updated"), tr("Preview background set for %1").arg(modId));
         refreshModDetail(modId);
-        refreshMods();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Preview Failed"), QString::fromUtf8(e.what()));
     }
@@ -351,9 +361,7 @@ void SmmClient::setModPriority(const QString& modId, quint32 priority) {
     const fs::path stagingPath = toStdPath(stagingDir_);
     try {
         smm::ModManager::set_mod_priority(stagingPath, modId.toStdString(), priority);
-        refreshMods();
-        refreshConflicts();
-        refreshPlan();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Priority Update Failed"), QString::fromUtf8(e.what()));
     }
@@ -364,8 +372,7 @@ void SmmClient::swapModPriorities(const QString& modIdA, quint32 priA, const QSt
     try {
         smm::ModManager::set_mod_priority(stagingPath, modIdA.toStdString(), priA);
         smm::ModManager::set_mod_priority(stagingPath, modIdB.toStdString(), priB);
-        refreshConflicts();
-        refreshPlan();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Priority Swap Failed"), QString::fromUtf8(e.what()));
     }
@@ -377,8 +384,7 @@ void SmmClient::batchUpdatePriorities(const QMap<QString, quint32>& priorities) 
         for (auto it = priorities.constBegin(); it != priorities.constEnd(); ++it) {
             smm::ModManager::set_mod_priority(stagingPath, it.key().toStdString(), it.value());
         }
-        refreshConflicts();
-        refreshPlan();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Batch Priority Update Failed"), QString::fromUtf8(e.what()));
     }
@@ -389,9 +395,7 @@ void SmmClient::removeMod(const QString& modId) {
     try {
         smm::ModManager::delete_mod(stagingPath, modId.toStdString());
         emit operationSucceeded(tr("Mod Deleted"), tr("%1 has been removed").arg(modId));
-        refreshMods();
-        refreshConflicts();
-        refreshPlan();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Delete Failed"), QString::fromUtf8(e.what()));
     }
@@ -454,7 +458,7 @@ void SmmClient::updateModMetadata(const QString& modId, const QString& newId,
         smm::ModManager::save_mod_info(finalModDir, info);
         emit operationSucceeded(tr("Metadata Saved"), tr("Mod details updated."));
         refreshModDetail(targetId);
-        refreshMods();
+        refreshModState();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Save Failed"), QString::fromUtf8(e.what()));
     }
@@ -492,9 +496,7 @@ void SmmClient::applyPreset(const QString& presetId) {
     try {
         const auto p = smm::PresetManager::apply_preset(stagingPath, presetId.toStdString());
         emit operationSucceeded(tr("Preset Applied"), tr("Preset '%1' equipped.").arg(QString::fromStdString(p.name)));
-        refreshMods();
-        refreshConflicts();
-        refreshPlan();
+        refreshModState();
         refreshPresets();
     } catch (const std::exception& e) {
         emit operationFailed(tr("Preset Apply Failed"), QString::fromUtf8(e.what()));
@@ -683,9 +685,7 @@ void SmmClient::importPaths(const QStringList& paths, const QString& customId, c
             QMetaObject::invokeMethod(this, [this]() {
                 setBusy(false);
                 emit operationSucceeded(tr("Import Complete"), tr("All mods imported successfully."));
-                refreshMods();
-                refreshConflicts();
-                refreshPlan();
+                refreshModState();
             }, Qt::QueuedConnection);
 
         } catch (const std::exception& e) {
@@ -763,9 +763,7 @@ void SmmClient::importModPack(const QString& packPath) {
                                         tr("Imported '%1' with %2 mods.")
                                             .arg(QString::fromStdString(res.manifest.name))
                                             .arg(res.mods.size()));
-                refreshMods();
-                refreshConflicts();
-                refreshPlan();
+                refreshModState();
                 refreshPresets();
             }, Qt::QueuedConnection);
         } catch (const std::exception& e) {
