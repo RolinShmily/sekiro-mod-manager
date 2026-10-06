@@ -68,7 +68,7 @@ HusModal {
                             color: HusTheme.Primary.colorTextPrimary
                         }
                         HusTag {
-                            text: "v0.3.6"
+                            text: "v" + smmBackend.updater.currentVersion
                         }
                         HusButton {
                             implicitHeight: 22

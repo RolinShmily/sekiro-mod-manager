@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.3.7] - 2026-10-06
+
+### Added
+
+- Search all installed Windows font families by name, with match counts, a bilingual preview and missing-font fallback hints. Recommend installed Noto Sans SC (思源黑体系列); preserve existing font selections.
+- Persist a reduced-motion preference across HuskarUI controls, navigation, dialogs, notifications and mod reordering. Add keyboard activation and visible focus to navigation.
+- Add the `skills/smm-cli` agent skill with source-verified workflows and a standard-library NDJSON runner.
+- Publish a bilingual product website with real application screenshots and separate GUI installer, portable, CLI and Skill downloads.
+
+### Changed
+
+- Derive mod lists, conflicts and deployment plans from one staging scan. Batch enable/delete deduplicates IDs and refreshes once, with partial-failure reporting.
+- Retain mod delegates when order and filter membership remain stable; reorder with row-move notifications. Debounce search and share rank options across cards.
+- Load mod and preset pages on first visit and retain them afterward; skip hidden preview images and avoid full rescans for appearance-only settings.
+- Refine page fades, modal entrance and notification movement, and reproduce HuskarUI button effects through the compatibility patch script.
+- Derive CLI, update-check and About versions from the CMake project version; align Windows numeric and string file versions.
+
+### Fixed
+
+- Prevent bound switch updates from writing mod enabled state. Reload previews after image replacement while preserving card delegates.
+- Keep unsaved theme choices when switching settings language, and respect reduced motion for button press scaling.
+
+### 中文更新摘要
+
+- 全量搜索 Windows 已安装字体，提供匹配数量、中英文预览与缺失字体提示；优先推荐已安装的 Noto Sans SC，保留原有字体选择。
+- 新增可保存的减少动效设置，优化页面、弹窗、通知与卡片交互，并增加导航键盘操作。
+- 模组、冲突和部署计划共用一次扫描，批量操作只刷新一次；保留卡片实例，页面首次访问才加载，外观设置不再触发全量扫描。
+- 修复开关绑定误触发、预览更新及语言切换导致待保存主题重置的问题。
+- 新增 smm-cli 智能体技能与双语产品网站，统一软件版本信息。
+
 ## [0.3.6] - 2026-10-05
 
 ### Changed
@@ -231,7 +261,9 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.7...HEAD
+[0.3.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.6...v0.3.7
+[0.3.6]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.5...v0.3.6
 [0.2.0]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.1.6...v0.1.7

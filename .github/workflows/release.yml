@@ -30,6 +30,15 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Verify tag matches project version
+        shell: pwsh
+        run: |
+          $cmake = Get-Content CMakeLists.txt -Raw
+          $match = [regex]::Match($cmake, 'project\(sekiro_mod_manager VERSION ([0-9]+\.[0-9]+\.[0-9]+)')
+          if (-not $match.Success -or "v$($match.Groups[1].Value)" -ne $env:GITHUB_REF_NAME) {
+            throw "Release tag does not match the CMake project version."
+          }
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -63,6 +72,21 @@ jobs:
       - name: Build Release Targets
         run: |
           cmake --build build --config Release
+
+      - name: Verify built binary versions
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          $cliVersion = & ./build/src/cli/smm.exe --version
+          if ($LASTEXITCODE -ne 0 -or $cliVersion.Trim() -ne "smm (Sekiro Mod Manager) $version") {
+            throw "CLI version does not match the release tag."
+          }
+          $guiVersion = (Get-Item ./build/src/gui/smm_gui.exe).VersionInfo
+          if ($guiVersion.FileVersion -ne "$version.0" -or $guiVersion.ProductVersion -ne "$version.0") {
+            throw "GUI file version does not match the release tag."
+          }
+          $numeric = "$($guiVersion.FileMajorPart).$($guiVersion.FileMinorPart).$($guiVersion.FileBuildPart).$($guiVersion.FilePrivatePart)"
+          if ($numeric -ne "$version.0") { throw "GUI numeric file version does not match." }
 
       - name: Package CLI, GUI, and Setup Installer
         shell: pwsh
@@ -125,6 +149,13 @@ jobs:
           } | ConvertTo-Json -Depth 4
           $latest | Set-Content -Path "dist/latest.json" -Encoding utf8
 
+          # Publish the release-specific bilingual changelog, not a commit title dump.
+          $changelog = Get-Content CHANGELOG.md -Raw -Encoding utf8
+          $pattern = "(?ms)^## \[$([regex]::Escape($version))\][^\r\n]*\r?\n(.*?)(?=^## \[|\z)"
+          $notes = [regex]::Match($changelog, $pattern)
+          if (-not $notes.Success) { throw "Missing release changelog for $version." }
+          $notes.Groups[1].Value.Trim() | Set-Content "dist/release-notes.md" -Encoding utf8
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -134,4 +165,5 @@ jobs:
             dist/latest.json
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body_path: dist/release-notes.md
+          generate_release_notes: false

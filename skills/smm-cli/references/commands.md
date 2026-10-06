@@ -1,6 +1,6 @@
 # SMM CLI 命令参考
 
-按仓库 `src/cli/src/cli_parser.cpp`、命令实现及 `smm.exe --help` 核对。当前源码为 0.3.6；本地已有二进制可能较旧，运行前用实际帮助验证。README 部分命令名尚未更新。
+按仓库 `src/cli/src/cli_parser.cpp`、命令实现及 `smm.exe --help` 核对。当前源码为 0.3.7；本地已有二进制可能较旧，运行前用实际帮助验证。README 部分命令名尚未更新。
 
 ## 通用参数
 

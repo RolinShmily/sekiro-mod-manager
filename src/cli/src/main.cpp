@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     }
 
     if (ctx.has("--version") || ctx.has("-V")) {
-        std::cout << "smm (Sekiro Mod Manager) 0.3.6\n";
+        std::cout << "smm (Sekiro Mod Manager) " SMM_VERSION_STRING "\n";
         return kExitSuccess;
     }
 

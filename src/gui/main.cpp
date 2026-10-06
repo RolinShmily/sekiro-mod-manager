@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
     app.setWindowIcon(QIcon(QStringLiteral(":/images/sekiro_icon_256.png")));
     app.setOrganizationName("SekiroModManager");
     app.setApplicationName("SMM");
+    app.setApplicationVersion(QStringLiteral(SMM_VERSION_STRING));
 
     // Prefer Noto Sans SC when installed; preserve an existing user selection.
     QSettings preSettings(QStringLiteral("SekiroModManager"), QStringLiteral("SMM"));

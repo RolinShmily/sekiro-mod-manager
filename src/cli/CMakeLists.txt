@@ -14,8 +14,9 @@ add_executable(smm
 )
 
 target_include_directories(smm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_definitions(smm PRIVATE SMM_VERSION_STRING="${PROJECT_VERSION}")
 target_link_libraries(smm PRIVATE smm_core smm::warnings)
 set_target_properties(smm PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 
-# The GUI launches this binary by name; keep the alias stable for scripts.
+# Keep the CLI alias stable for build scripts.
 add_executable(smm-cli ALIAS smm)

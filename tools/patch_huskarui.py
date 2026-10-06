@@ -113,14 +113,13 @@ endif()"""
             """    property int hoverCursorShape: Qt.PointingHandCursor
     property int type: HusButton.Type_Default
     property int shape: HusButton.Shape_Default
-
     property color colorText: {""",
             """    property int hoverCursorShape: Qt.PointingHandCursor
     property int type: HusButton.Type_Default
     property int shape: HusButton.Shape_Default
 
     focusPolicy: Qt.TabFocus
-    scale: (control.enabled && control.down) ? 0.985 : 1.0
+    scale: (control.animationEnabled && control.enabled && control.down) ? 0.985 : 1.0
     opacity: (control.enabled && control.down) ? 0.86 : 1.0
 
     Behavior on scale {
@@ -133,6 +132,22 @@ endif()"""
     }
 
     property color colorText: {"""
+        ),
+        (
+            "scale: (control.enabled && control.down) ? 0.985 : 1.0",
+            "scale: (control.animationEnabled && control.enabled && control.down) ? 0.985 : 1.0"
+        ),
+        (
+            "property: 'width'; from: __bg.width + 3; to: __bg.width + 8;",
+            "property: 'width'; from: __bg.width + 1; to: __bg.width + 6;"
+        ),
+        (
+            "property: 'height'; from: __bg.height + 3; to: __bg.height + 8;",
+            "property: 'height'; from: __bg.height + 1; to: __bg.height + 6;"
+        ),
+        (
+            "property: 'opacity'; from: 0.2; to: 0;",
+            "property: 'opacity'; from: 0.35; to: 0;"
         ),
         (
             "__effect.border.width = 8;",
