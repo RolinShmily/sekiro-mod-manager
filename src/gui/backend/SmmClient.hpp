@@ -4,6 +4,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
+#include <QThreadPool>
 
 namespace smm::gui {
 
@@ -141,6 +142,10 @@ class SmmClient : public QObject {
 
 public:
     explicit SmmClient(QObject* parent = nullptr);
+    ~SmmClient() override;
+
+    bool isDoctorChecking() const { return doctorRunning_; }
+    static HealthInfo collectHealth(const QString& game, const QString& staging);
 
     static QString locateCli() { return QStringLiteral("embedded:smm_core"); }
 
@@ -161,6 +166,7 @@ public:
     void refreshConflicts();
     void refreshPlan();
     void refreshDoctor();
+    void refreshRuntimeDoctor();
     void refreshPresets();
 
     // Writes
@@ -207,6 +213,7 @@ signals:
     void conflictsLoaded(const QVector<smm::gui::ConflictEntry>& conflicts);
     void planLoaded(const smm::gui::PlanInfo& plan);
     void doctorLoaded(const smm::gui::HealthInfo& health);
+    void doctorCheckingChanged();
     void presetsLoaded(const QVector<smm::gui::PresetEntry>& presets);
 
     void deployFinished(const smm::gui::DeploySummary& summary, const smm::gui::PlanInfo& plan);
@@ -222,6 +229,11 @@ signals:
 
 private:
     void setBusy(bool busy, const QString& label = {});
+    void runDoctor();
+    QThreadPool doctorPool_;
+    quint64 doctorGeneration_{0};
+    bool doctorRunning_{false};
+    HealthInfo baseHealth_;
 
     QString stagingDir_;
     QString gameDir_;

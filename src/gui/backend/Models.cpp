@@ -9,6 +9,7 @@
 #include <QProcess>
 #include <QSettings>
 #include <QThreadPool>
+#include <QTimer>
 #include <algorithm>
 #include <fstream>
 
@@ -459,6 +460,15 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
 
     checkVolumeMatch();
     refreshAll();
+    auto* runtimeTimer = new QTimer(this);
+    runtimeTimer->setInterval(10000);
+    connect(runtimeTimer, &QTimer::timeout, this, [this]() {
+        if (!isBusy() && !launchPending()) client_.refreshRuntimeDoctor();
+    });
+    runtimeTimer->start();
+    connect(qGuiApp, &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
+        if (state == Qt::ApplicationActive && !isBusy()) client_.refreshRuntimeDoctor();
+    });
 }
 
 void GuiController::initSignals() {
@@ -466,6 +476,11 @@ void GuiController::initSignals() {
         statusText_ = busy ? label : "Ready";
         emit busyChanged();
         emit statusTextChanged();
+        emit doctorChanged();
+        if (!busy && doctorRefreshPending_ && !client_.isDoctorChecking()) {
+            doctorRefreshPending_ = false;
+            scheduleDoctor();
+        }
     });
 
     connect(&client_, &SmmClient::environmentLoaded, this, [this](const EnvironmentInfo& env) {
@@ -476,8 +491,11 @@ void GuiController::initSignals() {
         emit sekiroDirChanged();
     });
 
-    connect(&client_, &SmmClient::modsLoaded, this, [this](const QVector<ModEntry>& mods, const QStringList&, const QString&) {
+    connect(&client_, &SmmClient::modsLoaded, this, [this](const QVector<ModEntry>& mods, const QStringList& failures, const QString&) {
         modListModel_.setMods(mods);
+        modScanFailures_ = failures;
+        emit doctorChanged();
+        scheduleDoctor();
     });
 
     connect(&client_, &SmmClient::modDetailLoaded, this, [this](const ModEntry& mod, const QVector<AssetEntry>& assets) {
@@ -513,11 +531,31 @@ void GuiController::initSignals() {
         emit doctorChanged();
     });
 
+    connect(&client_, &SmmClient::doctorCheckingChanged, this, [this]() {
+        emit doctorChanged();
+        if (client_.isDoctorChecking()) return;
+        if (doctorRefreshPending_ && !isBusy()) {
+            doctorRefreshPending_ = false;
+            refreshDoctor();
+            return;
+        }
+        if (launchPending_) completeLaunchCheck();
+    });
+
     connect(&client_, &SmmClient::deployFinished, this, [this](const DeploySummary& summary, const PlanInfo&) {
-        deployedFiles_ = summary.hardLinks + summary.copies;
-        bytesSaved_ = summary.bytesSaved;
-        emit telemetryChanged();
-        emit notification("success", tr("Deployment succeeded: %1 files linked.").arg(deployedFiles_));
+        const bool launchAfter = deployLaunchPending_;
+        deployLaunchPending_ = false;
+        updateDeploymentTelemetry();
+        if (!summary.success || summary.failed > 0) {
+            emit notification("error", tr("部署失败：%1 个文件未部署，已取消启动。%2")
+                              .arg(summary.failed).arg(summary.errors.join(QStringLiteral("; "))));
+            emit launchBlocked();
+            refreshDoctor();
+            return;
+        }
+        emit notification("success", tr("Deployment succeeded: %1 files linked.").arg(summary.hardLinks + summary.copies));
+        if (launchAfter) launchGame();
+        else refreshDoctor();
     });
 
     connect(&client_, &SmmClient::restoreFinished, this, [this](const RestoreSummary& summary) {
@@ -525,15 +563,23 @@ void GuiController::initSignals() {
         bytesSaved_ = 0;
         emit telemetryChanged();
         emit notification("info", tr("Restored: %1 links safely unlinked.").arg(summary.removedFiles));
+        refreshDoctor();
     });
 
     connect(&client_, &SmmClient::operationSucceeded, this, [this](const QString& title, const QString& detail) {
         emit notification("success", QString("%1: %2").arg(title, detail));
-        // Mutating client operations refresh their own affected models.
+        // Refresh checks after engine/config mutations as well as mod model updates.
+        scheduleDoctor();
     });
 
     connect(&client_, &SmmClient::operationFailed, this, [this](const QString& title, const QString& message) {
+        if (deployLaunchPending_) {
+            deployLaunchPending_ = false;
+            emit doctorChanged();
+            emit launchBlocked();
+        }
         emit notification("error", QString("%1: %2").arg(title, message));
+        scheduleDoctor();
     });
 
     // 联动 ModListModel 开关与优先级
@@ -561,6 +607,9 @@ void GuiController::setSekiroDir(const QString& dir) {
         checkVolumeMatch();
         updateDeploymentTelemetry();
         emit sekiroDirChanged();
+        launchPending_ = false;
+        deployLaunchPending_ = false;
+        refreshDoctor();
     }
 }
 
@@ -570,6 +619,9 @@ void GuiController::setStagingDir(const QString& dir) {
         client_.setStagingDir(dir);
         checkVolumeMatch();
         emit stagingDirChanged();
+        launchPending_ = false;
+        deployLaunchPending_ = false;
+        refreshDoctor();
     }
 }
 
@@ -588,6 +640,7 @@ void GuiController::setLanguage(const QString& code) {
     availableFontsCache_.clear();
     emit languageChanged(language_);
     emit availableFontsChanged();
+    emit doctorChanged();
 }
 
 void GuiController::setFontFamily(const QString& family) {
@@ -729,51 +782,93 @@ void GuiController::refreshAll() {
     client_.refreshEnvironment();
     client_.refreshModState();
     client_.refreshPresets();
-    client_.refreshDoctor();
+    scheduleDoctor();
     updateDeploymentTelemetry();
 }
 
 void GuiController::deploy() {
+    if (isBusy() || launchPending()) return;
     client_.deploy();
 }
 
 void GuiController::deployAndLaunch() {
-    client_.deploy();
-    launchGame();
+    if (isBusy() || launchPending()) return;
+    deployLaunchPending_ = true;
+    launchPending_ = true;
+    emit doctorChanged();
+    refreshDoctor();
 }
 
 void GuiController::restore() {
+    if (isBusy() || launchPending()) return;
     client_.restore();
 }
 
+void GuiController::scheduleDoctor() {
+    if (isBusy() || client_.isDoctorChecking()) {
+        doctorRefreshPending_ = true;
+        return;
+    }
+    doctorRefreshPending_ = false;
+    if (doctorScheduled_) return;
+    doctorScheduled_ = true;
+    QTimer::singleShot(0, this, [this]() {
+        doctorScheduled_ = false;
+        if (isBusy()) {
+            doctorRefreshPending_ = true;
+            return;
+        }
+        if (!client_.isDoctorChecking()) refreshDoctor();
+    });
+}
+
 void GuiController::launchGame() {
-    // 1. 优先尝试直接启动本地配置的游戏可执行文件 sekiro.exe，脱离 Steam 依赖
-    QString gameDir = sekiroDir_;
-    if (gameDir.isEmpty() || !QDir(gameDir).exists()) {
-        const QString detected = detectSekiroDir();
-        if (!detected.isEmpty()) {
-            gameDir = detected;
+    if (isBusy() || launchPending()) return;
+    launchPending_ = true;
+    emit doctorChanged();
+    // Always request a fresh complete check; cached green status never authorizes launch.
+    refreshDoctor();
+}
+
+void GuiController::completeLaunchCheck() {
+    launchPending_ = false;
+    emit doctorChanged();
+    if (!canLaunch() || QDir::cleanPath(QDir::fromNativeSeparators(healthInfo_.gameDir)) != QDir::cleanPath(QDir::fromNativeSeparators(sekiroDir_)) ||
+        QDir::cleanPath(QDir::fromNativeSeparators(healthInfo_.stagingDir)) != QDir::cleanPath(QDir::fromNativeSeparators(stagingDir_))) {
+        deployLaunchPending_ = false;
+        emit doctorChanged();
+        emit notification("error", tr("启动已阻止：%1").arg(healthSummary()));
+        emit launchBlocked();
+        return;
+    }
+    for (const auto& item : healthInfo_.items) {
+        if (item.id.startsWith(QLatin1String("runtime-game-"))) {
+            deployLaunchPending_ = false;
+            emit doctorChanged();
+            emit notification("info", tr("只狼已在运行，请先退出游戏再启动。"));
+            emit launchBlocked();
+            return;
         }
     }
-
-    if (!gameDir.isEmpty()) {
-        const QString exePath = QDir(gameDir).filePath(QStringLiteral("sekiro.exe"));
-        if (QFile::exists(exePath)) {
-            bool started = QProcess::startDetached(exePath, QStringList{}, gameDir);
-            if (started) {
-                emit notification("success", tr("已直接启动只狼游戏 (sekiro.exe)"));
-                return;
-            }
-        }
+    if (deployLaunchPending_) {
+        client_.deploy();
+        return;
     }
-
-    // 2. 本地 sekiro.exe 未找到时，再尝试通过 Steam 协议拉起 Sekiro (AppID 814380)
-    bool opened = QDesktopServices::openUrl(QUrl("steam://rungameid/814380"));
-    if (opened) {
-        emit notification("info", tr("未在本地路径找到独立程序，已通过 Steam 协议拉起 (AppID 814380)"));
-    } else {
-        emit notification("warning", tr("启动失败：未检测到 sekiro.exe，且无法通过 Steam 拉起。请先在全局配置中指定只狼游戏目录。"));
+    const QString executable = QDir(sekiroDir_).filePath(QStringLiteral("sekiro.exe"));
+    if (!QFileInfo(executable).isFile() || !startGameProcess(executable, sekiroDir_)) {
+        emit notification("error", tr("启动失败，请检查游戏目录与访问权限。"));
+        emit launchBlocked();
+        return;
     }
+    emit notification("success", tr("启动前诊断通过，已启动只狼。"));
+    // Steam may relaunch the executable. Re-observe the actual process instead of
+    // assuming a successful CreateProcess means that ModEngine loaded.
+    QTimer::singleShot(3000, this, [this]() { client_.refreshRuntimeDoctor(); });
+    QTimer::singleShot(10000, this, [this]() { client_.refreshRuntimeDoctor(); });
+}
+
+bool GuiController::startGameProcess(const QString& executable, const QString& workingDirectory) {
+    return QProcess::startDetached(executable, QStringList{}, workingDirectory);
 }
 
 void GuiController::updateDeploymentTelemetry() {
@@ -1024,6 +1119,53 @@ void GuiController::importArchives(const QStringList& archivePaths) {
     }
 }
 
+QString GuiController::healthSummary() const {
+    if (isDoctorChecking()) return tr("正在检查环境、部署文件与启动链…");
+    const auto items = healthItems();
+    for (const auto& value : items) {
+        const auto item = value.toMap();
+        if (item.value(QStringLiteral("id")).toString().startsWith(QLatin1String("mod-load-failure-")))
+            return item.value(QStringLiteral("detail")).toString();
+    }
+    if (healthInfo_.overall.isEmpty()) return tr("尚未完成诊断，启动前将重新检测。");
+    if (healthInfo_.overall == QLatin1String("healthy") && modScanFailures_.isEmpty())
+        return tr("诊断通过，启动前仍会重新检查。");
+    for (const auto& value : items) {
+        const auto item = value.toMap();
+        if (item.value(QStringLiteral("status")) == QLatin1String("error") ||
+            item.value(QStringLiteral("status")) == QLatin1String("warning"))
+            return item.value(QStringLiteral("detail")).toString();
+    }
+    return tr("诊断异常，请处理问题后重新检测。");
+}
+
+QString GuiController::healthRemediation() const {
+    if (isDoctorChecking()) return {};
+    for (const auto& value : healthItems()) {
+        const auto item = value.toMap();
+        if (item.value(QStringLiteral("id")).toString().startsWith(QLatin1String("mod-load-failure-")))
+            return item.value(QStringLiteral("remediation")).toString();
+    }
+    for (const auto& value : healthItems()) {
+        const auto item = value.toMap();
+        if (item.value(QStringLiteral("status")) == QLatin1String("error") ||
+            item.value(QStringLiteral("status")) == QLatin1String("warning"))
+            return item.value(QStringLiteral("remediation")).toString();
+    }
+    return {};
+}
+
+bool GuiController::engineReady() const {
+    if (isDoctorChecking() || healthInfo_.overall.isEmpty()) return false;
+    bool hookPresent = false;
+    for (const auto& item : healthInfo_.items) {
+        if (item.id == QLatin1String("dinput8") && item.status == QLatin1String("ok")) hookPresent = true;
+        if ((item.category == QLatin1String("modengine") || item.category == QLatin1String("runtime")) &&
+            (item.status == QLatin1String("error") || item.status == QLatin1String("warning"))) return false;
+    }
+    return hookPresent;
+}
+
 QVariantList GuiController::healthItems() const {
     QVariantList list;
     for (const auto& item : healthInfo_.items) {
@@ -1034,12 +1176,55 @@ QVariantList GuiController::healthItems() const {
         m[QStringLiteral("detail")] = item.detail;
         m[QStringLiteral("status")] = item.status;
         m[QStringLiteral("remediation")] = item.remediation;
+        if (language_ != QLatin1String("en-US") && item.category == QLatin1String("runtime")) {
+            const bool hook = item.id.endsWith(QLatin1String("-hook"));
+            const QString process = item.id.startsWith(QLatin1String("runtime-launcher-")) ? QStringLiteral("SMM") :
+                item.id.startsWith(QLatin1String("runtime-steam-")) ? QStringLiteral("Steam") : QStringLiteral("Sekiro");
+            m[QStringLiteral("title")] = hook ? tr("运行中的 ModEngine 钩子") : tr("%1 DLL 加载策略").arg(process);
+            if (item.detail.contains(QLatin1String("PreferSystem32 is enabled"))) {
+                m[QStringLiteral("detail")] = tr("%1 优先加载系统 DLL（PreferSystem32），可能绕过游戏目录中的 ModEngine，导致所有模组失效。")
+                    .arg(process);
+                m[QStringLiteral("remediation")] = tr("完全退出游戏和 Steam，从不带该策略的启动入口重新启动 Steam 与 SMM，再次检测；无需关闭全局 Windows 防护。");
+            } else if (hook && item.status == QLatin1String("error")) {
+                m[QStringLiteral("detail")] = item.detail.contains(QLatin1String("not loaded")) ?
+                    tr("游戏未加载本地 ModEngine 钩子。文件已部署不代表模组已生效。") :
+                    tr("无法核验游戏加载的 DLL，请先退出游戏并确认安装路径。") + QStringLiteral(" ") + item.detail;
+                m[QStringLiteral("remediation")] = tr("完全退出游戏和 Steam，检查启动链后重新启动并再次检测。");
+            } else if (item.status == QLatin1String("ok")) {
+                m[QStringLiteral("detail")] = hook ? tr("游戏已加载本地 ModEngine 钩子；这不代表每个模组都已验证。") :
+                    tr("%1 未启用优先加载系统 DLL 策略。").arg(process);
+            } else {
+                m[QStringLiteral("detail")] = tr("无法核验启动链，不能视为诊断通过。") + QStringLiteral(" ") + item.detail;
+                m[QStringLiteral("remediation")] = tr("等待启动器完成启动，确认可以访问目标进程后重新检测。");
+            }
+        } else if (language_ != QLatin1String("en-US") && item.id == QLatin1String("deployment")) {
+            m[QStringLiteral("title")] = tr("部署文件一致性");
+            m[QStringLiteral("detail")] = item.status == QLatin1String("ok") ?
+                tr("当前启用文件与部署结果一致，或没有需要部署的文件。") :
+                tr("部署文件缺失、改变或已过期。") + QStringLiteral(" ") + item.detail;
+            m[QStringLiteral("remediation")] = item.status == QLatin1String("ok") ? QString{} :
+                tr("先部署当前模组组合，再重新检测。");
+        }
         list.append(m);
+    }
+    for (qsizetype i = 0; i < modScanFailures_.size(); ++i) {
+        list.append(QVariantMap{
+            {QStringLiteral("id"), QStringLiteral("mod-load-failure-%1").arg(i)},
+            {QStringLiteral("category"), tr("模组")},
+            {QStringLiteral("title"), tr("模组读取失败")},
+            {QStringLiteral("detail"), modScanFailures_.at(i)},
+            {QStringLiteral("remediation"), tr("请重新导入该模组，或修复其元数据和文件后重新检测。")},
+            {QStringLiteral("status"), QStringLiteral("error")}});
     }
     return list;
 }
 
 void GuiController::refreshDoctor() {
+    // Refresh the exact mod failure list as well as the health report so successful repairs
+    // can clear the launch gate without requiring an application restart.
+    doctorRefreshPending_ = false;
+    client_.refreshModState();
+    doctorRefreshPending_ = false;
     client_.refreshDoctor();
 }
 

@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.0] - 2026-10-06
+
+### Added
+
+- Proactively surface mod, deployment and ModEngine diagnostics on the launch workbench. Verify the SMM/Steam/Sekiro `PreferSystem32Images` policy and the game's loaded local hook; require a clean preflight before launching, and recheck after deployment and process startup.
+
+### Fixed
+
+- Diagnose ModEngine's actual `[files] useModOverrideDirectory` switch and managed override target instead of treating the legacy `enabled` key as the loader switch. Compare deployed files with the current plan and flag stale manifest entries before launch.
+- Prevent deploy-and-launch from deploying when preflight fails or starting Sekiro before asynchronous deployment has completed.
+
+### 中文摘要
+
+- 启动工作台主动展示模组、部署与 ModEngine 诊断；检查 SMM、Steam、只狼进程的 `PreferSystem32Images` 与本地钩子加载状态，诊断通过后才允许启动，并在部署和启动后复查。
+- 按 ModEngine 实际读取的 `[files] useModOverrideDirectory` 检测配置目标，而非误把旧 `enabled` 键当作加载开关；核对部署文件并阻止使用过期部署启动。
+- 修复“部署并启动”未等待异步部署完成、以及诊断异常时仍先部署的问题。
+
 ## [0.3.7] - 2026-10-06
 
 ### Added
@@ -261,7 +278,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.7...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.7...v0.4.0
 [0.3.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.5...v0.3.6
 [0.2.0]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.1.8...v0.2.0

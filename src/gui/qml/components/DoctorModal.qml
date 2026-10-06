@@ -8,7 +8,9 @@ import HuskarUI.Basic
 HusModal {
     id: rootModal
 
+    objectName: "doctorModal"
     width: 720
+    onOpened: if (!smmBackend.isDoctorChecking) smmBackend.refreshDoctor()
     title: qsTr("只狼游戏环境与 ModEngine 全景诊断")
     description: qsTr("SEKIRO ENVIRONMENT HEALTH DOCTOR · 引擎装配与环境健康透视")
 
@@ -22,7 +24,8 @@ HusModal {
             spacing: 8
 
             HusButton {
-                text: qsTr("重新检测")
+                enabled: !smmBackend.isDoctorChecking && !smmBackend.isBusy
+                text: smmBackend.isDoctorChecking ? qsTr("正在检测…") : qsTr("重新检测")
                 onClicked: {
                     if (smmBackend) smmBackend.refreshDoctor();
                 }
@@ -71,7 +74,7 @@ HusModal {
                         HusTag {
                             id: statusBadge
                             readonly property string s: smmBackend ? smmBackend.healthOverall : ""
-                            text: s === "healthy" ? qsTr("环境健康 (Healthy)") :
+                            text: smmBackend.isDoctorChecking ? qsTr("正在检测…") : s === "healthy" ? qsTr("环境健康 (Healthy)") :
                                   s === "degraded" ? qsTr("配置提示 (Degraded)") :
                                   qsTr("需修复 (Action Required)")
                             colorText: s === "healthy" ? HusTheme.Primary.colorSuccess :
@@ -93,11 +96,20 @@ HusModal {
                 HusButton {
                     type: HusButton.Type_Primary
                     text: qsTr("一键装配 / 修复 ModEngine")
+                    enabled: !smmBackend.isBusy && !smmBackend.isDoctorChecking
                     onClicked: {
                         if (smmBackend) smmBackend.setupEngine();
                     }
                 }
             }
+        }
+
+        HusText {
+            Layout.fillWidth: true
+            text: qsTr("启动仅在诊断通过后放行。修复 ModEngine 不会改变进程的 DLL 加载策略；策略异常请按诊断建议重新启动相关程序。")
+            font.pixelSize: 13
+            color: HusTheme.Primary.colorTextSecondary
+            wrapMode: Text.WordWrap
         }
 
         // 诊断项列表

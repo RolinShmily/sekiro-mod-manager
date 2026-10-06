@@ -225,6 +225,12 @@ class GuiController : public QObject {
     Q_PROPERTY(int activeAssetCount READ activeAssetCount NOTIFY assetCountsChanged)
     Q_PROPERTY(int totalAssetCount READ totalAssetCount NOTIFY assetCountsChanged)
 
+    Q_PROPERTY(bool isDoctorChecking READ isDoctorChecking NOTIFY doctorChanged)
+    Q_PROPERTY(bool launchPending READ launchPending NOTIFY doctorChanged)
+    Q_PROPERTY(bool canLaunch READ canLaunch NOTIFY doctorChanged)
+    Q_PROPERTY(QString healthSummary READ healthSummary NOTIFY doctorChanged)
+    Q_PROPERTY(QString healthRemediation READ healthRemediation NOTIFY doctorChanged)
+    Q_PROPERTY(bool engineReady READ engineReady NOTIFY doctorChanged)
     Q_PROPERTY(QString healthOverall READ healthOverall NOTIFY doctorChanged)
     Q_PROPERTY(int healthOkCount READ healthOkCount NOTIFY doctorChanged)
     Q_PROPERTY(int healthWarnCount READ healthWarnCount NOTIFY doctorChanged)
@@ -290,6 +296,13 @@ public:
     int activeAssetCount() const { return assetListModel_.activeCount(); }
     int totalAssetCount() const { return assetListModel_.totalCount(); }
 
+    bool isDoctorChecking() const { return client_.isDoctorChecking(); }
+    bool launchPending() const { return launchPending_ || deployLaunchPending_; }
+    bool canLaunch() const { return !isBusy() && !isDoctorChecking() && modScanFailures_.isEmpty() &&
+                                     healthInfo_.overall == QLatin1String("healthy"); }
+    QString healthSummary() const;
+    QString healthRemediation() const;
+    bool engineReady() const;
     QString healthOverall() const { return healthInfo_.overall; }
     int healthOkCount() const { return healthInfo_.okCount; }
     int healthWarnCount() const { return healthInfo_.warningCount; }
@@ -360,10 +373,20 @@ signals:
     void equippedPackChanged();
     void assetCountsChanged();
     void notification(const QString& type, const QString& message);
+    void launchBlocked();
+
+protected:
+    virtual bool startGameProcess(const QString& executable, const QString& workingDirectory);
 
 private:
     void initSignals();
     void checkVolumeMatch();
+    void completeLaunchCheck();
+    void scheduleDoctor();
+    bool launchPending_{false};
+    bool deployLaunchPending_{false};
+    bool doctorScheduled_{false};
+    bool doctorRefreshPending_{false};
 
     SmmClient client_;
     ModListModel modListModel_;
@@ -400,6 +423,7 @@ private:
     QString currentModHomepage_;
 
     HealthInfo healthInfo_;
+    QStringList modScanFailures_;
     UpdateManager updater_;
 };
 

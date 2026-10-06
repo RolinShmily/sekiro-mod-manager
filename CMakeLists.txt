@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 # C is enabled because the vendored miniz is a C library; everything first-party is C++17.
-project(sekiro_mod_manager VERSION 0.3.7 LANGUAGES C CXX)
+project(sekiro_mod_manager VERSION 0.4.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_CLI "Build the smm command line tool" ON)
 option(BUILD_GUI "Build the Qt/QML HuskarUI GUI" ON)
 option(SMM_WERROR "Treat compiler warnings as errors" OFF)
+option(SMM_BUILD_TESTS "Build focused core diagnostic regression tests" OFF)
 
 # Language and definition settings that must hold everywhere, third-party code included.
 #
@@ -70,6 +71,13 @@ endif()
 
 if(BUILD_GUI)
     add_subdirectory(src/gui)
+endif()
+
+if(SMM_BUILD_TESTS)
+    enable_testing()
+    add_executable(smm_doctor_tests src/core/tests/doctor_tests.cpp)
+    target_link_libraries(smm_doctor_tests PRIVATE smm_core smm::warnings)
+    add_test(NAME smm_doctor_tests COMMAND smm_doctor_tests)
 endif()
 
 message(STATUS "sekiro_mod_manager configured: BUILD_CLI=${BUILD_CLI} BUILD_GUI=${BUILD_GUI}")

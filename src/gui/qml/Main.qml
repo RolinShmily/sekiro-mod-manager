@@ -168,12 +168,38 @@ HusWindow {
                             }
                         }
 
+                        HusText {
+                            Layout.fillWidth: true
+                            text: smmBackend.isDoctorChecking ? qsTr("检查中…") :
+                                  smmBackend.healthOverall === "healthy" ? qsTr("诊断通过") :
+                                  qsTr("%1 项异常 · %2 项警告").arg(smmBackend.healthErrorCount).arg(smmBackend.healthWarnCount)
+                            font.pixelSize: 13
+                            font.bold: true
+                            wrapMode: Text.WordWrap
+                            color: smmBackend.canLaunch ? HusTheme.Primary.colorSuccess : HusTheme.Primary.colorWarning
+                        }
+                        HusText {
+                            Layout.fillWidth: true
+                            visible: smmBackend.healthOverall !== "healthy"
+                            text: smmBackend.healthSummary
+                            font.pixelSize: 12
+                            wrapMode: Text.Wrap
+                            maximumLineCount: 4
+                            elide: Text.ElideRight
+                            color: HusTheme.Primary.colorTextSecondary
+                        }
+                        HusButton {
+                            Layout.fillWidth: true
+                            text: qsTr("查看诊断")
+                            onClicked: doctorModal.open()
+                        }
+
                         Repeater {
                             model: [
                                 {
                                     k: qsTr("ModEngine 钩子"),
-                                    v: qsTr("已就绪"),
-                                    ok: true
+                                    v: smmBackend.isDoctorChecking ? qsTr("检查中") : smmBackend.engineReady ? qsTr("已就绪") : qsTr("需处理"),
+                                    ok: smmBackend.engineReady
                                 },
                                 {
                                     k: qsTr("NTFS 零拷贝卷"),
@@ -266,6 +292,7 @@ HusWindow {
 
             Loader {
                 sourceComponent: LaunchHubView {
+                    onRequestDiagnosis: doctorModal.open()
                     onNavigateToArmoury: mainWindow.currentNav = "armoury"
                     onNavigateToModPacks: mainWindow.currentNav = "packs"
                 }
@@ -415,6 +442,7 @@ HusWindow {
 
     Connections {
         target: smmBackend
+        function onLaunchBlocked() { doctorModal.open(); }
         function onNotification(type, message) {
             toastBanner.show(type, message);
         }

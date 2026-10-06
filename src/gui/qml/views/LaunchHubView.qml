@@ -14,6 +14,7 @@ ScrollView {
         policy: ScrollBar.AsNeeded
     }
 
+    signal requestDiagnosis()
     signal navigateToArmoury()
     signal navigateToModPacks()
 
@@ -33,6 +34,51 @@ ScrollView {
     ColumnLayout {
         width: rootView.availableWidth
         spacing: 16
+
+        HusFrame {
+            objectName: "healthBanner"
+            Layout.fillWidth: true
+            padding: 16
+            colorBg: HusTheme.Primary.colorFillQuaternary
+            borderBg.color: smmBackend.healthErrorCount > 0 ? HusTheme.Primary.colorError :
+                            smmBackend.healthWarnCount > 0 ? HusTheme.Primary.colorWarning : HusTheme.Primary.colorBorderSecondary
+            contentItem: ColumnLayout {
+                spacing: 8
+                RowLayout {
+                    Layout.fillWidth: true
+                    HusText {
+                        Layout.fillWidth: true
+                        text: smmBackend.isDoctorChecking ? qsTr("正在诊断") :
+                              smmBackend.canLaunch ? qsTr("启动前检查 · 已通过") : qsTr("启动已锁定 · 请先处理诊断问题")
+                        font.pixelSize: 15
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                        color: smmBackend.canLaunch ? HusTheme.Primary.colorSuccess : HusTheme.Primary.colorWarning
+                    }
+                    HusButton {
+                        text: qsTr("重新检测")
+                        enabled: !smmBackend.isDoctorChecking && !smmBackend.isBusy
+                        onClicked: smmBackend.refreshDoctor()
+                    }
+                    HusButton { text: qsTr("查看诊断"); onClicked: rootView.requestDiagnosis() }
+                }
+                HusText {
+                    Layout.fillWidth: true
+                    text: smmBackend.healthSummary
+                    font.pixelSize: 14
+                    wrapMode: Text.Wrap
+                    color: HusTheme.Primary.colorTextPrimary
+                }
+                HusText {
+                    Layout.fillWidth: true
+                    visible: text.length > 0
+                    text: smmBackend.healthRemediation
+                    font.pixelSize: 13
+                    wrapMode: Text.Wrap
+                    color: HusTheme.Primary.colorTextSecondary
+                }
+            }
+        }
 
         // =====================================================================
         // 部署面板（沉浸式只狼概念画卷背景 + 真迹水墨书法水印，100% 边缘铺满）
@@ -129,11 +175,11 @@ ScrollView {
                             implicitWidth: 7
                             implicitHeight: 7
                             radius: 3.5
-                            color: HusTheme.Primary.colorSuccess
+                            color: smmBackend.canLaunch ? HusTheme.Primary.colorSuccess : HusTheme.Primary.colorWarning
                         }
 
                         HusText {
-                            text: qsTr("已就绪 · 当前方案处于活跃投影状态")
+                            text: smmBackend.canLaunch ? qsTr("诊断通过 · 启动前将再次检查") : qsTr("诊断未通过 · 暂不可启动")
                             font.pixelSize: 14
                             color: HusTheme.Primary.colorTextSecondary
                         }
@@ -158,7 +204,8 @@ ScrollView {
                     HusText {
                         Layout.fillWidth: true
                         Layout.maximumWidth: 560
-                        text: qsTr("装配方案「剑圣孤影 · 断绝不死」已装载。物理硬链接零拷贝投影就绪，随时可出征苇名。")
+                        text: qsTr("已部署 %1 个文件。更换模组组合后请先部署；启动前会核验环境、文件一致性和 DLL 加载策略。")
+                              .arg(smmBackend.deployedFiles)
                         font.pixelSize: 14
                         color: HusTheme.Primary.colorTextTertiary
                         wrapMode: Text.WordWrap
@@ -175,7 +222,9 @@ ScrollView {
                             implicitHeight: 40
                             implicitWidth: 140
                             type: HusButton.Type_Primary
-                            text: qsTr("启动只狼")
+                            objectName: "launchButton"
+                            text: smmBackend.launchPending ? qsTr("正在检查…") : qsTr("启动只狼")
+                            enabled: smmBackend.canLaunch && !smmBackend.launchPending
                             onClicked: smmBackend.launchGame()
                         }
 
@@ -184,6 +233,7 @@ ScrollView {
                             implicitHeight: 40
                             implicitWidth: 110
                             text: qsTr("仅部署")
+                            enabled: !smmBackend.isBusy && !smmBackend.launchPending
                             onClicked: smmBackend.deploy()
                         }
 
@@ -191,6 +241,7 @@ ScrollView {
                         HusButton {
                             implicitHeight: 40
                             text: qsTr("纯净还原")
+                            enabled: !smmBackend.isBusy && !smmBackend.launchPending
                             onClicked: smmBackend.restore()
                         }
 

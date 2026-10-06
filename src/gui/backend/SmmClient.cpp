@@ -7,10 +7,12 @@
 #include <QRegularExpression>
 #include <QSettings>
 #include <QThreadPool>
+#include <algorithm>
 
 #include <smm/conflict.hpp>
 #include <smm/deploy.hpp>
 #include <smm/doctor.hpp>
+#include <smm/runtime_doctor.hpp>
 #include <smm/error.hpp>
 #include <smm/executor.hpp>
 #include <smm/exporter.hpp>
@@ -80,7 +82,11 @@ AssetEntry toAssetEntry(const smm::AssetEntry& a) {
 
 } // namespace
 
-SmmClient::SmmClient(QObject* parent) : QObject(parent) {}
+SmmClient::SmmClient(QObject* parent) : QObject(parent) {
+    doctorPool_.setMaxThreadCount(1);
+}
+
+SmmClient::~SmmClient() { doctorPool_.waitForDone(); }
 
 void SmmClient::setBusy(bool busy, const QString& label) {
     if (isBusy_ != busy) {
@@ -186,7 +192,11 @@ void SmmClient::refreshModState() {
         emit conflictsLoaded(conflicts);
         emit planLoaded(info);
     } catch (const std::exception& e) {
-        emit operationFailed(tr("Mod Scan Failed"), QString::fromUtf8(e.what()));
+        const QString failure = QString::fromUtf8(e.what());
+        emit modsLoaded({}, {failure}, stagingDir_);
+        emit conflictsLoaded({});
+        emit planLoaded({});
+        emit operationFailed(tr("Mod Scan Failed"), failure);
     }
 }
 
@@ -220,39 +230,88 @@ void SmmClient::refreshPlan() {
     refreshModState();
 }
 
-void SmmClient::refreshDoctor() {
-    const fs::path gamePath = toStdPath(gameDir_);
-    const fs::path stagingPath = toStdPath(stagingDir_);
-
-    try {
-        const auto health = smm::diagnose_environment(gamePath, stagingPath);
-        HealthInfo hi;
-        hi.overall = QString::fromStdString(smm::to_string(health.overall));
-        hi.gameDir = toQString(health.game_dir);
-        hi.stagingDir = toQString(health.staging_dir);
-        hi.okCount = static_cast<int>(health.ok_count);
-        hi.infoCount = static_cast<int>(health.info_count);
-        hi.warningCount = static_cast<int>(health.warning_count);
-        hi.errorCount = static_cast<int>(health.error_count);
-
-        hi.items.reserve(static_cast<qsizetype>(health.items.size()));
-        for (const auto& it : health.items) {
-            DiagnosticEntry de;
-            de.id = QString::fromStdString(it.id);
-            de.category = QString::fromStdString(it.category);
-            de.title = QString::fromStdString(it.title);
-            de.detail = QString::fromStdString(it.detail);
-            de.status = QString::fromStdString(smm::to_string(it.status));
-            if (it.remediation) {
-                de.remediation = QString::fromStdString(*it.remediation);
-            }
-            hi.items.append(de);
-        }
-
-        emit doctorLoaded(hi);
-    } catch (const std::exception& e) {
-        emit operationFailed(tr("Health Check Failed"), QString::fromUtf8(e.what()));
+namespace {
+HealthInfo toHealthInfo(const smm::HealthReport& health) {
+    HealthInfo hi;
+    hi.overall = QString::fromStdString(smm::to_string(health.overall));
+    hi.gameDir = toQString(health.game_dir);
+    hi.stagingDir = toQString(health.staging_dir);
+    hi.okCount = static_cast<int>(health.ok_count);
+    hi.infoCount = static_cast<int>(health.info_count);
+    hi.warningCount = static_cast<int>(health.warning_count);
+    hi.errorCount = static_cast<int>(health.error_count);
+    for (const auto& it : health.items) {
+        hi.items.append({QString::fromStdString(it.id), QString::fromStdString(it.category),
+                         QString::fromStdString(it.title), QString::fromStdString(it.detail),
+                         it.remediation ? QString::fromStdString(*it.remediation) : QString{},
+                         QString::fromStdString(smm::to_string(it.status))});
     }
+    return hi;
+}
+
+HealthInfo withRuntime(HealthInfo base) {
+    const auto runtime = toHealthInfo(smm::diagnose_launch_runtime(
+        smm::inspect_launch_runtime(toStdPath(base.gameDir))));
+    base.items += runtime.items;
+    base.okCount += runtime.okCount;
+    base.infoCount += runtime.infoCount;
+    base.warningCount += runtime.warningCount;
+    base.errorCount += runtime.errorCount;
+    base.overall = base.errorCount ? QStringLiteral("action_required") :
+                   base.warningCount ? QStringLiteral("degraded") : QStringLiteral("healthy");
+    const auto rank = [](const QString& status) {
+        return status == QLatin1String("error") ? 0 : status == QLatin1String("warning") ? 1 :
+               status == QLatin1String("info") ? 2 : 3;
+    };
+    std::stable_sort(base.items.begin(), base.items.end(), [&rank](const auto& a, const auto& b) {
+        return rank(a.status) < rank(b.status);
+    });
+    return base;
+}
+}
+
+HealthInfo SmmClient::collectHealth(const QString& game, const QString& staging) {
+    try {
+        return toHealthInfo(smm::diagnose_environment(toStdPath(game), toStdPath(staging), true));
+    } catch (const std::exception& error) {
+        HealthInfo failed;
+        failed.gameDir = game;
+        failed.stagingDir = staging;
+        failed.overall = QStringLiteral("action_required");
+        failed.errorCount = 1;
+        failed.items.append({QStringLiteral("doctor-failed"), QStringLiteral("diagnostic"),
+            tr("诊断未完成"), QString::fromUtf8(error.what()), tr("请检查目录访问权限后重新检测。"),
+            QStringLiteral("error")});
+        return failed;
+    }
+}
+
+void SmmClient::refreshDoctor() {
+    ++doctorGeneration_;
+    if (!doctorRunning_) runDoctor();
+}
+
+void SmmClient::runDoctor() {
+    doctorRunning_ = true;
+    emit doctorCheckingChanged();
+    const auto generation = doctorGeneration_;
+    const auto game = gameDir_;
+    const auto staging = stagingDir_;
+    doctorPool_.start([this, generation, game, staging]() {
+        const auto base = collectHealth(game, staging);
+        QMetaObject::invokeMethod(this, [this, generation, base]() {
+            if (generation != doctorGeneration_) { runDoctor(); return; }
+            baseHealth_ = base;
+            // Runtime is observed in the GUI process after the filesystem check finishes.
+            emit doctorLoaded(withRuntime(baseHealth_));
+            doctorRunning_ = false;
+            emit doctorCheckingChanged();
+        }, Qt::QueuedConnection);
+    });
+}
+
+void SmmClient::refreshRuntimeDoctor() {
+    if (!doctorRunning_ && !baseHealth_.overall.isEmpty()) emit doctorLoaded(withRuntime(baseHealth_));
 }
 
 void SmmClient::refreshPresets() {

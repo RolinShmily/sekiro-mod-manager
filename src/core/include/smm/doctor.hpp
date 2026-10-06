@@ -72,7 +72,8 @@ extern const std::string_view MOD_ENGINE_SOURCE_HINT;
 struct ModEngineConfig {
     fs::path path;
     std::string raw_content;
-    std::optional<bool> enabled;
+    std::optional<bool> enabled; ///< Legacy manager key, not the ModEngine override switch.
+    std::optional<bool> use_mod_override; ///< [files] switch; ModEngine defaults to true when absent.
     std::optional<bool> load_uxm_files;
     std::optional<bool> cache_paths;
     std::optional<bool> load_loose_params;
@@ -88,8 +89,8 @@ ModEngineConfig parse_modengine_ini_text(std::string_view content);
 /// Renders the canonical SMM-generated ini.
 std::string render_default_modengine_ini(std::string_view mod_override_dir);
 
-/// Forces \`enabled=1\`, \`loadLooseParams=1\` and \`modOverrideDirectory\` to \`mods_dir\` while
-/// leaving every other line of an existing file untouched. Returns the new file content.
+/// Forces \`useModOverrideDirectory=1\`, \`enabled=1\`, \`loadLooseParams=1\` and
+/// \`modOverrideDirectory\` to \`mods_dir\` while leaving unrelated lines untouched.
 std::string patch_modengine_ini_text(std::optional<std::string_view> existing,
                                      std::string_view mods_dir);
 
@@ -116,7 +117,10 @@ void to_json(json& j, const EngineProvisionResult& r);
 EngineProvisionResult provision_mod_engine(const fs::path& game_dir,
                                            const fs::path& source_or_staging = {});
 
-HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& staging_dir);
+/// Optionally compares enabled planned files with the current deployment and checks stale manifest entries.
+/// This verification is read-only.
+HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& staging_dir,
+                                  bool verify_deployment = false);
 
 /// Best-effort location of the Sekiro installation.
 ///

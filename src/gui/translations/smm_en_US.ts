@@ -201,6 +201,8 @@
       <source>需修复 (Action Required)</source>
       <translation>Action Required</translation>
     </message>
+    <message><source>正在检测…</source><translation>Checking…</translation></message>
+    <message><source>启动仅在诊断通过后放行。修复 ModEngine 不会改变进程的 DLL 加载策略；策略异常请按诊断建议重新启动相关程序。</source><translation>Launch is gated on a passing diagnosis. Repairing ModEngine does not change process DLL search policies; follow the diagnostic advice to restart the affected programs.</translation></message>
   </context>
   <context>
     <name>LaunchHubView</name>
@@ -220,6 +222,15 @@
       <source>已就绪 · 当前方案处于活跃投影状态</source>
       <translation>Ready · the current setup is actively deployed</translation>
     </message>
+    <message><source>正在诊断</source><translation>Checking</translation></message>
+    <message><source>启动前检查 · 已通过</source><translation>Pre-launch check · passed</translation></message>
+    <message><source>启动已锁定 · 请先处理诊断问题</source><translation>Launch locked · resolve diagnostic issues first</translation></message>
+    <message><source>诊断通过 · 启动前将再次检查</source><translation>Diagnosis passed · will recheck before launch</translation></message>
+    <message><source>诊断未通过 · 暂不可启动</source><translation>Diagnosis failed · launch unavailable</translation></message>
+    <message><source>已部署 %1 个文件。更换模组组合后请先部署；启动前会核验环境、文件一致性和 DLL 加载策略。</source><translation>%1 files deployed. Deploy after changing mods; environment, file consistency and DLL load policy are verified before launch.</translation></message>
+    <message><source>正在检查…</source><translation>Checking…</translation></message>
+    <message><source>重新检测</source><translation>Recheck</translation></message>
+    <message><source>查看诊断</source><translation>View Diagnostics</translation></message>
     <message>
       <source>引擎按优先级自动排序投射，低顺位模组的重合文件被自动遮罩，无需手动干预。</source>
       <translation>Files are projected in priority order; overlapping files from lower-ranked mods are shadowed automatically.</translation>
@@ -243,10 +254,6 @@
     <message>
       <source>胜出投影文件</source>
       <translation>Winning files</translation>
-    </message>
-    <message>
-      <source>装配方案「剑圣孤影 · 断绝不死」已装载。物理硬链接零拷贝投影就绪，随时可出征苇名。</source>
-      <translation>Loadout “Sword Saint · Immortal Severance” is loaded. Zero-copy hard-link projection is ready.</translation>
     </message>
     <message>
       <source>语义冲突仲裁</source>
@@ -306,6 +313,13 @@
     <message>
       <source>已就绪</source>
       <translation>Ready</translation>
+    </message>
+    <message><source>检查中</source><translation>Checking</translation></message>
+    <message><source>需处理</source><translation>Issues</translation></message>
+    <message><source>检查中…</source><translation>Checking…</translation></message>
+    <message><source>诊断通过</source><translation>Diagnosis passed</translation></message>
+    <message><source>%1 项异常 · %2 项警告</source><translation>%1 error(s) · %2 warning(s)</translation></message>
+    <message><source>查看诊断</source><translation>View Diagnostics</translation>
     </message>
     <message>
       <source>整合包预设</source>
@@ -734,4 +748,34 @@
   <context>
     <name>UpdateModal</name>
     <message><source>软件版本更新</source><translation>Software Update</translation></message><message><source>SEKIRO MOD MANAGER · 版本更新通知</source><translation>SEKIRO MOD MANAGER · Release Notification</translation></message><message><source>下载安装程序 (.exe)</source><translation>Download Installer (.exe)</translation></message><message><source>前往发布页面</source><translation>View Release Page</translation></message><message><source>官方推荐通过安装程序进行平滑升级；便携版用户可前往 GitHub 发布页下载最新压缩包解压使用。</source><translation>Recommended to upgrade seamlessly using the installer; portable users can download the zip package from GitHub Releases.</translation></message><message><source>稍后再说</source><translation>Remind Me Later</translation></message><message><source>重新检查</source><translation>Check Again</translation></message><message><source>完成</source><translation>Done</translation></message><message><source>检查中</source><translation>Checking</translation></message><message><source>正在连接 GitHub 校验最新版本清单...</source><translation>Connecting to GitHub to verify the latest release manifest...</translation></message><message><source>新版本可用</source><translation>New Version Available</translation></message><message><source>当前版本: v</source><translation>Current: v</translation></message><message><source>已是最新</source><translation>Up to Date</translation></message><message><source>当前版本 (v%1) 为最新发布版本，无需更新。</source><translation>Current version (v%1) is the latest release. No update needed.</translation></message><message><source>更新内容详情:</source><translation>Release Notes:</translation></message></context>
-<context><name>GuiController</name><message><source>整合包已取消应用，当前进入自由模组管理状态。</source><translation>Modpack deactivated. You are now in freeform mod management mode.</translation></message></context><context><name>SmmClient</name><message><source>Updated %1 mods.</source><translation>Updated %1 mods.</translation></message><message><source>Deleted %1 mods successfully.</source><translation>Deleted %1 mods successfully.</translation></message><message><source>Mod ID '%1' already exists.</source><translation>Mod ID '%1' already exists.</translation></message></context></TS>
+<context><name>GuiController</name><message><source>整合包已取消应用，当前进入自由模组管理状态。</source><translation>Modpack deactivated. You are now in freeform mod management mode.</translation></message>
+<message><source>部署失败：%1 个文件未部署，已取消启动。%2</source><translation>Deploy failed: %1 file(s) not deployed. Launch cancelled. %2</translation></message>
+<message><source>启动已阻止：%1</source><translation>Launch blocked: %1</translation></message>
+<message><source>启动前诊断通过，已启动只狼。</source><translation>Pre-launch diagnosis passed. Sekiro is launching.</translation></message>
+<message><source>只狼已在运行，请先退出游戏再启动。</source><translation>Sekiro is already running. Exit the game before launching again.</translation></message>
+<message><source>启动失败，请检查游戏目录与访问权限。</source><translation>Launch failed. Check the game directory and access permissions.</translation></message>
+<message><source>正在检查环境、部署文件与启动链…</source><translation>Checking environment, deployment and launch chain…</translation></message>
+<message><source>尚未完成诊断，启动前将重新检测。</source><translation>Diagnosis not completed. Will recheck before launch.</translation></message>
+<message><source>诊断通过，启动前仍会重新检查。</source><translation>Diagnosis passed. Will recheck before launch.</translation></message>
+<message><source>诊断异常，请处理问题后重新检测。</source><translation>Diagnosis failed. Resolve the issues and recheck.</translation></message>
+<message><source>诊断未完成</source><translation>Diagnosis incomplete</translation></message>
+<message><source>请检查目录访问权限后重新检测。</source><translation>Check directory permissions and recheck.</translation></message>
+<message><source>运行中的 ModEngine 钩子</source><translation>Loaded ModEngine hook</translation></message>
+<message><source>%1 DLL 加载策略</source><translation>%1 DLL search policy</translation></message>
+<message><source>%1 优先加载系统 DLL（PreferSystem32），可能绕过游戏目录中的 ModEngine，导致所有模组失效。</source><translation>%1 prefers system DLLs (PreferSystem32 is enabled), which may bypass ModEngine in the game directory and cause all mods to fail.</translation></message>
+<message><source>完全退出游戏和 Steam，从不带该策略的启动入口重新启动 Steam 与 SMM，再次检测；无需关闭全局 Windows 防护。</source><translation>Fully exit the game and Steam, then restart Steam and SMM from a launcher without this policy. Recheck before launching; no need to disable global Windows protection.</translation></message>
+<message><source>游戏未加载本地 ModEngine 钩子。文件已部署不代表模组已生效。</source><translation>The game has not loaded the local ModEngine hook. Deployed files alone do not activate mods.</translation></message>
+<message><source>无法核验游戏加载的 DLL，请先退出游戏并确认安装路径。</source><translation>Cannot verify the game’s loaded DLLs. Exit the game and confirm the installation path first.</translation></message>
+<message><source>完全退出游戏和 Steam，检查启动链后重新启动并再次检测。</source><translation>Fully exit the game and Steam. Restart the launch chain and recheck.</translation></message>
+<message><source>游戏已加载本地 ModEngine 钩子；这不代表每个模组都已验证。</source><translation>The game loaded the local ModEngine hook. This does not verify every individual mod.</translation></message>
+<message><source>%1 未启用优先加载系统 DLL 策略。</source><translation>%1 does not prefer system DLLs.</translation></message>
+<message><source>无法核验启动链，不能视为诊断通过。</source><translation>Cannot verify the launch chain. This is not a passed check.</translation></message>
+<message><source>等待启动器完成启动，确认可以访问目标进程后重新检测。</source><translation>Wait for launchers to finish starting, confirm access to the target process, then recheck.</translation></message>
+<message><source>部署文件一致性</source><translation>Deployed file consistency</translation></message>
+<message><source>模组</source><translation>Mod</translation></message>
+<message><source>模组读取失败</source><translation>Mod failed to load</translation></message>
+<message><source>请重新导入该模组，或修复其元数据和文件后重新检测。</source><translation>Re-import this mod, or repair its metadata and files, then recheck.</translation></message>
+<message><source>当前启用文件与部署结果一致，或没有需要部署的文件。</source><translation>Enabled files match the current deployment, or no files need deploying.</translation></message>
+<message><source>部署文件缺失、改变或已过期。</source><translation>Deployed files are missing, changed or stale.</translation></message>
+<message><source>先部署当前模组组合，再重新检测。</source><translation>Deploy the current mod setup, then recheck.</translation></message>
+</context><context><name>SmmClient</name><message><source>Updated %1 mods.</source><translation>Updated %1 mods.</translation></message><message><source>Deleted %1 mods successfully.</source><translation>Deleted %1 mods successfully.</translation></message><message><source>Mod ID '%1' already exists.</source><translation>Mod ID '%1' already exists.</translation></message></context></TS>

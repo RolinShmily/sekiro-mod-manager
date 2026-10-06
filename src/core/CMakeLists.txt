@@ -11,6 +11,7 @@ add_library(smm_core STATIC
     src/importer.cpp
     src/exporter.cpp
     src/doctor.cpp
+    src/runtime_doctor.cpp
     src/preset.cpp
 )
 
