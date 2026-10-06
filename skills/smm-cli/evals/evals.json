@@ -1,0 +1,38 @@
+{
+  "skill_name": "smm-cli",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "用 smm-cli 把下载的武器外观包导入一个带空格的暂存目录，先预览识别结果，再导入为 blade；仅禁用副武器资产，核对启用状态，不要部署。",
+      "expected_output": "先 dry-run 再真实 import，通过 info 获取准确相对路径后 disable-asset，验证其余资产仍启用，不调用 deploy/config。",
+      "files": [],
+      "expectations": [
+        "dry-run 不安装目标模组",
+        "通过真实 info 资产路径禁用单文件",
+        "未写入游戏目录或持久化真实配置"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把暂存区当前启用组合保存为预设，然后导出成一个 .smmpack，在另一临时暂存区导入验证；说明预设和整合包的区别，不包含原始下载。",
+      "expected_output": "presets save/list/apply 获取真实 ID，export 显式指定 ID 与 --name/--output，import-pack 验证 round trip，不使用 README 旧别名或 --include-source。",
+      "files": [],
+      "expectations": [
+        "预设按返回的 ID 应用且禁用组合外模组",
+        "export/import-pack 往返保留资产和开关",
+        "使用可解析的真实命令，无不存在的别名"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "只在临时模拟游戏目录验证 plan、deploy、restore 与 JSON 自动化；检查严重冲突是否自动阻止部署、业务失败和非 JSON 参数错误如何处理，并说明 restore 对未追踪文件的影响。",
+      "expected_output": "检查 NDJSON 最终结果与部署 success/failed_files，报告 current restore 会扫未追踪文件，不操作实际游戏，不声称严重冲突自动阻止部署。",
+      "files": [],
+      "expectations": [
+        "完整 NDJSON 输出被解析为一个最终结果",
+        "严重冲突行为及 restore 清扫范围如实说明",
+        "业务失败/退出码2/找不到程序均识别失败"
+      ]
+    }
+  ]
+}
