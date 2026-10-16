@@ -35,51 +35,6 @@ ScrollView {
         width: rootView.availableWidth
         spacing: 16
 
-        HusFrame {
-            objectName: "healthBanner"
-            Layout.fillWidth: true
-            padding: 16
-            colorBg: HusTheme.Primary.colorFillQuaternary
-            borderBg.color: smmBackend.healthErrorCount > 0 ? HusTheme.Primary.colorError :
-                            smmBackend.healthWarnCount > 0 ? HusTheme.Primary.colorWarning : HusTheme.Primary.colorBorderSecondary
-            contentItem: ColumnLayout {
-                spacing: 8
-                RowLayout {
-                    Layout.fillWidth: true
-                    HusText {
-                        Layout.fillWidth: true
-                        text: smmBackend.isDoctorChecking ? qsTr("正在诊断") :
-                              smmBackend.canLaunch ? qsTr("启动前检查 · 已通过") : qsTr("启动已锁定 · 请先处理诊断问题")
-                        font.pixelSize: 15
-                        font.bold: true
-                        wrapMode: Text.WordWrap
-                        color: smmBackend.canLaunch ? HusTheme.Primary.colorSuccess : HusTheme.Primary.colorWarning
-                    }
-                    HusButton {
-                        text: qsTr("重新检测")
-                        enabled: !smmBackend.isDoctorChecking && !smmBackend.isBusy
-                        onClicked: smmBackend.refreshDoctor()
-                    }
-                    HusButton { text: qsTr("查看诊断"); onClicked: rootView.requestDiagnosis() }
-                }
-                HusText {
-                    Layout.fillWidth: true
-                    text: smmBackend.healthSummary
-                    font.pixelSize: 14
-                    wrapMode: Text.Wrap
-                    color: HusTheme.Primary.colorTextPrimary
-                }
-                HusText {
-                    Layout.fillWidth: true
-                    visible: text.length > 0
-                    text: smmBackend.healthRemediation
-                    font.pixelSize: 13
-                    wrapMode: Text.Wrap
-                    color: HusTheme.Primary.colorTextSecondary
-                }
-            }
-        }
-
         // =====================================================================
         // 部署面板（沉浸式只狼概念画卷背景 + 真迹水墨书法水印，100% 边缘铺满）
         // =====================================================================

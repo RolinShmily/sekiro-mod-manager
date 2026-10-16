@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.1] - 2026-10-16
+
+### Changed
+
+- Simplify the launch hub workbench by removing the redundant pre-launch check banner at the top, relying on the compact hero indicator and the dedicated sidebar running status card.
+
+### 中文摘要
+
+- 简化启动工作台页面结构：移除首页顶部的冗余「启动前检查」横幅，统一保留左侧导航栏底部的全景运行状态卡片及主画卷内的紧凑诊断指示。
+
 ## [0.4.0] - 2026-10-06
 
 ### Added
@@ -278,7 +288,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.7...v0.4.0
 [0.3.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.5...v0.3.6
