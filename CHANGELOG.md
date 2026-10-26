@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.2] - 2026-10-26
+
+### Fixed
+
+- Update the About dialog's displayed blog address and visit link to `https://blog.srprolin.com` so installed clients use the current domain after upgrading.
+
+### Changed
+
+- Update the official website links, canonical URL and Open Graph URL to `https://sekiro.srprolin.com/`.
+- Explicitly disable Cloudflare `workers.dev` and version / preview URLs while retaining the existing dashboard-managed DNS and domain routing.
+
+### 中文摘要
+
+- 将客户端「关于」窗口中的博客显示地址和访问链接更新为 `https://blog.srprolin.com`，升级软件后即可使用新域名。
+- 官网入口、canonical 和 Open Graph 页面地址统一为 `https://sekiro.srprolin.com/`。
+- 显式关闭 Cloudflare `workers.dev` 及版本 / 预览 URL，沿用控制台已有的 DNS 和域名路由配置。
+
 ## [0.4.1] - 2026-10-16
 
 ### Changed
@@ -288,7 +305,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.7...v0.4.0
 [0.3.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.6...v0.3.7
