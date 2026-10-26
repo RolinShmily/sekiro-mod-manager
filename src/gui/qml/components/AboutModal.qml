@@ -131,7 +131,7 @@ HusModal {
 
                 HusText {
                     Layout.fillWidth: true
-                    text: "blog.srprolin.top"
+                    text: "blog.srprolin.com"
                     font.pixelSize: 12
                     color: HusTheme.Primary.colorTextSecondary
                 }
@@ -141,7 +141,7 @@ HusModal {
                     type: HusButton.Type_Text
                     text: qsTr("访问博客 ↗")
                     font.pixelSize: 12
-                    onClicked: Qt.openUrlExternally("https://blog.srprolin.top")
+                    onClicked: Qt.openUrlExternally("https://blog.srprolin.com")
                 }
             }
 

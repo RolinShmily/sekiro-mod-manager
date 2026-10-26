@@ -2,7 +2,7 @@
 
 专为《只狼：影逝二度》设计的高性能模组暂存、语义冲突仲裁与 NTFS 零拷贝硬链接部署管理器。
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | [官网](https://sekiro.srprolin.com/)
 
 ---
 

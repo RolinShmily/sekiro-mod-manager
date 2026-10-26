@@ -2,6 +2,8 @@
 
 Sekiro Mod Manager 产品展示网站：介绍桌面工作台、模组管理能力、CLI 与智能体技能，并提供软件下载。
 
+官网：<https://sekiro.srprolin.com/>。
+
 技术栈：**Next.js 16 / React 19 / TypeScript / Tailwind CSS 4 / Radix UI / Lucide / Motion / Cloudflare Workers**。App Router 静态导出，不需要 Next.js 运行服务器。依赖版本固定在 `package.json` 和 `package-lock.json`。
 
 ## 本地运行
@@ -52,7 +54,7 @@ gh api repos/RolinShmily/sekiro-mod-manager/releases/latest > public/release.jso
 
 ## Cloudflare Workers
 
-仓库根 `wrangler.toml` 定义静态 Worker `sekiro-mod-manager`，资源目录 `website/out/`。缺失资源返回 404，不把 ZIP / JSON 请求回退成首页；没有服务器入口代码。
+仓库根 `wrangler.toml` 定义静态 Worker `sekiro-mod-manager`，资源目录 `website/out/`，并通过 `routes` / `custom_domain = true` 声明正式域名 `sekiro.srprolin.com`。缺失资源返回 404，不把 ZIP / JSON 请求回退成首页；没有服务器入口代码。
 
 CI `website.yml` 在网站 / Skill 改动时运行测试、类型检查、构建并上传 `smm-website` 产物。`main` 推送通过验证后自动部署到 Cloudflare；Pull Request 只验证。也支持手动触发部署。使用仓库 Secrets：
 
@@ -66,7 +68,9 @@ CI `website.yml` 在网站 / Skill 改动时运行测试、类型检查、构建
 npx --yes wrangler@4.147.0 deploy --config wrangler.toml
 ```
 
-不在配置中写账号或令牌，也没有设置自定义域名、DNS 或覆盖其他 Worker。`workers.dev` 提供预览入口；自定义域名可在 Cloudflare 控制台后续绑定。
+不在配置中写账号或令牌。部署会按 `wrangler.toml` 维护 `sekiro.srprolin.com` 的 Custom Domain 绑定，需要同一 Cloudflare 账户下已激活的 `srprolin.com` Zone 和相应域名权限。`workers_dev = false` 和 `preview_urls = false` 显式关闭 `workers.dev` 地址及版本 / 预览 URL，仅通过正式域名访问。
+
+页面的正式站点地址统一定义在 `src/lib/paths.ts` 的 `SITE_URL`，用于生成 canonical 和 Open Graph URL。网站资源、release snapshot 与 Skill 下载使用同源路径，跟随新域名加载。旧域名的 301 跳转需要在 Cloudflare 旧域名所在 Zone 配置，并保留路径与查询参数；GitHub 仓库 About 的 Website 也应同步为新官网地址。
 
 ## 子路径
 
