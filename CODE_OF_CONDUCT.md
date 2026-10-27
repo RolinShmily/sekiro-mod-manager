@@ -60,8 +60,9 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the project maintainer, [@RolinShmily](https://github.com/RolinShmily),
-through GitHub's private reporting tools or a direct message. All complaints will
-be reviewed and investigated promptly and fairly.
+through GitHub's private reporting tools, a direct message, or by email to
+**<contact@srprolin.com>**. All complaints will be reviewed and investigated
+promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
 reporter of any incident.

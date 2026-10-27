@@ -9,3 +9,6 @@ contact_links:
   - name: Usage help & documentation
     url: https://github.com/RolinShmily/sekiro-mod-manager#readme
     about: Build, install, and CLI reference live in the README.
+  - name: Email the maintainer
+    url: mailto:contact@srprolin.com
+    about: For private enquiries about conduct or anything that does not fit a public issue.

@@ -19,7 +19,7 @@ release; older tags are not patched.
 2. Click **Report a vulnerability** and describe the issue.
 
 If that is unavailable, contact the maintainer [@RolinShmily](https://github.com/RolinShmily)
-directly through GitHub.
+directly through GitHub, or email **<contact@srprolin.com>**.
 
 Please include, where possible:
 
