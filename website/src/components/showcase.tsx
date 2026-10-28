@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
-import { ArrowLeft, ArrowRight, Monitor, LayoutGrid, Layers, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, ArrowRight, Monitor, LayoutGrid, Layers, SlidersHorizontal, CheckCircle2, Terminal } from "lucide-react";
 import Image from "next/image";
 import { useI18n } from "./i18n";
 import { assetPath } from "@/lib/paths";
+import { BrandLogo } from "./icons";
 
 const screens = [
   { id: "hub", label: "screenHub", Icon: Monitor, zh: { title: "从这里，整装出发。", description: "集中查看部署状态、环境诊断与游戏入口。准备就绪，再出征苇名。", points: ["部署、启动与环境诊断", "硬链接与磁盘占用信息", "管理页一键直达"] }, en: { title: "Prepare your next journey.", description: "Deployment state, diagnostics, and the game launcher in one place. Check the environment before you set out.", points: ["Deploy, launch, and diagnose", "Hard-link and storage information", "Quick access to your library"] } },
@@ -27,10 +28,56 @@ export function Showcase() {
       <Tabs.Root value={active} onValueChange={setActive} className="showcase-layout reveal" orientation="horizontal">
         <div className="showcase-menu">
           <Tabs.List className="showcase-tabs" aria-label={t("screensLabel")}>{screens.map((screen, i) => <Tabs.Trigger className="showcase-tab" key={screen.id} value={screen.id} id={`tab-${screen.id}`}><span className="tab-number">0{i + 1}</span><screen.Icon className="icon" /><span>{t(screen.label)}</span><ArrowRight className="icon tab-arrow" /></Tabs.Trigger>)}</Tabs.List>
-          <div className="showcase-details" aria-live="polite"><span className="mini-label">0{index + 1} / 04</span><h3>{copy.title}</h3><p>{copy.description}</p><ul>{copy.points.map(point => <li key={point}>{point}</li>)}</ul></div>
+          <div className="showcase-details" aria-live="polite">
+            <span className="mini-label">0{index + 1} / 04</span>
+            <h3>{copy.title}</h3>
+            <p>{copy.description}</p>
+            <ul>
+              {copy.points.map((point) => (
+                <li key={point}>
+                  <CheckCircle2 className="point-icon" size={16} />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
           <div className="showcase-controls"><button className="icon-button" id="screen-prev" onClick={() => change(-1)} aria-label={t("previous")}><ArrowLeft className="icon" /></button><span className="mini-label">{t("manualSwitch")}</span><button className="icon-button" id="screen-next" onClick={() => change(1)} aria-label={t("next")}><ArrowRight className="icon" /></button></div>
         </div>
-        {screens.map(screen => <Tabs.Content className="showcase-visual" key={screen.id} value={screen.id}><div className="window-frame"><Image src={assetPath(`/assets/app/${screen.id}-${locale}.webp`)} alt={`${t(screen.label)} — ${t("actualScreenshot")}`} width={1360} height={880} loading="lazy" /></div><div className="screen-caption"><span><span className="caption-dot" />{t("actualScreenshot")}</span><span>C++ / Qt / QML</span></div></Tabs.Content>)}
+        {screens.map((screen) => (
+          <Tabs.Content className="showcase-visual" key={screen.id} value={screen.id}>
+            <div className="window-frame">
+              <div className="window-titlebar">
+                <div className="window-dots" aria-hidden="true">
+                  <span className="dot dot-close" />
+                  <span className="dot dot-min" />
+                  <span className="dot dot-max" />
+                </div>
+                <div className="window-title">
+                  <BrandLogo className="w-3.5 h-3.5 shrink-0 inline-block mr-1.5" />
+                  <span>Sekiro Mod Manager — {t(screen.label)}</span>
+                </div>
+                <div className="window-tag">Desktop GUI</div>
+              </div>
+              <Image
+                src={assetPath(`/assets/app/${screen.id}-${locale}.webp`)}
+                alt={`${t(screen.label)} — ${t("actualScreenshot")}`}
+                width={1360}
+                height={880}
+                loading="lazy"
+              />
+            </div>
+            <div className="screen-caption">
+              <span>
+                <span className="caption-dot" />
+                {t("actualScreenshot")}
+              </span>
+              <span>
+                <Terminal size={12} className="inline mr-1" />
+                C++ / Qt / QML
+              </span>
+            </div>
+          </Tabs.Content>
+        ))}
       </Tabs.Root>
     </div>
   </section>;
