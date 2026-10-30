@@ -10,7 +10,14 @@ export const metadata: Metadata = {
   alternates: { canonical: pageUrl },
   title: "Sekiro Mod Manager · 重返苇名，由你执掌",
   description: "为《只狼：影逝二度》打造的开源模组工作台。暂存模组、查看覆盖、保存组合，以 NTFS 硬链接部署你的苇名。",
-  icons: { icon: assetPath("/assets/favicon.svg") },
+  icons: {
+    icon: [
+      { url: assetPath("/favicon.ico"), sizes: "any" },
+      { url: assetPath("/assets/favicon.svg"), type: "image/svg+xml" },
+      { url: assetPath("/assets/icon.png"), sizes: "256x256", type: "image/png" },
+    ],
+    apple: assetPath("/assets/apple-touch-icon.png"),
+  },
   openGraph: { title: "Sekiro Mod Manager", description: "你的模组，你的顺位，你的苇名。Windows 原生模组管理器，支持 CLI 与智能体 Skill。", type: "website", url: pageUrl },
 };
 export const viewport: Viewport = { themeColor: "#181a18" };

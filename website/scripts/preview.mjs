@@ -12,7 +12,7 @@ try {
   if (error.code === "ENOENT") { console.error("Run npm run build before preview."); process.exit(1); }
   throw error;
 }
-const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".webp": "image/webp", ".zip": "application/zip", ".md": "text/plain; charset=utf-8", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8" };
+const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".zip": "application/zip", ".md": "text/plain; charset=utf-8", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8" };
 const server = createServer(async (request, response) => {
   if (request.method !== "GET" && request.method !== "HEAD") { response.writeHead(405); response.end(); return; }
   try {
