@@ -1,9 +1,25 @@
 export const RELEASES_URL = "https://github.com/RolinShmily/sekiro-mod-manager/releases";
 export const RELEASE_API = "https://api.github.com/repos/RolinShmily/sekiro-mod-manager/releases/latest";
+export const DEFAULT_MIRROR = "https://gh-proxy.org/";
+
+export function getDownloadMirror(): string {
+  const raw = process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR ?? process.env.NEXT_PUBLIC_GH_PROXY ?? DEFAULT_MIRROR;
+  if (!raw || raw === "none" || raw === "direct" || raw === "false") return "";
+  return raw.endsWith("/") ? raw : `${raw}/`;
+}
+
+export const MIRROR = getDownloadMirror();
+export type DownloadSource = "mirror" | "github";
 const DOWNLOAD_ROOT = "https://github.com/RolinShmily/sekiro-mod-manager/releases/download/";
 export type AssetKind = "setup" | "portable" | "cli";
 export type ReleaseAsset = { name: string; url: string; size: number | null; digest: string | null };
 export type StableRelease = { tag: string; page: string; assets: Partial<Record<AssetKind, ReleaseAsset>> };
+
+export function softwareUrl(url: string, source: DownloadSource = "mirror", customMirror?: string): string {
+  const mirror = customMirror !== undefined ? customMirror : getDownloadMirror();
+  if (source === "github" || !mirror) return url;
+  return `${mirror}${url}`;
+}
 
 function object(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;

@@ -42,6 +42,10 @@ npm run preview
 
 ## 软件下载
 
+支持通过环境变量 `NEXT_PUBLIC_DOWNLOAD_MIRROR`（或 `NEXT_PUBLIC_GH_PROXY`）自定义配置默认加速源（缺省为 `https://gh-proxy.org/`）。
+
+页面提供「加速源 · 默认」与「GitHub 原生」下载通道切换按钮，并自动将用户选择记忆在 `localStorage`（键名 `smm_download_source`）中，切换时即时同步更新安装包、便携版和独立 CLI 的下载链接。
+
 优先查询固定仓库的 GitHub Releases API；失败时读取随网站发布的 `public/release.json` 快照。快照回退会明确标为“已发布版本快照 · 实时查询不可用”，不冒充实时最新版本。CI 构建时刷新快照；本地更新可运行：
 
 ```bash

@@ -196,6 +196,12 @@ svg.icon { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: curren
 .download-app-head { padding: 30px 36px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 28px; border-bottom: 1px solid var(--night-line); }
 .download-app-head h3 { font-family: Georgia, serif; font-size: 1.75rem; margin-top: 8px; }
 .download-app-head p { color: var(--on-night-muted); font-size: .8125rem; margin-top: 5px; }
+.source-control { display: flex; flex-direction: column; gap: 6px; }
+.source-control > span { font-size: .6875rem; color: var(--on-night-muted); }
+.source-control-group { display: inline-flex; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--night-line); padding: 3px; border-radius: 8px; }
+.source-control-btn { min-height: 30px; padding: 5px 12px; border: 0; background: transparent; border-radius: 6px; font-size: .75rem; color: var(--on-night-muted); cursor: pointer; transition: background .18s, color .18s; }
+.source-control-btn[aria-pressed="true"] { background: rgba(201, 182, 138, 0.18); color: var(--gold); font-weight: 600; }
+.source-control-btn:hover:not([aria-pressed="true"]) { color: var(--on-night); }
 .release-state { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: .6875rem; color: var(--gold); max-width: 340px; }
 .text-button { background: transparent; border: 0; padding: 10px 0; color: var(--on-night-muted); font-size: .6875rem; text-decoration: underline; }
 .text-button:disabled { cursor: wait; }
@@ -396,6 +402,9 @@ svg.icon { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: curren
   .download-app-head { padding: 24px; }
   .download-app-head h3 { font-size: 1.375rem; overflow-wrap: anywhere; }
   .download-app-head p { font-size: .75rem; }
+  .source-control { width: 100%; }
+  .source-control-group { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .source-control-btn { text-align: center; }
   .download-app-footer { padding: 20px 24px; font-size: .6875rem; }
   .download-type { width: 40px; height: 40px; font-size: .625rem; }
   .download-option .button { min-width: 120px; }

@@ -23,8 +23,10 @@ import {
   fetchRelease,
   formatSize,
   RELEASES_URL,
+  softwareUrl,
   type ReleaseLookup,
   type AssetKind,
+  type DownloadSource,
 } from "@/lib/downloads";
 import { WindowsIcon, ExeBadgeIcon, ZipBadgeIcon } from "./icons";
 
@@ -32,11 +34,30 @@ export function Downloads() {
   const { locale, t } = useI18n();
   const [release, setRelease] = useState<ReleaseLookup | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [source, setSource] = useState<DownloadSource>("mirror");
   const [refresh, setRefresh] = useState(0);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [copiedSha, setCopiedSha] = useState<string | null>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("smm_download_source");
+      if (saved === "github" || saved === "mirror") setSource(saved);
+    } catch (error) {
+      if (!(error instanceof DOMException)) console.warn(error);
+    }
+  }, []);
+
+  function chooseSource(value: DownloadSource) {
+    setSource(value);
+    try {
+      localStorage.setItem("smm_download_source", value);
+    } catch (error) {
+      if (!(error instanceof DOMException)) console.warn(error);
+    }
+  }
 
   useEffect(() => {
     const abort = new AbortController();
@@ -124,6 +145,27 @@ export function Downloads() {
                 <span>{t("downloadPlatform")}</span>
               </p>
             </div>
+            <div className="source-control">
+              <span id="source-label">{t("downloadSourceLabel")}</span>
+              <div className="source-control-group" role="group" aria-labelledby="source-label">
+                <button
+                  type="button"
+                  className="source-control-btn"
+                  aria-pressed={source === "mirror"}
+                  onClick={() => chooseSource("mirror")}
+                >
+                  {t("sourceMirror")}
+                </button>
+                <button
+                  type="button"
+                  className="source-control-btn"
+                  aria-pressed={source === "github"}
+                  onClick={() => chooseSource("github")}
+                >
+                  {t("sourceDirect")}
+                </button>
+              </div>
+            </div>
             <div className="release-state">
               {status === "loading" ? (
                 <Clock size={14} className="text-gold animate-spin" />
@@ -186,7 +228,7 @@ export function Downloads() {
                       kind === "setup" ? "button-primary" : "button-outline"
                     } asset-download`}
                     id={`${kind}-download`}
-                    href={asset?.url}
+                    href={asset ? softwareUrl(asset.url, source) : undefined}
                     aria-disabled={!asset}
                     tabIndex={asset ? 0 : -1}
                   >
@@ -233,7 +275,7 @@ export function Downloads() {
             <a
               className="text-link asset-download"
               id="cli-download"
-              href={release?.assets.cli?.url}
+              href={release?.assets.cli ? softwareUrl(release.assets.cli.url, source) : undefined}
               aria-disabled={!release?.assets.cli}
               tabIndex={release?.assets.cli ? 0 : -1}
             >

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseRelease, formatSize, fetchRelease, RELEASE_API } from "../src/lib/downloads.ts";
+import { parseRelease, formatSize, fetchRelease, RELEASE_API, MIRROR, softwareUrl } from "../src/lib/downloads.ts";
 
 const repository = "https://github.com/RolinShmily/sekiro-mod-manager/releases";
 function asset(tag, kind) {
@@ -18,6 +18,26 @@ test("separates GUI installer, portable and CLI from a real stable release shape
   assert.equal(parsed.assets.cli.name.endsWith("cli.zip"), true);
   assert.equal(parsed.assets.portable.digest, "a".repeat(64));
   assert.equal(formatSize(parsed.assets.setup.size), "10.0 MB · Windows x64");
+  assert.equal(parsed.assets.setup.url, asset("v1.2.3", "setup").browser_download_url);
+});
+test("softwareUrl prefixes with MIRROR by default and supports direct GitHub and env var override", () => {
+  const url = "https://github.com/RolinShmily/sekiro-mod-manager/releases/download/v1.0.0/app.exe";
+  assert.equal(softwareUrl(url), "https://gh-proxy.org/" + url);
+  assert.equal(softwareUrl(url, "mirror"), "https://gh-proxy.org/" + url);
+  assert.equal(softwareUrl(url, "github"), url);
+
+  assert.equal(softwareUrl(url, "mirror", "https://custom.mirror/"), "https://custom.mirror/" + url);
+
+  const prev = process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR;
+  try {
+    process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR = "https://env-mirror.org/";
+    assert.equal(softwareUrl(url, "mirror"), "https://env-mirror.org/" + url);
+    process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR = "none";
+    assert.equal(softwareUrl(url, "mirror"), url);
+  } finally {
+    if (prev === undefined) delete process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR;
+    else process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR = prev;
+  }
 });
 test("rejects draft/prerelease and malformed metadata rather than fabricating links", () => {
   for (const payload of [null, {}, [], { ...fixture(), draft: true }, { ...fixture(), prerelease: true }, { ...fixture(), tag_name: "v1.2.3-rc1" }, { ...fixture(), html_url: "https://example.com/release" }]) assert.equal(parseRelease(payload), null);
