@@ -2,168 +2,86 @@
 
 High-performance mod staging, semantic conflict arbitration, and zero-copy NTFS deployment for *Sekiro: Shadows Die Twice*.
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [Website](https://sekiro.srprolin.com/)
+[English](README.md) | [简体中文](README.zh-CN.md) | [Website](https://sekiro.srprolin.com/) | [Documentation](docs/README.md)
 
 ---
 
 ## Overview
 
-**Sekiro Mod Manager (SMM)** is a modern, lightweight, native mod manager engineered specifically for *Sekiro: Shadows Die Twice*. Built in modern **C++17**, **Qt 6 / QML**, and **HuskarUI**, it keeps mods cleanly staged in isolated folders and projects active files directly into the game's `mods/` directory using **NTFS hard links** — achieving instantaneous zero-disk-space deployments with pristine rollback capability.
-
----
+Sekiro Mod Manager keeps mods in an isolated staging area and projects the active ones into
+the game's `mods/` directory with **NTFS hard links**, so deploying tens of gigabytes is
+instant, costs no extra disk space, and can be rolled back to a pristine install. It is a
+native C++17 / Qt 6 QML desktop app, a standalone CLI, and an agent skill built on the same
+core library.
 
 ## Key Features
 
-- **⚡ Zero-Copy NTFS Deployment**
-  Enabled mods are projected into the game directory via Windows `CreateHardLinkW`. Deploying dozens of gigabytes of high-definition textures or character models takes milliseconds and consumes zero additional disk storage. SMM automatically detects cross-volume setups and gracefully falls back to copy mode with diagnostic feedback.
-
-- **🛡️ Pristine Rollback**
-  Every deployment state is tracked via `.smm_manifest.json`. Restoring purges only files and directories linked or copied by SMM, preserving the pristine state of your game installation.
-
-- **🧩 Smart Normalization & Multi-depth Archive Parsing**
-  Handles arbitrary folder hierarchies from Nexus Mods or community zip/7z packages. Recursively extracts nested archives up to 6 levels deep, routes loose signature files (`wp_a_0300.partsbnd.dcx` → `parts/`, `c0000.chrbnd.dcx` → `chr/`, `.gfx` → `menu/font/`), and cleans unpacking scaffolding (`_yabber`, `_witchy`).
-
-- **⚖️ 3-Tier Semantic Conflict Arbiter**
-  Automatic collision resolution by user-assigned priority rank:
-  - **Critical**: Collisions on global balance tables (`gameparam.parambnd.dcx`).
-  - **Warning**: Overlaps on exclusive player/weapon slots.
-  - **Info**: General asset overrides.
-
-- **📦 Mod Pack Presets (.smmpack)**
-  Save, apply, export, and import entire curated mod configurations in portable `.smmpack` archives (with bilingual Chinese/English titles and descriptions).
-
-- **🎛️ Fine-Grained Asset Toggles & Immersive Backdrops**
-  Inspect individual asset files inside any staged mod and toggle them on or off individually. Customize mod cards with blurred immersive backdrop artwork.
-
-- **🩺 Environment Health Doctor**
-  Built-in diagnostic suite verifying `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini` injection parameters, and NTFS volume consistency with one-click automated repair.
-
-- **🌐 Bilingual Internationalization (i18n)**
-  Seamless real-time switching between Simplified Chinese (`zh-CN`) and English (`en-US`).
-
----
+| | |
+|---|---|
+| **Zero-copy deployment** | `CreateHardLinkW` on the same volume; automatic copy fallback across volumes with diagnostics. |
+| **Pristine rollback** | Every deployment is tracked in `.smm_manifest.json`; restore removes only what SMM created. |
+| **Normalisation** | Arbitrary Nexus/community folder layouts, archives nested up to 6 levels, loose signature files routed to `parts/`, `chr/`, `menu/font/`…, unpacking scaffolding removed. |
+| **Conflict arbitration** | Three severities — critical (balance tables), warning (exclusive player/weapon slots), info (general overrides) — resolved by user-assigned priority. |
+| **Mod packs** | `.smmpack` presets with bilingual titles, exportable/importable as portable archives. |
+| **Asset-level control** | Inspect a staged mod's files and toggle individual assets, with per-mod backdrop artwork. |
+| **Environment doctor** | Verifies `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini` and NTFS layout, with one-click repair. |
+| **Bilingual UI** | Live switching between `zh-CN` and `en-US`, plus a dark/light/system theme and reduced-motion mode. |
 
 ## Architecture
 
 ```
-                 +-------------------+
-                 |    smm_core       |  <-- Pure C++17 static library
-                 |  (Core Engine)    |      (Normalization, Conflicts, Deploy, Presets)
-                 +---------+---------+
-                           |
-             +-------------+-------------+
-             |                           |
-             v                           v
-   +-------------------+       +-------------------+
-   |     smm_cli       |       |     smm_gui       |
-   | (smm.exe / JSON)  |       |   (smm_gui.exe)   |
-   | CLI & Agent API   |       | Qt 6 / QML + HuskarUI |
-   +-------------------+       +-------------------+
+                    smm_core   (C++17, no Qt, no printing)
+                        ▲
+          ┌─────────────┴─────────────┐
+       smm.exe                     smm_gui.exe
+       CLI + JSON API              Qt 6 / QML + HuskarUI
+                                   controller → service → core
 ```
 
-| Component | Target | Tech Stack | Description |
-|---|---|---|---|
-| `src/core` | `smm_core` | C++17 static lib | Zero-overhead core logic: file normalization, conflict matrix, NTFS link engine, ZIP archive extractor/packager. |
-| `src/cli` | `smm.exe` | C++17 executable | Standalone CLI and headless JSON API for automated workflows and scripting. |
-| `src/gui` | `smm_gui.exe` | Qt 6 Quick / QML | Hardware-accelerated desktop GUI linking `smm_core` directly in-process for instant response times. |
+Both entry points are independent processes that link the same static library. The GUI adds a
+Qt-only adaptation layer (`src/gui/backend/`); the CLI owns argument parsing, table/JSON
+output and exit codes. Details: [docs/architecture/layers.md](docs/architecture/layers.md).
 
-`src/gui/backend` is a thin adaption layer between QML and the core, split by responsibility:
+## Quick start
 
-| Layer | Responsibility | Never does |
-|---|---|---|
-| `controllers/GuiController` | QML entry points, flow coordination, GUI state (busy flags, health text, launch gate), settings persistence | Filesystem work, business rules |
-| `models/` | `QAbstractListModel` projections: rows, filters, toggle state | Touch the disk or decide persistence |
-| `services/CoreService` | Synchronous, throwing facade over `smm_core`; one user action maps to one core flow | Threads, signals, `tr()` strings, busy state |
-| `services/TaskRunner` | Serialized background execution (one job at a time), progress relay, cooperative cancellation, safe teardown | Know what the job does |
-| `services/UpdateFeed` / `UpdateService` | Pure manifest/version logic, then the network request around it | Parse JSON inside the Qt network object |
-| `adapters/CoreMapping` | Core value types to Qt value types; path encoding in exactly one place | Own any policy |
-| `providers/ModPreviewImageProvider` | Locate, decode, cache and downsample preview images | Reach into the controller or the models |
-
-Both entry points stay independent processes that share `smm_core`: the CLI never launches the
-GUI and the GUI never shells out to the CLI.
-
----
-
-## Building from Source
-
-### Prerequisites
-
-- **Windows 10 / 11 (64-bit)**
-- **Visual Studio 2022** (MSVC v143 toolset with C++17 support)
-- **CMake 3.25+**
-- **Qt 6.7+** (with `Qt6::Quick`, `Qt6::Qml`, `Qt6::LinguistTools`)
-- **Ninja** (optional, recommended for fast builds)
-
-### Clone with Submodules
+Prerequisites: Windows 10/11 x64, Visual Studio 2022 (MSVC v143), CMake 3.25+, Qt 6.11.2,
+Python 3.9+ (skill packaging and the HuskarUI patch).
 
 ```bash
-git clone --recurse-submodules https://github.com/RoL1n-SrP/sekiro-mods.git
-cd sekiro-mods
+git clone --recurse-submodules https://github.com/RolinShmily/sekiro-mod-manager.git
+cd sekiro-mod-manager
+cmake --preset msvc-x64-release && cmake --build --preset build-release
 ```
 
-### Build Instructions
+Outputs: `build/msvc-x64-release/src/cli/smm.exe` and `.../src/gui/smm_gui.exe`.
+Presets, incremental builds, `core-only` (no Qt) builds and troubleshooting:
+[docs/development/build.md](docs/development/build.md).
 
-#### Option 1: Standard Terminal Direct Build (Recommended · No environment setup needed)
-Uses the Visual Studio 2022 generator. CMake and MSBuild automatically locate the Windows SDK and MSVC runtime paths out of the box in any standard PowerShell, Git Bash, or CMD:
+## CLI at a glance
 
 ```bash
-# Debug Build
-cmake --preset vs2022-x64
-cmake --build --preset build-vs2022-debug
-
-# Release Build (Optimized standalone release)
-cmake --preset vs2022-x64
-cmake --build --preset build-vs2022-release
+smm doctor                       # environment + ModEngine health
+smm list                         # staged mods, priority, conflicts
+smm import ~/Downloads/mod.zip   # stage an archive or folder
+smm plan && smm deploy           # preview, then hard-link into mods/
+smm restore                      # return the game install to pristine
 ```
 
-#### Option 2: Build inside VS Code
-With the **CMake Tools** extension installed:
-1. Press `Ctrl+Shift+P` -> `CMake: Select Configure Preset` -> Choose `msvc-x64-debug` or `msvc-x64-release`.
-2. Press `F7` to build or `F5` to debug with live QML hot-reloading.
-*(VS Code automatically injects the MSVC environment for Ninja in the background)*
+Full command/option/exit-code reference: [docs/reference/cli.md](docs/reference/cli.md).
+Machine-readable output (`--json`) contract: [docs/reference/json-contract.md](docs/reference/json-contract.md).
 
-#### Option 3: Terminal Ninja Build (Requires MSVC Developer Environment)
-> ⚠️ **Note**: Ninja is a lightweight build system that does not detect SDK include paths on its own. When running directly in a standalone terminal, load the MSVC environment first (otherwise `filesystem` or `windows.h` will not be found):
+## Documentation
 
-```powershell
-# 1. Activate MSVC x64 Developer Environment
-call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+Documentation is written in Chinese; the index lives at [docs/README.md](docs/README.md).
 
-# 2. Build via Ninja presets
-cmake --preset msvc-x64-release
-cmake --build --preset build-release
-```
-*(Or launch the **x64 Native Tools Command Prompt for VS 2022** from your Windows Start Menu)*
+| Section | Covers |
+|---|---|
+| [architecture/](docs/architecture/README.md) | Layer boundaries, GUI backend roles, async/threading model, main data flows, decision log. |
+| [design/](docs/design/README.md) | Design tokens, reusable QML components, motion rules, i18n and accessibility. |
+| [development/](docs/development/README.md) | Environment and presets, coding style, test suites, branch/commit/PR workflow. |
+| [reference/](docs/reference/README.md) | CLI reference, JSON contract, error codes, on-disk formats, `smm_core` header index. |
 
----
-
-## CLI Reference
-
-SMM includes a headless CLI (`smm.exe`) for scripting, CI, or AI agent integration. Every command supports `--json` for structured output.
-
-```bash
-# General environment & diagnostics
-smm.exe doctor
-smm.exe doctor --json
-smm.exe setup-engine
-
-# Mod management
-smm.exe list
-smm.exe enable <MOD_ID>
-smm.exe disable <MOD_ID>
-smm.exe set-priority <MOD_ID> <RANK>
-smm.exe conflicts
-
-# Deployment
-smm.exe deploy
-smm.exe restore
-
-# Mod packs (.smmpack)
-smm.exe pack-export my-pack.smmpack
-smm.exe pack-import my-pack.smmpack
-```
-
----
+Contributor quick guide: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licensing & Trademarks
 

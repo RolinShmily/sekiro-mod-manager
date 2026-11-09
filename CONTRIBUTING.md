@@ -1,65 +1,55 @@
 # Contributing to Sekiro Mod Manager (SMM)
 
-Thank you for your interest in contributing to SMM! This document outlines how to build, test, and submit pull requests.
+Thanks for helping. This page is the short version; the detailed rules live in [`docs/`](docs/README.md).
 
-By participating, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). Please report any security vulnerabilities privately per [SECURITY.md](SECURITY.md).
-
----
-
-## 1. Prerequisites
-
-| Tool | Recommended Version | Purpose |
-| :--- | :--- | :--- |
-| **Windows OS** | Windows 10 / 11 (64-bit) | Required for Win32 NTFS hard link deployment and Direct3D/QML hardware acceleration |
-| **Visual Studio** | 2022 (MSVC v143) | C++17 compiler and toolchain |
-| **CMake** | 3.25+ | Cross-platform build system generator |
-| **Qt 6** | 6.7+ (MSVC 2022 64-bit) | Desktop framework (`QtQuick`, `Qml`, `LinguistTools`) |
-| **Ninja** | 1.11+ (Optional) | Recommended fast build tool |
+By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues
+privately per [SECURITY.md](SECURITY.md), never in a public issue.
 
 ---
 
-## 2. Setup & Building
+## 1. Get it building
 
-Clone the repository with submodules recursively:
-
-```bash
-git clone --recurse-submodules https://github.com/RoL1n-SrP/sekiro-mods.git
-cd sekiro-mods
-```
-
-### Building with CMake Presets
+Requirements: Windows 10/11 x64, Visual Studio 2022 (MSVC v143), CMake 3.25+, Qt 6.11.2 and
+Python 3.9+ (skill packaging + the HuskarUI patch script run at configure time).
 
 ```bash
-# Debug build (enables QML hot reload with --dev flag)
-cmake --preset msvc-x64-debug
-cmake --build --preset build-debug
-
-# Release build (optimized production binary)
-cmake --preset msvc-x64-release
-cmake --build --preset build-release
+git clone --recurse-submodules https://github.com/RolinShmily/sekiro-mod-manager.git
+cd sekiro-mod-manager
+cmake --preset msvc-x64-debug && cmake --build --preset build-debug
 ```
 
-### Running Tests & Verification
+`msvc-x64-release` for the optimised build, `core-only` when no Qt is installed.
+Presets, submodule recovery and troubleshooting: [`docs/development/build.md`](docs/development/build.md).
+
+## 2. Before you open a PR
 
 ```bash
-# Run CLI diagnostics and tests
-./build/msvc-x64-debug/src/cli/smm.exe --help
-./build/msvc-x64-debug/src/cli/smm.exe doctor --json
-
-# Run QML linting (ensure Qt bin is in PATH)
-qmllint.exe -I src/gui/third_party/HuskarUI/src/imports -I src/gui/qml src/gui/qml/Main.qml src/gui/qml/components/*.qml src/gui/qml/views/*.qml
+# headless regression suites (core rules, CoreService adapter, update feed)
+cmake --preset msvc-x64-release -DSMM_BUILD_TESTS=ON && cmake --build --preset build-release
+ctest --test-dir build/msvc-x64-release --output-on-failure
 ```
 
----
+What each suite covers, how to add one, and the manual GUI checklist:
+[`docs/development/testing.md`](docs/development/testing.md).
 
-## 3. Pull Request Guidelines
+## 3. Rules that are easy to get wrong
 
-1. **Coding Standards**:
-   - First-party C++ code follows modern C++17 conventions.
-   - QML UI code uses HuskarUI components (`HusWindow`, `HusButton`, `HusModal`, `HusTag`, etc.) and theme tokens from `HusTheme.Primary`.
-   - Never hardcode saturated colors or absolute pixel font families; use theme design tokens.
-2. **Commit Hygiene**:
-   - Write clear, concise commit messages.
-   - Ensure all submodules are updated and no unintended files are committed.
-3. **Licensing**:
-   - All contributions are submitted under the project's [MIT License](LICENSE).
+- **Respect the layer boundaries.** `smm_core` never includes Qt, never prints, and never knows
+  about the GUI; business rules belong there, not in QML or the GUI backend.
+  See [`docs/architecture/layers.md`](docs/architecture/layers.md).
+- **Use design tokens.** QML takes colours, radii and durations from `HusTheme.Primary`, never
+  hardcoded hex; animations are gated on `HusTheme.animationEnabled`.
+  See [`docs/design/tokens.md`](docs/design/tokens.md).
+- **Keep contracts stable.** CLI JSON field names, `ErrorCode` strings and on-disk file schemas
+  are consumed by the GUI and by scripts: [`docs/reference/errors.md`](docs/reference/errors.md),
+  [`docs/reference/file-formats.md`](docs/reference/file-formats.md).
+- **Update docs in the same commit** as the behaviour you changed.
+- Coding style (C++/QML/CMake): [`docs/development/code-style.md`](docs/development/code-style.md).
+
+## 4. Commits and pull requests
+
+- Conventional Commits (`feat(gui): …`, `fix(ci): …`, `refactor(core): …`), one concern per
+  commit; stage files explicitly rather than sweeping the tree.
+- PRs must keep `ci.yml` green (build + `ctest`) and describe user-visible changes; website-only
+  changes are covered by `website.yml`. Details: [`docs/development/workflow.md`](docs/development/workflow.md).
+- Contributions are submitted under the project's [MIT License](LICENSE).
