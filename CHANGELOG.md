@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.4] - 2026-11-09
+
+### Added
+
+- The setup installer offers to add the CLI to the current user's `PATH`, so `smm` works from any terminal; the uninstaller removes exactly that entry again and leaves other entries untouched.
+- The portable bundle and the setup ship the agent skill: `skill/smm-cli.zip` (the same archive the website serves) plus an extracted copy for agents that read a folder.
+
+### Changed
+
+- The Windows installer asset is named `sekiro-mod-manager-<version>-windows-x64-setup.exe` (previously `...-gui-setup.exe`); the GUI and CLI zips keep their names. **Upgrade note:** clients up to 0.4.3 build that file name themselves, so their "download installer" button points at a missing asset until they update; the release page button still works.
+- `dxil.dll` is pruned together with `dxcompiler.dll` (it is only meaningful beside it), bringing the Windows bundle to 53.5 MB on disk and 21.7 MB zipped.
+
+### 中文摘要
+
+- 安装程序可选把 CLI 写入当前用户 `PATH`，装完即可在任意终端直接运行 `smm`；卸载时精确移除该条目，不影响用户的其他 PATH 项。
+- 便携包与安装包都带上智能体 Skill：`skill/smm-cli.zip`（与官网提供的是同一个压缩包）以及解压后的目录，便于直接拷进 agent 的 skills 目录。
+- 安装包资源名改为 `...-windows-x64-setup.exe`（原为 `...-gui-setup.exe`）；GUI 与 CLI 的 zip 名称不变。**升级提示**：0.4.3 及更早的客户端会自行拼出旧文件名，它们的「下载安装程序」按钮会暂时 404，改用「前往发布页面」即可。
+- 与 `dxcompiler.dll` 一同裁剪 `dxil.dll`（后者只在配套前者时有意义），Windows 便携包降到 53.5 MB（zip 21.7 MB）。
+
 ## [0.4.3] - 2026-11-09
 
 ### Added
@@ -344,7 +363,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.0...v0.4.1
