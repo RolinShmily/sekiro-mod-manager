@@ -72,6 +72,8 @@ class GuiController : public QObject {
     Q_PROPERTY(bool isDoctorChecking READ isDoctorChecking NOTIFY doctorChanged)
     Q_PROPERTY(bool launchPending READ launchPending NOTIFY doctorChanged)
     Q_PROPERTY(bool canLaunch READ canLaunch NOTIFY doctorChanged)
+    Q_PROPERTY(bool launchEnabled READ launchEnabled NOTIFY busyChanged)
+    Q_PROPERTY(bool isElevated READ isElevated CONSTANT)
     Q_PROPERTY(QString healthSummary READ healthSummary NOTIFY doctorChanged)
     Q_PROPERTY(QString healthRemediation READ healthRemediation NOTIFY doctorChanged)
     Q_PROPERTY(bool engineReady READ engineReady NOTIFY doctorChanged)
@@ -141,8 +143,13 @@ public:
     int totalAssetCount() const { return assetListModel_.totalCount(); }
 
     bool isDoctorChecking() const { return diagnoseInFlight_; }
-    bool launchPending() const { return launchPending_ || deployLaunchPending_; }
+    bool launchPending() const { return launchPending_; }
+    /// Last completed check: true when it found nothing to fix. Every launch runs its own check
+    /// first, so this is a status readout (badge, hero line) rather than a gate.
     bool canLaunch() const;
+    /// Whether the launch button is clickable: the click itself performs the environment check.
+    bool launchEnabled() const { return !isBusy() && !launchPending(); }
+    bool isElevated() const { return elevated_; }
     QString healthSummary() const;
     QString healthRemediation() const;
     bool engineReady() const;
@@ -166,7 +173,6 @@ public:
     Q_INVOKABLE void refreshDoctor();
     Q_INVOKABLE void setupEngine();
     Q_INVOKABLE void deploy();
-    Q_INVOKABLE void deployAndLaunch();
     Q_INVOKABLE void restore();
     Q_INVOKABLE void launchGame();
     Q_INVOKABLE void autoDetectGameDir();
@@ -236,9 +242,8 @@ protected:
 private:
     /// How much work a refresh has to do.
     enum class RefreshScope {
-        Scan,        ///< staging scan only: mods, conflicts, plan, deployment telemetry
-        Diagnose,    ///< scan plus a full health report (the launch gate)
-        RuntimeOnly  ///< re-observe running processes on top of the last health report
+        Scan,     ///< staging scan only: mods, conflicts, plan, deployment telemetry
+        Diagnose  ///< scan plus the environment report (startup, launch click, manual check)
     };
     /// Everything a background refresh produces; applied on the GUI thread in one step.
     struct RefreshResult {
@@ -253,11 +258,17 @@ private:
     void initConnections();
     void checkVolumeMatch();
     void requestRefresh(RefreshScope scope);
-    void applyRefresh(const RefreshResult& result, RefreshScope scope);
+    void applyRefresh(const RefreshResult& result);
     void completeLaunchCheck();
-    void scheduleDoctor();
+    /// Drops a report that no longer describes the configured paths.
+    void invalidateHealth();
     void updateEquippedModIds();
     void applyModDetail(const ModEntry& mod, const QVector<AssetEntry>& assets);
+    /// Localized title/detail/remediation for one core diagnostic item.
+    QString localizedTitle(const DiagnosticEntry& item) const;
+    QString localizedDetail(const DiagnosticEntry& item) const;
+    QString localizedRemediation(const DiagnosticEntry& item) const;
+    int enabledModCount() const;
     void clearCurrentMod();
     void notify(const QString& type, const QString& message);
     void reportFailure(const QString& title, const std::exception& error);
@@ -308,14 +319,13 @@ private:
 
     HealthInfo healthInfo_;
     QStringList modScanFailures_;
+    bool elevated_{false}; ///< Whether this process holds an administrator token
 
     bool launchPending_{false};
-    bool deployLaunchPending_{false};
     bool diagnoseInFlight_{false};
     bool refreshQueued_{false};
     RefreshScope queuedScope_{RefreshScope::Scan};
     QString queuedDetailId_;
-    bool launchAfterDeploy_{false};
 };
 
 } // namespace smm::gui

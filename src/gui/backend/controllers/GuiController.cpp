@@ -9,7 +9,6 @@
 #include <QGuiApplication>
 #include <QProcess>
 #include <QSettings>
-#include <QTimer>
 #include <QUrl>
 
 #include <algorithm>
@@ -34,6 +33,16 @@ constexpr const char* kSettingsApp = "SMM";
 
 QString megabytes(quint64 bytes) {
     return QString::number(static_cast<double>(bytes) / (1024.0 * 1024.0), 'f', 1);
+}
+
+/// True when the report holds this item in a state the user has to act on.
+bool healthProblem(const HealthInfo& health, const QString& id) {
+    for (const auto& item : health.items) {
+        if (item.id == id) {
+            return item.status == QLatin1String("error") || item.status == QLatin1String("warning");
+        }
+    }
+    return true; // a missing item is not a passed check
 }
 
 } // namespace
@@ -75,28 +84,15 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
     applyThemeMode(themeMode_);
     initConnections();
 
+    elevated_ = CoreService::isElevated();
+
     publishPreviewStaging();
     checkVolumeMatch();
     updateEquippedModIds();
+    // One of exactly three places that runs an environment check: opening the launcher.
+    // The other two are the launch button and the diagnostics page itself. Nothing here polls
+    // process state or re-checks on a timer, so an idle window does no work.
     refreshAll();
-
-    // Process state is the only health input that changes while SMM sits idle, so it is
-    // re-observed on a timer; a full staging scan is never repeated on a schedule.
-    auto* runtimeTimer = new QTimer(this);
-    runtimeTimer->setInterval(10000);
-    connect(runtimeTimer, &QTimer::timeout, this, [this]() {
-        if (!isBusy() && !launchPending()) {
-            requestRefresh(RefreshScope::RuntimeOnly);
-        }
-    });
-    runtimeTimer->start();
-
-    connect(qGuiApp, &QGuiApplication::applicationStateChanged, this,
-            [this](Qt::ApplicationState state) {
-                if (state == Qt::ApplicationActive && !isBusy()) {
-                    requestRefresh(RefreshScope::RuntimeOnly);
-                }
-            });
 }
 
 void GuiController::initConnections() {
@@ -226,29 +222,6 @@ void GuiController::requestRefresh(RefreshScope scope) {
         return;
     }
 
-    if (scope == RefreshScope::RuntimeOnly) {
-        if (healthInfo_.overall.isEmpty()) {
-            return; // nothing to annotate yet; the initial diagnose is still pending
-        }
-        auto result = std::make_shared<HealthInfo>(healthInfo_);
-        TaskRunner::Completion completion;
-        completion.success = [this, result]() {
-            healthInfo_ = *result;
-            emit doctorChanged();
-        };
-        completion.failure = [this](const QString& message) {
-            reportFailure(tr("Runtime Check Failed"), message);
-        };
-        scans_.run(
-            tr("Checking runtime..."),
-            [base = healthInfo_, result](TaskContext& context) {
-                context.report(0, 1, {});
-                *result = CoreService::withRuntimeProbe(base);
-            },
-            completion);
-        return;
-    }
-
     const QString staging = stagingDir_;
     const QString game = sekiroDir_;
     const bool diagnose = scope == RefreshScope::Diagnose;
@@ -259,7 +232,7 @@ void GuiController::requestRefresh(RefreshScope scope) {
 
     auto result = std::make_shared<RefreshResult>();
     TaskRunner::Completion completion;
-    completion.success = [this, result, scope]() { applyRefresh(*result, scope); };
+    completion.success = [this, result]() { applyRefresh(*result); };
     completion.failure = [this, diagnose](const QString& message) {
         if (diagnose) {
             diagnoseInFlight_ = false;
@@ -275,8 +248,7 @@ void GuiController::requestRefresh(RefreshScope scope) {
             result->snapshot = snapshot.view;
             result->presets = CoreService::presets(staging);
             if (diagnose) {
-                result->health = CoreService::withRuntimeProbe(
-                    CoreService::diagnose(game, staging, &snapshot));
+                result->health = CoreService::diagnose(game, staging, &snapshot);
                 result->diagnosed = true;
             }
             const auto telemetry = CoreService::deploymentTelemetry(game);
@@ -292,7 +264,7 @@ void GuiController::requestRefresh(RefreshScope scope) {
     }
 }
 
-void GuiController::applyRefresh(const RefreshResult& result, RefreshScope scope) {
+void GuiController::applyRefresh(const RefreshResult& result) {
     modListModel_.setMods(result.snapshot.mods);
     presetListModel_.setPresets(result.presets);
     presetListModel_.setEquippedId(equippedPackId_);
@@ -304,12 +276,6 @@ void GuiController::applyRefresh(const RefreshResult& result, RefreshScope scope
     deployedFiles_ = result.deployedFiles;
     bytesSaved_ = result.bytesSaved;
     emit telemetryChanged();
-
-    if (scope == RefreshScope::RuntimeOnly) {
-        healthInfo_ = result.health;
-        emit doctorChanged();
-        return;
-    }
 
     if (result.diagnosed) {
         healthInfo_ = result.health;
@@ -331,12 +297,12 @@ void GuiController::refreshDoctor() {
     requestRefresh(RefreshScope::Diagnose);
 }
 
-void GuiController::scheduleDoctor() {
-    QTimer::singleShot(0, this, [this]() {
-        if (!isBusy()) {
-            refreshDoctor();
-        }
-    });
+void GuiController::invalidateHealth() {
+    if (healthInfo_.overall.isEmpty()) {
+        return;
+    }
+    healthInfo_ = HealthInfo{};
+    emit doctorChanged();
 }
 
 // ---------------------------------------------------------------------------
@@ -344,46 +310,29 @@ void GuiController::scheduleDoctor() {
 // ---------------------------------------------------------------------------
 
 bool GuiController::canLaunch() const {
-    return !isBusy() && !isDoctorChecking() && modScanFailures_.isEmpty() &&
-           healthInfo_.overall == QLatin1String("healthy");
+    return !healthInfo_.overall.isEmpty() && healthInfo_.errorCount == 0 &&
+           healthInfo_.warningCount == 0 && modScanFailures_.isEmpty();
 }
 
 QString GuiController::healthSummary() const {
-    if (isDoctorChecking()) return tr("正在检查环境、部署文件与启动链…");
-    const auto items = healthItems();
-    for (const auto& value : items) {
-        const auto item = value.toMap();
-        if (item.value(QStringLiteral("id")).toString().startsWith(QLatin1String("mod-load-failure-"))) {
-            return item.value(QStringLiteral("detail")).toString();
+    if (isDoctorChecking()) return tr("正在检测运行环境…");
+    if (healthInfo_.overall.isEmpty()) return tr("尚未检测。启动只狼时会重新检测。");
+    if (canLaunch()) return tr("环境正常，可以启动。启动前会再检测一次。");
+    if (!modScanFailures_.isEmpty()) return modScanFailures_.first();
+    for (const auto& item : healthInfo_.items) {
+        if (item.status == QLatin1String("error") || item.status == QLatin1String("warning")) {
+            return localizedDetail(item);
         }
     }
-    if (healthInfo_.overall.isEmpty()) return tr("尚未完成诊断，启动前将重新检测。");
-    if (healthInfo_.overall == QLatin1String("healthy") && modScanFailures_.isEmpty()) {
-        return tr("诊断通过，启动前仍会重新检查。");
-    }
-    for (const auto& value : items) {
-        const auto item = value.toMap();
-        if (item.value(QStringLiteral("status")) == QLatin1String("error") ||
-            item.value(QStringLiteral("status")) == QLatin1String("warning")) {
-            return item.value(QStringLiteral("detail")).toString();
-        }
-    }
-    return tr("诊断异常，请处理问题后重新检测。");
+    return tr("检测到问题，请按建议处理后重新检测。");
 }
 
 QString GuiController::healthRemediation() const {
     if (isDoctorChecking()) return {};
-    for (const auto& value : healthItems()) {
-        const auto item = value.toMap();
-        if (item.value(QStringLiteral("id")).toString().startsWith(QLatin1String("mod-load-failure-"))) {
-            return item.value(QStringLiteral("remediation")).toString();
-        }
-    }
-    for (const auto& value : healthItems()) {
-        const auto item = value.toMap();
-        if (item.value(QStringLiteral("status")) == QLatin1String("error") ||
-            item.value(QStringLiteral("status")) == QLatin1String("warning")) {
-            return item.value(QStringLiteral("remediation")).toString();
+    if (!modScanFailures_.isEmpty()) return tr("请重新导入这些模组，或修复其元数据与文件。");
+    for (const auto& item : healthInfo_.items) {
+        if (item.status == QLatin1String("error") || item.status == QLatin1String("warning")) {
+            return localizedRemediation(item);
         }
     }
     return {};
@@ -391,90 +340,110 @@ QString GuiController::healthRemediation() const {
 
 bool GuiController::engineReady() const {
     if (isDoctorChecking() || healthInfo_.overall.isEmpty()) return false;
-    bool hookPresent = false;
-    for (const auto& item : healthInfo_.items) {
-        if (item.id == QLatin1String("dinput8") && item.status == QLatin1String("ok")) {
-            hookPresent = true;
-        }
-        if ((item.category == QLatin1String("modengine") ||
-             item.category == QLatin1String("runtime")) &&
-            (item.status == QLatin1String("error") || item.status == QLatin1String("warning"))) {
-            return false;
-        }
-    }
-    return hookPresent;
+    return !healthProblem(healthInfo_, QStringLiteral("modengine-hook")) &&
+           !healthProblem(healthInfo_, QStringLiteral("modengine-ini"));
 }
 
 QVariantList GuiController::healthItems() const {
     QVariantList list;
     for (const auto& item : healthInfo_.items) {
-        QVariantMap map;
-        map[QStringLiteral("id")] = item.id;
-        map[QStringLiteral("category")] = item.category;
-        map[QStringLiteral("title")] = item.title;
-        map[QStringLiteral("detail")] = item.detail;
-        map[QStringLiteral("status")] = item.status;
-        map[QStringLiteral("remediation")] = item.remediation;
-        if (language_ != QLatin1String("en-US") && item.category == QLatin1String("runtime")) {
-            const bool hook = item.id.endsWith(QLatin1String("-hook"));
-            const QString process = item.id.startsWith(QLatin1String("runtime-launcher-"))
-                                        ? QStringLiteral("SMM")
-                                    : item.id.startsWith(QLatin1String("runtime-steam-"))
-                                        ? QStringLiteral("Steam")
-                                        : QStringLiteral("Sekiro");
-            map[QStringLiteral("title")] =
-                hook ? tr("运行中的 ModEngine 钩子") : tr("%1 DLL 加载策略").arg(process);
-            if (item.detail.contains(QLatin1String("PreferSystem32 is enabled"))) {
-                map[QStringLiteral("detail")] =
-                    tr("%1 优先加载系统 DLL（PreferSystem32），可能绕过游戏目录中的 ModEngine，"
-                       "导致所有模组失效。")
-                        .arg(process);
-                map[QStringLiteral("remediation")] =
-                    tr("完全退出游戏和 Steam，从不带该策略的启动入口重新启动 Steam 与 SMM，再次检测；"
-                       "无需关闭全局 Windows 防护。");
-            } else if (hook && item.status == QLatin1String("error")) {
-                map[QStringLiteral("detail")] =
-                    item.detail.contains(QLatin1String("not loaded"))
-                        ? tr("游戏未加载本地 ModEngine 钩子。文件已部署不代表模组已生效。")
-                        : tr("无法核验游戏加载的 DLL，请先退出游戏并确认安装路径。") +
-                              QStringLiteral(" ") + item.detail;
-                map[QStringLiteral("remediation")] =
-                    tr("完全退出游戏和 Steam，检查启动链后重新启动并再次检测。");
-            } else if (item.status == QLatin1String("ok")) {
-                map[QStringLiteral("detail")] =
-                    hook ? tr("游戏已加载本地 ModEngine 钩子；这不代表每个模组都已验证。")
-                         : tr("%1 未启用优先加载系统 DLL 策略。").arg(process);
-            } else {
-                map[QStringLiteral("detail")] =
-                    tr("无法核验启动链，不能视为诊断通过。") + QStringLiteral(" ") + item.detail;
-                map[QStringLiteral("remediation")] =
-                    tr("等待启动器完成启动，确认可以访问目标进程后重新检测。");
-            }
-        } else if (language_ != QLatin1String("en-US") && item.id == QLatin1String("deployment")) {
-            map[QStringLiteral("title")] = tr("部署文件一致性");
-            map[QStringLiteral("detail")] =
-                item.status == QLatin1String("ok")
-                    ? tr("当前启用文件与部署结果一致，或没有需要部署的文件。")
-                    : tr("部署文件缺失、改变或已过期。") + QStringLiteral(" ") + item.detail;
-            map[QStringLiteral("remediation")] =
-                item.status == QLatin1String("ok") ? QString{} : tr("先部署当前模组组合，再重新检测。");
-        }
-        list.append(map);
-    }
-    for (qsizetype i = 0; i < modScanFailures_.size(); ++i) {
-        list.append(QVariantMap{
-            {QStringLiteral("id"), QStringLiteral("mod-load-failure-%1").arg(i)},
-            {QStringLiteral("category"), tr("模组")},
-            {QStringLiteral("title"), tr("模组读取失败")},
-            {QStringLiteral("detail"), modScanFailures_.at(i)},
-            {QStringLiteral("remediation"),
-             tr("请重新导入该模组，或修复其元数据和文件后重新检测。")},
-            {QStringLiteral("status"), QStringLiteral("error")}});
+        list.append(QVariantMap{{QStringLiteral("id"), item.id},
+                                {QStringLiteral("category"), item.category},
+                                {QStringLiteral("title"), localizedTitle(item)},
+                                {QStringLiteral("detail"), localizedDetail(item)},
+                                {QStringLiteral("status"), item.status},
+                                {QStringLiteral("remediation"), localizedRemediation(item)}});
     }
     return list;
 }
 
 // ---------------------------------------------------------------------------
+// Health presentation: one place that turns the five core items into readable text
+// ---------------------------------------------------------------------------
+
+int GuiController::enabledModCount() const {
+    int enabled = 0;
+    for (const auto& mod : modListModel_.mods()) {
+        if (mod.enabled) {
+            ++enabled;
+        }
+    }
+    return enabled;
+}
+
+QString GuiController::localizedTitle(const DiagnosticEntry& item) const {
+    if (language_ == QLatin1String("en-US")) {
+        return item.title;
+    }
+    if (item.id == QLatin1String("game")) return tr("游戏与 sekiro.exe");
+    if (item.id == QLatin1String("modengine-hook")) return tr("ModEngine 钩子");
+    if (item.id == QLatin1String("modengine-ini")) return tr("modengine.ini 配置");
+    if (item.id == QLatin1String("staging")) return tr("暂存区与模组");
+    if (item.id == QLatin1String("deployment")) return tr("部署文件一致性");
+    return item.title;
+}
+
+QString GuiController::localizedDetail(const DiagnosticEntry& item) const {
+    if (language_ == QLatin1String("en-US")) {
+        return item.detail;
+    }
+    const bool ok = item.status == QLatin1String("ok");
+    if (item.id == QLatin1String("game")) {
+        if (!ok) return tr("找不到游戏目录或其中的 sekiro.exe：%1").arg(sekiroDir_);
+        return tr("已找到 sekiro.exe：%1").arg(sekiroDir_);
+    }
+    if (item.id == QLatin1String("modengine-hook")) {
+        if (ok) return tr("dinput8.dll 已就位，模组加载钩子可用。");
+        if (item.status == QLatin1String("warning")) {
+            return tr("dinput8.dll 体积过小，不是真正的 ModEngine，需要替换。");
+        }
+        return tr("游戏目录缺少 dinput8.dll，模组不会被加载。");
+    }
+    if (item.id == QLatin1String("modengine-ini")) {
+        return ok ? tr("modengine.ini 指向 mods 目录，ModEngine 能找到已部署的模组。")
+                  : tr("modengine.ini 缺失或未指向 mods 目录，ModEngine 看不到已部署的模组。");
+    }
+    if (item.id == QLatin1String("staging")) {
+        // The model's row count is filtered by the armoury's search box; the report is about
+        // every staged mod, so count the full set.
+        QString detail = tr("%1 个模组，%2 个已启用。")
+                             .arg(modListModel_.mods().size())
+                             .arg(enabledModCount());
+        detail += isNtfsMatched_ ? tr("同卷部署使用零拷贝硬链接。")
+                                 : tr("跨卷部署会逐文件复制。");
+        if (!modScanFailures_.isEmpty()) {
+            detail += tr("其中 %1 个模组无法读取。").arg(modScanFailures_.size());
+        }
+        return detail;
+    }
+    if (item.id == QLatin1String("deployment")) {
+        return ok ? tr("当前启用的文件与部署结果一致。")
+                  : tr("部署文件缺失、已改变或已过期。");
+    }
+    return item.detail;
+}
+
+QString GuiController::localizedRemediation(const DiagnosticEntry& item) const {
+    if (language_ == QLatin1String("en-US")) {
+        return item.remediation;
+    }
+    if (item.id == QLatin1String("game")) return tr("在「全局配置」中把游戏目录指向包含 sekiro.exe 的文件夹。");
+    if (item.id == QLatin1String("modengine-hook")) {
+        return tr("把正版 ModEngine 的 dinput8.dll 放进暂存区的 mod-engine 目录，"
+                  "然后在诊断页点击「一键装配 / 修复 ModEngine」。");
+    }
+    if (item.id == QLatin1String("modengine-ini")) {
+        return tr("在诊断页点击「一键装配 / 修复 ModEngine」，SMM 会重写这些开关。");
+    }
+    if (item.id == QLatin1String("staging")) {
+        return modScanFailures_.isEmpty() ? QString{} : tr("重新导入无法读取的模组后再次检测。");
+    }
+    if (item.id == QLatin1String("deployment")) {
+        return item.status == QLatin1String("ok") ? QString{} : tr("先部署当前启用的模组，再重新检测。");
+    }
+    return item.remediation;
+}
+
 // Paths and preferences
 // ---------------------------------------------------------------------------
 
@@ -486,8 +455,8 @@ void GuiController::setSekiroDir(const QString& dir) {
     checkVolumeMatch();
     emit sekiroDirChanged();
     launchPending_ = false;
-    deployLaunchPending_ = false;
-    requestRefresh(RefreshScope::Diagnose);
+    invalidateHealth();
+    requestRefresh(RefreshScope::Scan);
 }
 
 void GuiController::setStagingDir(const QString& dir) {
@@ -499,9 +468,9 @@ void GuiController::setStagingDir(const QString& dir) {
     checkVolumeMatch();
     emit stagingDirChanged();
     launchPending_ = false;
-    deployLaunchPending_ = false;
     updateEquippedModIds();
-    requestRefresh(RefreshScope::Diagnose);
+    invalidateHealth();
+    requestRefresh(RefreshScope::Scan);
 }
 
 void GuiController::publishPreviewStaging() {
@@ -725,7 +694,8 @@ void GuiController::saveSettings(const QString& staging, const QString& game, co
     settings.sync();
 
     if (pathsChanged) {
-        refreshAll();
+        invalidateHealth();
+        requestRefresh(RefreshScope::Scan);
     }
     notify(QStringLiteral("success"), tr("Preferences saved successfully."));
 }
@@ -803,12 +773,10 @@ void GuiController::reportFailure(const QString& title, const std::exception& er
         }
     }
     notify(QStringLiteral("error"), QStringLiteral("%1: %2").arg(title, detail));
-    scheduleDoctor();
 }
 
 void GuiController::reportFailure(const QString& title, const QString& message) {
     notify(QStringLiteral("error"), QStringLiteral("%1: %2").arg(title, message));
-    scheduleDoctor();
 }
 
 void GuiController::setModsEnabled(const QStringList& modIds, bool enabled) {
@@ -992,7 +960,7 @@ void GuiController::importModPack(const QString& packPath) {
         notify(QStringLiteral("success"),
                tr("Pack Imported") + QStringLiteral(": ") +
                    tr("Imported '%1' with %2 mods.").arg(summary->name).arg(summary->modCount));
-        requestRefresh(RefreshScope::Diagnose);
+        requestRefresh(RefreshScope::Scan);
     };
     completion.failure = [this](const QString& message) {
         reportFailure(tr("Pack Import Failed"), message);
@@ -1136,7 +1104,7 @@ void GuiController::applyModPack(const QString& packId) {
     completion.success = [this, appliedName]() {
         notify(QStringLiteral("success"), tr("Preset Applied") + QStringLiteral(": ") +
                                               tr("Preset '%1' equipped.").arg(*appliedName));
-        requestRefresh(RefreshScope::Diagnose);
+        requestRefresh(RefreshScope::Scan);
     };
     completion.failure = [this](const QString& message) {
         reportFailure(tr("Preset Apply Failed"), message);
@@ -1204,29 +1172,17 @@ void GuiController::deploy() {
     TaskRunner::Completion completion;
     completion.success = [this, summary]() {
         ModPreviewImageProvider::clearCache();
-        if (launchAfterDeploy_) {
-            launchAfterDeploy_ = false;
-            launchGame();
-            return;
-        }
         notify(QStringLiteral("success"),
                tr("Deployment succeeded: %1 files linked.")
                    .arg(summary->hardLinks + summary->copies));
-        requestRefresh(RefreshScope::Diagnose);
+        requestRefresh(RefreshScope::Scan);
     };
     completion.cancelled = [this]() {
-        launchAfterDeploy_ = false;
         notify(QStringLiteral("info"), tr("Deployment cancelled; partially deployed files are "
                                           "removed by the next deploy or restore."));
-        requestRefresh(RefreshScope::Diagnose);
+        requestRefresh(RefreshScope::Scan);
     };
     completion.failure = [this](const QString& message) {
-        launchAfterDeploy_ = false;
-        if (deployLaunchPending_) {
-            deployLaunchPending_ = false;
-            emit doctorChanged();
-            emit launchBlocked();
-        }
         reportFailure(tr("Deploy Failed"), message);
     };
 
@@ -1243,15 +1199,6 @@ void GuiController::deploy() {
         completion);
 }
 
-void GuiController::deployAndLaunch() {
-    if (isBusy() || launchPending()) return;
-    deployLaunchPending_ = true;
-    launchPending_ = true;
-    emit doctorChanged();
-    // Deploying without a fresh health check could launch a game whose hook is broken.
-    refreshDoctor();
-}
-
 void GuiController::restore() {
     if (isBusy() || launchPending()) return;
     const QString game = sekiroDir_;
@@ -1261,7 +1208,7 @@ void GuiController::restore() {
     completion.success = [this, summary]() {
         notify(QStringLiteral("info"),
                tr("Restored: %1 links safely unlinked.").arg(summary->removedFiles));
-        requestRefresh(RefreshScope::Diagnose);
+        requestRefresh(RefreshScope::Scan);
     };
     completion.failure = [this](const QString& message) {
         reportFailure(tr("Restore Failed"), message);
@@ -1298,26 +1245,9 @@ void GuiController::completeLaunchCheck() {
         QDir::cleanPath(QDir::fromNativeSeparators(healthInfo_.stagingDir)) ==
             QDir::cleanPath(QDir::fromNativeSeparators(stagingDir_));
     if (!canLaunch() || !pathsMatch) {
-        deployLaunchPending_ = false;
         emit doctorChanged();
         notify(QStringLiteral("error"), tr("启动已阻止：%1").arg(healthSummary()));
         emit launchBlocked();
-        return;
-    }
-    for (const auto& item : healthInfo_.items) {
-        if (item.id.startsWith(QLatin1String("runtime-game-"))) {
-            deployLaunchPending_ = false;
-            emit doctorChanged();
-            notify(QStringLiteral("info"), tr("只狼已在运行，请先退出游戏再启动。"));
-            emit launchBlocked();
-            return;
-        }
-    }
-    if (deployLaunchPending_) {
-        // Deploy first, then launch from the deploy completion once the files are in place.
-        deployLaunchPending_ = false;
-        launchAfterDeploy_ = true;
-        deploy();
         return;
     }
     const QString executable = QDir(sekiroDir_).filePath(QStringLiteral("sekiro.exe"));
@@ -1326,12 +1256,7 @@ void GuiController::completeLaunchCheck() {
         emit launchBlocked();
         return;
     }
-    notify(QStringLiteral("success"), tr("启动前诊断通过，已启动只狼。"));
-    // Steam may relaunch the executable. Re-observe the actual process instead of assuming
-    // a successful CreateProcess means that ModEngine loaded.
-    for (const int delay : {3000, 10000}) {
-        QTimer::singleShot(delay, this, [this]() { requestRefresh(RefreshScope::RuntimeOnly); });
-    }
+    notify(QStringLiteral("success"), tr("启动前检测通过，已启动只狼。"));
 }
 
 bool GuiController::startGameProcess(const QString& executable, const QString& workingDirectory) {

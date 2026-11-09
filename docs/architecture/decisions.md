@@ -34,7 +34,7 @@ CLI 与 GUI 互为"另一个客户端"：同一份 `.smm_mod.json`、`.smm_prese
 
 **理由**：NTFS 同卷硬链接让几十 GB 的贴图包"部署"在毫秒级完成且不占额外空间。跨卷（暂存区在 C:、游戏在 D:）时硬链接非法，只能复制。
 
-**代价**：复制路径会真实占用磁盘，且速度取决于数据量。因此 `hardlink-volume` 是体检项，`DeployResult` 分别统计 `hard_links_created` 与 `copied_files`，让用户看见自己处在哪种模式，而不是以为"零拷贝"永远成立。
+**代价**：复制路径会真实占用磁盘，且速度取决于数据量。因此 `staging` 体检项会写明当前是同卷还是跨卷，`DeployResult` 分别统计 `hard_links_created` 与 `copied_files`，让用户看见自己处在哪种模式，而不是以为"零拷贝"永远成立。
 
 ### 部署清单驱动还原，外加一次清扫
 
@@ -43,6 +43,20 @@ CLI 与 GUI 互为"另一个客户端"：同一份 `.smm_mod.json`、`.smm_prese
 ### SMM 不打包、不伪造 ModEngine
 
 **理由**：上游未声明可再分发许可，SMM 是管理器而不是模组，无法依赖"随模组附带"的授权。`provision_mod_engine()` 只在用户提供 payload 时安装；找不到就抛 `ModEngineSourceMissing`，并在 `MOD_ENGINE_SOURCE_HINT` 里给出获取途径。体检里 `MOD_ENGINE_DLL_MIN_SIZE` 用来识别占位用的假 DLL。
+
+### GUI 声明 `requireAdministrator`，而不是让用户先关 Steam
+
+**选择**：`smm_gui` 的 Windows 清单用 `requireAdministrator`（`QT_WINDOWS_APP_PROJECT_EXECUTION_LEVEL`），每次启动由系统先弹 UAC，再创建窗口。
+
+**理由**：ModEngine 通过游戏目录里的 `dinput8.dll` 加载。非提权的启动链（SMM → Steam → 只狼）会被 Steam 的 `PreferSystem32` DLL 搜索策略抢走系统 `DINPUT8.dll`，所有模组静默失效；以前的规避办法是让用户先完全退出 Steam 再开管理器。提权从源头消掉这条失败模式（实测管理员权限下启动正常），顺带满足"往 `Program Files` 下的 Steam 库写文件需要写权限"这个本就存在的要求。
+
+**代价**：没有管理员权限就无法运行 GUI（对模组管理器是合理要求）；同时 core 里的进程与 DLL 搜索策略体检（原 `runtime_doctor.cpp`）整体删除——问题不再可能出现，留着只会制造噪音。
+
+### 体检只有五项，只在三个入口运行
+
+**选择**：`diagnose_environment()` 把 ini 的三个键、目录与同卷状态、模组读取失败都折叠进各自的条目，总共五项；`Diagnose` 刷新只在打开启动器、点击「启动只狼」、诊断页点「检测环境」时发生，其余写操作只做 `Scan`，路径变更直接丢弃过期结果（`invalidateHealth()`）。
+
+**理由**：条目越细，用户越难判断"下一步该动什么"；轮询式体检让空闲窗口持续扫盘。启动门禁仍然存在，只是从"按钮灰着"变成"点了就检，检出问题就拦下并跳到诊断页"。
 
 ### HuskarUI 作为 submodule，并用脚本打补丁
 
@@ -70,7 +84,7 @@ CLI 与 GUI 互为"另一个客户端"：同一份 `.smm_mod.json`、`.smm_prese
 
 ## 遗留问题
 
-1. **核心诊断文案仍是英文。** `doctor.cpp` 生成的 `title` / `detail` 没有走 `tr()`（core 不链接 Qt）。GUI 目前直接展示，中英混排。若要彻底统一，需要让 core 输出稳定的消息键、由界面翻译。
+1. **核心诊断文案仍是英文。** `doctor.cpp` 生成的 `title` / `detail` 没有走 `tr()`（core 不链接 Qt）。GUI 按五个稳定 `id` 覆盖成中文（`GuiController::localizedTitle/Detail/Remediation`），CLI 保持英文；更彻底的做法是让 core 直接输出消息键。
 2. **外部工具写 `mod.json` 不会生效，还会被删除。** 只有当 `.smm_mod.json` 缺失时才读 `mod.json`，读完立刻迁移；已有 `.smm_mod.json` 的模组，任何 `mod.json` 改动都被忽略，并在下次保存时清掉。
 3. **`.github/PULL_REQUEST_TEMPLATE.md` 仍在引用 `cargo` / `pnpm` 命令**，与当前 C++/CMake 流程不符，需要替换为 `cmake --build` 与 `ctest`。
 4. **`.editorconfig` 的默认缩进是 2 空格**，而现有 C++/QML 实际使用 4 空格；新增文件请与同目录现有文件保持一致，不要被默认值带偏。

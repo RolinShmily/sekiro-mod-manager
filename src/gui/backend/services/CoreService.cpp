@@ -18,7 +18,6 @@
 #include "smm/importer.hpp"
 #include "smm/manager.hpp"
 #include "smm/preset.hpp"
-#include "smm/runtime_doctor.hpp"
 
 namespace smm::gui {
 
@@ -220,37 +219,8 @@ HealthInfo CoreService::diagnose(const QString& gameDir, const QString& stagingD
     }
 }
 
-HealthInfo CoreService::withRuntimeProbe(const HealthInfo& base) {
-    if (base.gameDir.isEmpty()) {
-        return base;
-    }
-    try {
-        HealthInfo combined = base;
-        const auto runtime = toHealthInfo(smm::diagnose_launch_runtime(
-            smm::inspect_launch_runtime(toStdPath(base.gameDir))));
-        combined.items += runtime.items;
-        combined.okCount += runtime.okCount;
-        combined.infoCount += runtime.infoCount;
-        combined.warningCount += runtime.warningCount;
-        combined.errorCount += runtime.errorCount;
-        combined.overall = combined.errorCount    ? QStringLiteral("action_required")
-                           : combined.warningCount ? QStringLiteral("degraded")
-                                                   : QStringLiteral("healthy");
-        const auto rank = [](const QString& status) {
-            return status == QLatin1String("error")     ? 0
-                   : status == QLatin1String("warning") ? 1
-                   : status == QLatin1String("info")    ? 2
-                                                        : 3;
-        };
-        std::stable_sort(combined.items.begin(), combined.items.end(),
-                         [&rank](const DiagnosticEntry& a, const DiagnosticEntry& b) {
-                             return rank(a.status) < rank(b.status);
-                         });
-        return combined;
-    } catch (const std::exception&) {
-        // A probe failure must not erase a usable filesystem report.
-        return base;
-    }
+bool CoreService::isElevated() {
+    return smm::is_process_elevated();
 }
 
 CoreService::DeploymentTelemetry CoreService::deploymentTelemetry(const QString& gameDir) {

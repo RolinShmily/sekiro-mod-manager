@@ -4,12 +4,12 @@
 
 | CTest 名称 | 源文件 | 覆盖 |
 |---|---|---|
-| `smm_doctor_tests` | `src/core/tests/doctor_tests.cpp` | 启动运行时判定、`modengine.ini` 解析与修补幂等性 |
+| `smm_doctor_tests` | `src/core/tests/doctor_tests.cpp` | 五项体检、`modengine.ini` 解析与修补幂等性 |
 | `smm_core_business_tests` | `src/core/tests/core_business_tests.cpp` | 目录解析、id 清洗与改名、优先级重排、部署清单、复用已扫描的体检 |
 | `smm_update_feed_tests` | `src/gui/tests/update_feed_tests.cpp` | 版本比较、清单解析、多语言发布说明、链接生成（零 Qt） |
 | `smm_core_service_tests` | `src/gui/tests/core_service_tests.cpp` | `CoreService` + `CoreMapping` 的无窗口适配层 |
 
-全部是独立可执行文件，不依赖测试框架：`check(条件, "断言名")` 失败即抛异常，进程退出码非零。断言名会被 CI 原样打印，所以要写成能独立读懂的一句话（`"Steam PreferSystem32 blocks"`）。
+全部是独立可执行文件，不依赖测试框架：`check(条件, "断言名")` 失败即抛异常，进程退出码非零。断言名会被 CI 原样打印，所以要写成能独立读懂的一句话（`"wrong engine target blocks even if folder exists"`）。
 
 ## 运行
 
@@ -71,14 +71,16 @@ add_test(NAME smm_core_service_tests
 
 改动 GUI 后至少走一遍：
 
-1. 启动 → 工作台显示诊断摘要，五个导航项都能切换；
+1. 启动 → 工作台显示检测摘要，六个导航项都能切换；
 2. 模组管理：搜索、分类筛选、启停、改顺位、拖拽排序、打开详情抽屉、导出单模组；
 3. 导入一个 `.zip`：完成后列表出现新模组，预览图可选；
 4. 部署：进度徽标出现，完成后 `deployedFiles` 增加，磁盘上是硬链接（同卷）或复制（跨卷）；
 5. 还原：游戏 `mods/` 回到部署前状态，清单被删除；
 6. 整合包：保存 → 应用 → 取消应用 → 导出 → 导入；
-7. 设置页：改语言（立即生效）、改主题（深/浅/跟随系统）、改字体、开"减少动效"；
-8. 关闭动效后重看页面切换与卡片入场：不得有残影停在中间帧。
+7. 环境检测页：五项都能读到结果，点「检测环境」重跑，「一键装配 / 修复 ModEngine」不报错；刻意删掉游戏目录里的 `modengine.ini` 后重跑，页面应给出异常与修复建议；
+8. 设置页：改语言（立即生效）、改主题（深/浅/跟随系统）、改字体、开"减少动效"；主题切换应在一帧内完成，不应出现整窗逐帧重绘的卡顿；
+9. 关闭动效后重看页面切换与卡片入场：不得有残影停在中间帧；
+10. 双击 `SekiroModManager.exe`：应出现 UAC 提示，允许后标题栏与界面正常；拒绝时进程不应继续启动。
 
 ## 静态检查
 

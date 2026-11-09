@@ -36,20 +36,20 @@
 
 ## 刷新管线：一次扫描，一次更新
 
-`GuiController::requestRefresh(RefreshScope)` 有三个档位：
+`GuiController::requestRefresh(RefreshScope)` 有两个档位：
 
 | 档位 | 做什么 | 触发场景 |
 |---|---|---|
 | `Scan` | 扫描暂存区 + 预设 + 冲突 + 计划 + 部署遥测 | 任意写操作成功后 |
-| `Diagnose` | 上面的全部，再加完整环境体检与运行时探测 | 启动、`Ctrl+R`、设置变更、启动前门禁 |
-| `RuntimeOnly` | 只重新观察运行中的进程，复用上一次体检结果 | 10 秒定时器、窗口重新激活 |
+| `Diagnose` | 上面的全部，再加一次完整环境体检 | 打开启动器、点击「启动只狼」、诊断页「检测环境」 |
 
 合并策略：
 
 - `scans_` 忙时把请求记为 `refreshQueued_`，待下一个 `busyChanged(false)` 时重放；
 - 合并期间收到 `Diagnose` 会升级档位，`Scan` 不会把 `Diagnose` 降级；
-- `RuntimeOnly` 在首次体检尚未完成时直接丢弃（没有可注解的基线）；
 - `refreshAll()` 等价于 `Diagnose`。
+
+体检刻意只有三个入口：打开启动器、点击启动、在诊断页显式点击「检测环境」。写操作、失败通知、设置变更只做 `Scan`（或直接丢弃过期的体检结果见 `invalidateHealth()`），因此空闲窗口不会为了诊断去扫盘或枚举进程。
 
 一次性应用：`applyRefresh()` 在一片代码里设置模型、遥测、体检结果，因此界面上看到的模组列表、冲突数、部署文件数永远来自同一次扫描，不会出现"列表是新扫的、计划是旧的"。
 
@@ -71,6 +71,6 @@
 
 ## 定时与生命周期
 
-- 10 秒的运行时定时器只做 `RuntimeOnly`，且 `isBusy() || launchPending()` 时跳过。它是"玩家在游戏里启动/退出"的唯一感知手段，因此不能做完整扫描。
+- 没有周期性诊断定时器：体检只在 [data-flows.md](data-flows.md) 列出的三个入口运行。
 - `TaskRunner`（`tasks_` / `scans_`）与 `UpdateService` 是 `GuiController` 的值成员，随控制器一起析构，不额外挂父对象；动态创建的 `QTimer` 以控制器为父对象。两条路径都保证退出时先置取消标志、再等 worker 结束。
 - `QML` 的 `Loader` 懒加载会让视图在首次进入时才创建，`StackLayout.isCurrentItem` 变化时由 `Main.qml` 播放淡入动画——这些都在界面线程，与后台任务无关。

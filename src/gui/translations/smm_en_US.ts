@@ -293,92 +293,136 @@
         </message>
     </context>
     <context>
-        <name>DoctorModal</name>
+        <name>DiagnosticsView</name>
         <message>
-            <location filename="../qml/components/DoctorModal.qml" line="86" />
-            <source>(通过: %1 · 警告: %2 · 异常: %3)</source>
-            <translation>(Pass: %1 · Warning: %2 · Error: %3)</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="15" />
-            <source>SEKIRO ENVIRONMENT HEALTH DOCTOR · 引擎装配与环境健康透视</source>
-            <translation>SEKIRO ENVIRONMENT HEALTH DOCTOR · Engine Provisioning &amp; Full Health Diagnostics</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="98" />
-            <source>一键装配 / 修复 ModEngine</source>
-            <translation>One-Click Setup / Repair ModEngine</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="205" />
-            <source>修复建议: </source>
-            <translation>Remediation: </translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="14" />
-            <source>只狼游戏环境与 ModEngine 全景诊断</source>
-            <translation>Sekiro Game Environment &amp; ModEngine Diagnostics</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="158" />
-            <source>失败</source>
-            <translation>Fail</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="36" />
-            <source>完成</source>
-            <translation>Done</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="157" />
-            <source>提示</source>
-            <translation>Info</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="77" />
-            <source>环境健康 (Healthy)</source>
-            <translation>Healthy</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="66" />
-            <source>综合健康评级</source>
-            <translation>Overall Health Status</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="156" />
-            <source>警告</source>
-            <translation>Warning</translation>
-        </message>
-        <message>
-            <location filename="../qml/components/DoctorModal.qml" line="155" />
+            <location filename="../qml/views/DiagnosticsView.qml" line="42" />
             <source>通过</source>
             <translation>Pass</translation>
         </message>
         <message>
-            <location filename="../qml/components/DoctorModal.qml" line="78" />
-            <source>配置提示 (Degraded)</source>
-            <translation>Degraded</translation>
+            <location filename="../qml/views/DiagnosticsView.qml" line="43" />
+            <source>警告</source>
+            <translation>Warning</translation>
         </message>
         <message>
-            <location filename="../qml/components/DoctorModal.qml" line="28" />
-            <source>重新检测</source>
-            <translation>Recheck</translation>
+            <location filename="../qml/views/DiagnosticsView.qml" line="44" />
+            <source>提示</source>
+            <translation>Info</translation>
         </message>
         <message>
-            <location filename="../qml/components/DoctorModal.qml" line="79" />
-            <source>需修复 (Action Required)</source>
-            <translation>Action Required</translation>
+            <location filename="../qml/views/DiagnosticsView.qml" line="45" />
+            <source>异常</source>
+            <translation>Error</translation>
         </message>
         <message>
-            <location filename="../qml/components/DoctorModal.qml" line="28" />
-            <location filename="../qml/components/DoctorModal.qml" line="77" />
+            <location filename="../qml/views/DiagnosticsView.qml" line="51" />
+            <source>环境检测</source>
+            <translation>Environment Check</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="52" />
+            <source>五项检查覆盖启动只狼的全部前提。只在打开启动器、点击「启动只狼」与本页「检测环境」时运行。</source>
+            <translation>Five checks cover everything launching Sekiro needs. They only run when the launcher opens, when you press Launch, and when you press Check Environment here.</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="59" />
+            <source>检测中…</source>
+            <translation>Checking…</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="59" />
+            <source>检测环境</source>
+            <translation>Check environment</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="67" />
+            <source>一键装配 / 修复 ModEngine</source>
+            <translation>One-Click Setup / Repair ModEngine</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="124" />
             <source>正在检测…</source>
             <translation>Checking…</translation>
         </message>
         <message>
-            <location filename="../qml/components/DoctorModal.qml" line="109" />
-            <source>启动仅在诊断通过后放行。修复 ModEngine 不会改变进程的 DLL 加载策略；策略异常请按诊断建议重新启动相关程序。</source>
-            <translation>Launch is gated on a passing diagnosis. Repairing ModEngine does not change process DLL search policies; follow the diagnostic advice to restart the affected programs.</translation>
+            <location filename="../qml/views/DiagnosticsView.qml" line="125" />
+            <source>尚未检测</source>
+            <translation>Not checked yet</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="126" />
+            <source>环境健康</source>
+            <translation>Healthy</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="127" />
+            <source>需修复</source>
+            <translation>Needs repair</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="128" />
+            <source>有提示</source>
+            <translation>Has notices</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="137" />
+            <source>通过 %1 · 警告 %2 · 异常 %3</source>
+            <translation>Passed %1 · Warnings %2 · Errors %3</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="148" />
+            <source>管理员权限</source>
+            <translation>Administrator</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="148" />
+            <source>未提权</source>
+            <translation>Not elevated</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="176" />
+            <source>检测项</source>
+            <translation>Checks</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="177" />
+            <source>每项对应一个可以直接处理的对象；异常项会带出修复建议。</source>
+            <translation>Each row maps to one thing you can act on; failing rows carry a fix.</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="183" />
+            <source>还没有检测结果，点击右上角「检测环境」立即检查。</source>
+            <translation>No result yet. Press “Check environment” in the top right to run one now.</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="253" />
+            <source>修复建议：</source>
+            <translation>Fix: </translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="272" />
+            <source>什么时候检测</source>
+            <translation>When checks run</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="273" />
+            <source>诊断是只读操作，不做轮询：没有打开游戏也没有点击检测时，SMM 不会为了诊断去扫描磁盘或进程。</source>
+            <translation>Checks are read-only and never polled: with no game running and no button pressed, SMM does not scan disks or processes for diagnostics.</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="278" />
+            <source>打开启动器时检测一次，结果留在本页与侧栏状态卡。</source>
+            <translation>Opening the launcher runs one check; the result stays on this page and in the sidebar status card.</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="279" />
+            <source>点击「启动只狼」时重新检测一次，通过后才启动游戏。</source>
+            <translation>Pressing Launch runs one more check and only starts the game when it passes.</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/DiagnosticsView.qml" line="280" />
+            <source>在本页点击「检测环境」随时重新检测。</source>
+            <translation>Pressing “Check environment” here re-runs the check at any time.</translation>
         </message>
     </context>
     <context>
@@ -397,31 +441,6 @@
             <location filename="../qml/views/LaunchHubView.qml" line="172" />
             <source>启动只狼</source>
             <translation>Launch Sekiro</translation>
-        </message>
-        <message>
-            <location filename="../qml/views/LaunchHubView.qml" line="137" />
-            <source>诊断通过 · 启动前将再次检查</source>
-            <translation>Diagnosis passed · will recheck before launch</translation>
-        </message>
-        <message>
-            <location filename="../qml/views/LaunchHubView.qml" line="137" />
-            <source>诊断未通过 · 暂不可启动</source>
-            <translation>Diagnosis failed · launch unavailable</translation>
-        </message>
-        <message>
-            <location filename="../qml/views/LaunchHubView.qml" line="153" />
-            <source>已部署 %1 个文件。更换模组组合后请先部署；启动前会核验环境、文件一致性和 DLL 加载策略。</source>
-            <translation>%1 files deployed. Deploy after changing mods; environment, file consistency and DLL load policy are verified before launch.</translation>
-        </message>
-        <message>
-            <location filename="../qml/views/LaunchHubView.qml" line="172" />
-            <source>正在检查…</source>
-            <translation>Checking…</translation>
-        </message>
-        <message>
-            <location filename="../qml/views/LaunchHubView.qml" line="182" />
-            <source>查看诊断</source>
-            <translation>View Diagnostics</translation>
         </message>
         <message>
             <location filename="../qml/views/LaunchHubView.qml" line="325" />
@@ -467,6 +486,41 @@
             <location filename="../qml/views/LaunchHubView.qml" line="248" />
             <source>零拷贝可用</source>
             <translation>Zero-copy ready</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/LaunchHubView.qml" line="172" />
+            <source>正在检测环境…</source>
+            <translation>Checking the environment…</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/LaunchHubView.qml" line="173" />
+            <source>启动前会先检测环境</source>
+            <translation>The environment is checked before launch</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/LaunchHubView.qml" line="174" />
+            <source>检测通过 · 启动前会再检测一次</source>
+            <translation>Passed · checked again before launch</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/LaunchHubView.qml" line="175" />
+            <source>上次检测有提示 · 启动前会再检测一次</source>
+            <translation>Last check had notices · checked again before launch</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/LaunchHubView.qml" line="191" />
+            <source>已部署 %1 个文件。更换模组组合后请先部署；点击启动时先核验环境与文件一致性。</source>
+            <translation>%1 file(s) deployed. Deploy after changing your mod set; launching verifies the environment and deployment first.</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/LaunchHubView.qml" line="210" />
+            <source>正在检测…</source>
+            <translation>Checking…</translation>
+        </message>
+        <message>
+            <location filename="../qml/views/LaunchHubView.qml" line="224" />
+            <source>查看检测</source>
+            <translation>View checks</translation>
         </message>
     </context>
     <context>
@@ -542,24 +596,9 @@
             <translation>Issues</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="237" />
-            <source>检查中…</source>
-            <translation>Checking…</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="238" />
-            <source>诊断通过</source>
-            <translation>Diagnosis passed</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="239" />
             <source>%1 项异常 · %2 项警告</source>
             <translation>%1 error(s) · %2 warning(s)</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="257" />
-            <source>查看诊断</source>
-            <translation>View Diagnostics</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="171" />
@@ -585,6 +624,31 @@
             <location filename="../qml/Main.qml" line="220" />
             <source>运行状态</source>
             <translation>Status</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="183" />
+            <source>环境检测</source>
+            <translation>Environment Check</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="249" />
+            <source>检测中…</source>
+            <translation>Checking…</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="250" />
+            <source>尚未检测</source>
+            <translation>Not checked yet</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="251" />
+            <source>检测通过</source>
+            <translation>Checks passed</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="270" />
+            <source>查看检测</source>
+            <translation>View checks</translation>
         </message>
     </context>
     <context>
@@ -1179,16 +1243,6 @@
             <translation>Asset Update Failed</translation>
         </message>
         <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="240" />
-            <source>Runtime Check Failed</source>
-            <translation>Runtime Check Failed</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="243" />
-            <source>Checking runtime...</source>
-            <translation>Checking runtime...</translation>
-        </message>
-        <message>
             <location filename="../backend/controllers/GuiController.cpp" line="268" />
             <source>Refresh Failed</source>
             <translation>Refresh Failed</translation>
@@ -1204,114 +1258,9 @@
             <translation>Refreshing mods...</translation>
         </message>
         <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="352" />
-            <source>正在检查环境、部署文件与启动链…</source>
-            <translation>Checking environment, deployment and launch chain…</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="360" />
-            <source>尚未完成诊断，启动前将重新检测。</source>
-            <translation>Diagnosis not completed. Will recheck before launch.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="362" />
-            <source>诊断通过，启动前仍会重新检查。</source>
-            <translation>Diagnosis passed. Will recheck before launch.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="371" />
-            <source>诊断异常，请处理问题后重新检测。</source>
-            <translation>Diagnosis failed. Resolve the issues and recheck.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="426" />
-            <source>运行中的 ModEngine 钩子</source>
-            <translation>Loaded ModEngine hook</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="426" />
-            <source>%1 DLL 加载策略</source>
-            <translation>%1 DLL search policy</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="429" />
-            <source>%1 优先加载系统 DLL（PreferSystem32），可能绕过游戏目录中的 ModEngine，导致所有模组失效。</source>
-            <translation>%1 prefers system DLLs (PreferSystem32 is enabled), which may bypass ModEngine in the game directory and cause all mods to fail.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="433" />
-            <source>完全退出游戏和 Steam，从不带该策略的启动入口重新启动 Steam 与 SMM，再次检测；无需关闭全局 Windows 防护。</source>
-            <translation>Fully exit the game and Steam, then restart Steam and SMM from a launcher without this policy. Recheck before launching; no need to disable global Windows protection.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="438" />
-            <source>游戏未加载本地 ModEngine 钩子。文件已部署不代表模组已生效。</source>
-            <translation>The game has not loaded the local ModEngine hook. Deployed files alone do not activate mods.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="439" />
-            <source>无法核验游戏加载的 DLL，请先退出游戏并确认安装路径。</source>
-            <translation>Cannot verify the game’s loaded DLLs. Exit the game and confirm the installation path first.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="442" />
-            <source>完全退出游戏和 Steam，检查启动链后重新启动并再次检测。</source>
-            <translation>Fully exit the game and Steam. Restart the launch chain and recheck.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="445" />
-            <source>游戏已加载本地 ModEngine 钩子；这不代表每个模组都已验证。</source>
-            <translation>The game loaded the local ModEngine hook. This does not verify every individual mod.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="446" />
-            <source>%1 未启用优先加载系统 DLL 策略。</source>
-            <translation>%1 does not prefer system DLLs.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="449" />
-            <source>无法核验启动链，不能视为诊断通过。</source>
-            <translation>Cannot verify the launch chain. This is not a passed check.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="451" />
-            <source>等待启动器完成启动，确认可以访问目标进程后重新检测。</source>
-            <translation>Wait for launchers to finish starting, confirm access to the target process, then recheck.</translation>
-        </message>
-        <message>
             <location filename="../backend/controllers/GuiController.cpp" line="454" />
             <source>部署文件一致性</source>
             <translation>Deployed file consistency</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="457" />
-            <source>当前启用文件与部署结果一致，或没有需要部署的文件。</source>
-            <translation>Enabled files match the current deployment, or no files need deploying.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="458" />
-            <source>部署文件缺失、改变或已过期。</source>
-            <translation>Deployed files are missing, changed or stale.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="460" />
-            <source>先部署当前模组组合，再重新检测。</source>
-            <translation>Deploy the current mod setup, then recheck.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="467" />
-            <source>模组</source>
-            <translation>Mod</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="468" />
-            <source>模组读取失败</source>
-            <translation>Mod failed to load</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="471" />
-            <source>请重新导入该模组，或修复其元数据和文件后重新检测。</source>
-            <translation>Re-import this mod, or repair its metadata and files, then recheck.</translation>
         </message>
         <message>
             <location filename="../backend/controllers/GuiController.cpp" line="535" />
@@ -1647,19 +1596,9 @@
             <translation>Launch blocked: %1</translation>
         </message>
         <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="1311" />
-            <source>只狼已在运行，请先退出游戏再启动。</source>
-            <translation>Sekiro is already running. Exit the game before launching again.</translation>
-        </message>
-        <message>
             <location filename="../backend/controllers/GuiController.cpp" line="1325" />
             <source>启动失败，请检查游戏目录与访问权限。</source>
             <translation>Launch failed. Check the game directory and access permissions.</translation>
-        </message>
-        <message>
-            <location filename="../backend/controllers/GuiController.cpp" line="1329" />
-            <source>启动前诊断通过，已启动只狼。</source>
-            <translation>Pre-launch diagnosis passed. Sekiro is launching.</translation>
         </message>
         <message>
             <location filename="../backend/controllers/GuiController.cpp" line="1344" />
@@ -1705,6 +1644,146 @@
             <location filename="../backend/controllers/GuiController.cpp" line="1431" />
             <source>Copied to clipboard.</source>
             <translation>Copied to clipboard.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="319" />
+            <source>正在检测运行环境…</source>
+            <translation>Checking the running environment…</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="320" />
+            <source>尚未检测。启动只狼时会重新检测。</source>
+            <translation>Not checked yet. Launching Sekiro runs a check.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="321" />
+            <source>环境正常，可以启动。启动前会再检测一次。</source>
+            <translation>The environment is ready. Launching runs one more check.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="328" />
+            <source>检测到问题，请按建议处理后重新检测。</source>
+            <translation>Problems found. Apply the fixes and check again.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="333" />
+            <source>请重新导入这些模组，或修复其元数据与文件。</source>
+            <translation>Re-import these mods, or repair their metadata and files.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="379" />
+            <source>游戏与 sekiro.exe</source>
+            <translation>Game and sekiro.exe</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="380" />
+            <source>ModEngine 钩子</source>
+            <translation>ModEngine hook</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="381" />
+            <source>modengine.ini 配置</source>
+            <translation>modengine.ini settings</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="382" />
+            <source>暂存区与模组</source>
+            <translation>Staging and mods</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="393" />
+            <source>找不到游戏目录或其中的 sekiro.exe：%1</source>
+            <translation>No game directory or sekiro.exe found: %1</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="394" />
+            <source>已找到 sekiro.exe：%1</source>
+            <translation>Found sekiro.exe: %1</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="397" />
+            <source>dinput8.dll 已就位，模组加载钩子可用。</source>
+            <translation>dinput8.dll is in place; the mod loader hook is ready.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="399" />
+            <source>dinput8.dll 体积过小，不是真正的 ModEngine，需要替换。</source>
+            <translation>dinput8.dll is too small to be the real ModEngine; replace it.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="401" />
+            <source>游戏目录缺少 dinput8.dll，模组不会被加载。</source>
+            <translation>The game directory has no dinput8.dll, so no mod will load.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="408" />
+            <source>modengine.ini 指向 mods 目录，ModEngine 能找到已部署的模组。</source>
+            <translation>modengine.ini points at mods, so ModEngine finds the deployment.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="410" />
+            <source>modengine.ini 缺失或未指向 mods 目录，ModEngine 看不到已部署的模组。</source>
+            <translation>modengine.ini is missing or does not point at mods, so ModEngine never sees the deployment.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="413" />
+            <source>%1 个模组，%2 个已启用。</source>
+            <translation>%1 mods, %2 enabled.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="416" />
+            <source>同卷部署使用零拷贝硬链接。</source>
+            <translation>Same volume: deployment uses zero-copy hard links.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="417" />
+            <source>跨卷部署会逐文件复制。</source>
+            <translation>Different volume: deployment copies every file.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="419" />
+            <source>其中 %1 个模组无法读取。</source>
+            <translation>%1 of them cannot be read.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="424" />
+            <source>当前启用的文件与部署结果一致。</source>
+            <translation>The enabled files match the deployment.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="425" />
+            <source>部署文件缺失、已改变或已过期。</source>
+            <translation>Deployed files are missing, changed or stale.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="434" />
+            <source>在「全局配置」中把游戏目录指向包含 sekiro.exe 的文件夹。</source>
+            <translation>Point the game directory in Settings at the folder that contains sekiro.exe.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="436" />
+            <source>把正版 ModEngine 的 dinput8.dll 放进暂存区的 mod-engine 目录，然后在诊断页点击「一键装配 / 修复 ModEngine」。</source>
+            <translation>Put a genuine ModEngine dinput8.dll in the staging mod-engine folder, then press “One-click setup / repair ModEngine” on the diagnostics page.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="440" />
+            <source>在诊断页点击「一键装配 / 修复 ModEngine」，SMM 会重写这些开关。</source>
+            <translation>Press “One-click setup / repair ModEngine” on the diagnostics page; SMM rewrites these switches.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="443" />
+            <source>重新导入无法读取的模组后再次检测。</source>
+            <translation>Re-import the unreadable mods, then check again.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="446" />
+            <source>先部署当前启用的模组，再重新检测。</source>
+            <translation>Deploy the enabled mods first, then check again.</translation>
+        </message>
+        <message>
+            <location filename="../../../../Projects/sekiro-mods/src/gui/backend/controllers/GuiController.cpp" line="1314" />
+            <source>启动前检测通过，已启动只狼。</source>
+            <translation>The pre-launch check passed; Sekiro is starting.</translation>
         </message>
     </context>
     <context>

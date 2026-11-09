@@ -71,10 +71,15 @@ ModCard {
 - 键盘可达：`Keys.onSpacePressed` / `onReturnPressed` / `onEnterPressed` 都触发点击，`activeFocus` 时显示 2px 主色焦点环。
 - `Accessible.role: Accessible.Button`。
 
-## SavePackModal / DoctorModal
+## SavePackModal
 
 - `SavePackModal`：`packName`、`packDesc`、`packNameEn`、`packDescEn` 四个属性，`submitSave()` 调 `smmBackend.saveModPack(...)`；中英双语字段对应 `.smm_presets.json` 里的 `name_en` / `description_en`。
-- `DoctorModal`：只读展示 `healthItems`，按 `status` 上色；修复动作是弹窗里的显式按钮（如 `setup-engine`），不会自动改盘。
+
+## DiagnosticsView — 环境检测页
+
+- 只读展示 `healthItems`（五项），按 `status` 给图标与标签上色，异常项带出 `remediation`。
+- 两个动作都在页头：「检测环境」重跑体检，「一键装配 / 修复 ModEngine」调 `smmBackend.setupEngine()`；修复不会在检测过程中自动发生。
+- 以前这是 `DoctorModal` 弹窗，改成分页后诊断不再打断操作，结果也能停留、可回看。
 
 ## 组合规则
 

@@ -130,11 +130,16 @@ ScrollView {
                             implicitWidth: 7
                             implicitHeight: 7
                             radius: 3.5
-                            color: smmBackend.canLaunch ? HusTheme.Primary.colorSuccess : HusTheme.Primary.colorWarning
+                            color: smmBackend.healthOverall === "" ? HusTheme.Primary.colorTextQuaternary
+                                   : smmBackend.canLaunch ? HusTheme.Primary.colorSuccess
+                                   : HusTheme.Primary.colorWarning
                         }
 
                         HusText {
-                            text: smmBackend.canLaunch ? qsTr("诊断通过 · 启动前将再次检查") : qsTr("诊断未通过 · 暂不可启动")
+                            text: smmBackend.isDoctorChecking ? qsTr("正在检测环境…")
+                                  : smmBackend.healthOverall === "" ? qsTr("启动前会先检测环境")
+                                  : smmBackend.canLaunch ? qsTr("检测通过 · 启动前会再检测一次")
+                                  : qsTr("上次检测有提示 · 启动前会再检测一次")
                             font.pixelSize: 14
                             color: HusTheme.Primary.colorTextSecondary
                         }
@@ -150,7 +155,7 @@ ScrollView {
                     HusText {
                         Layout.fillWidth: true
                         Layout.maximumWidth: 560
-                        text: qsTr("已部署 %1 个文件。更换模组组合后请先部署；启动前会核验环境、文件一致性和 DLL 加载策略。")
+                        text: qsTr("已部署 %1 个文件。更换模组组合后请先部署；点击启动时先核验环境与文件一致性。")
                               .arg(smmBackend.deployedFiles)
                         font.pixelSize: 14
                         color: HusTheme.Primary.colorTextTertiary
@@ -169,8 +174,8 @@ ScrollView {
                             implicitWidth: 140
                             type: HusButton.Type_Primary
                             objectName: "launchButton"
-                            text: smmBackend.launchPending ? qsTr("正在检查…") : qsTr("启动只狼")
-                            enabled: smmBackend.canLaunch && !smmBackend.launchPending
+                            text: smmBackend.launchPending ? qsTr("正在检测…") : qsTr("启动只狼")
+                            enabled: smmBackend.launchEnabled
                             onClicked: smmBackend.launchGame()
                         }
 
@@ -181,8 +186,9 @@ ScrollView {
                             // 浅色主题下首屏是明亮的画作，默认文本按钮会糊进背景；跟随正文色
                             // 而不是主色，才在深浅两套主题里都够对比度。
                             colorText: HusTheme.Primary.colorTextPrimary
-                            visible: !smmBackend.canLaunch && !smmBackend.launchPending
-                            text: qsTr("查看诊断")
+                            visible: smmBackend.healthOverall !== "" && !smmBackend.canLaunch
+                                     && !smmBackend.launchPending
+                            text: qsTr("查看检测")
                             onClicked: rootView.requestDiagnosis()
                         }
 
@@ -191,7 +197,7 @@ ScrollView {
                             implicitHeight: 40
                             implicitWidth: 110
                             text: qsTr("仅部署")
-                            enabled: !smmBackend.isBusy && !smmBackend.launchPending
+                            enabled: smmBackend.launchEnabled
                             onClicked: smmBackend.deploy()
                         }
 
@@ -201,7 +207,7 @@ ScrollView {
                         HusButton {
                             implicitHeight: 40
                             text: qsTr("纯净还原")
-                            enabled: !smmBackend.isBusy && !smmBackend.launchPending
+                            enabled: smmBackend.launchEnabled
                             onClicked: smmBackend.restore()
                         }
 

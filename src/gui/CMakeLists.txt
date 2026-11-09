@@ -113,12 +113,12 @@ qt_add_qml_module(smm_gui
         qml/views/ModPackView.qml
         qml/views/SettingsView.qml
         qml/views/AboutView.qml
+        qml/views/DiagnosticsView.qml
         qml/components/PageHeader.qml
         qml/components/SectionCard.qml
         qml/components/ModCard.qml
         qml/components/ModDrawer.qml
         qml/components/SavePackModal.qml
-        qml/components/DoctorModal.qml
         qml/components/NavItem.qml
 )
 
@@ -193,6 +193,19 @@ set_target_properties(smm_gui PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     WIN32_EXECUTABLE $<CONFIG:Release>
+
+    # Sekiro Mod Manager runs elevated on purpose (Qt writes this into the generated
+    # <target>.exe.manifest).
+    #
+    # ModEngine is loaded through the game's local dinput8.dll. In an unelevated launch chain
+    # (SMM -> Steam -> Sekiro) Steam's PreferSystem32 DLL search policy makes the game load the
+    # system DINPUT8.dll instead, so every mod silently stops working; the old workaround was
+    # asking users to close Steam before opening the manager. Requesting administrator rights up
+    # front removes that failure mode entirely. Writing into the Steam library (usually under
+    # Program Files) needs the same rights anyway. "首次运行就弹 UAC" is therefore the Windows
+    # policy applied on every start, before any window is created.
+    QT_WINDOWS_APP_PROJECT_IDENTIFIER "com.rol1nsrp.sekiromodmanager"
+    QT_WINDOWS_APP_PROJECT_EXECUTION_LEVEL requireAdministrator
 )
 
 add_executable(smm-gui ALIAS smm_gui)

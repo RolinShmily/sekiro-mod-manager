@@ -19,9 +19,7 @@
 
 ## 已知的翻译缺口
 
-1. **核心诊断文案是英文**。`src/core/src/doctor.cpp` 里的 `DiagnosticItem::title` / `detail` / `remediation` 是硬编码英文，因为 core 不链接 Qt、不能用 `tr()`。结果是在中文界面里混着 `Game Directory`、`modengine.ini` 这类英文行。
-   - 短期：这些内容本身多为路径与键名，混排可接受。
-   - 长期：core 输出稳定消息键，由界面翻译。改之前先看 [../architecture/decisions.md](../architecture/decisions.md) 的遗留问题。
+1. **核心诊断文案是英文，界面按 id 覆盖**。`src/core/src/doctor.cpp` 仍然输出英文（core 不链接 Qt），但体检只有五个稳定 `id`：`GuiController::localizedTitle/Detail/Remediation` 按 id 给出中文，并把模组数量、同卷/跨卷等实时数据拼进文案。新增体检项时要同时补这三处映射，否则该项在中文界面里退回英文。
 2. **CLI 没有本地化**。`src/cli` 只有英文，且面向脚本与 CI，这是有意的。
 3. **分类名不翻译也不该翻译**。`weapon_skin`、`ui` 是元数据取值，界面用 `smmBackend.categoryLabel()` 统一映射成显示名，不要在各视图里各写一份映射。
 

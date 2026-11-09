@@ -15,15 +15,14 @@
 ```
 HusWindow (Main.qml)
 ├── HusCaptionBar            40px：品牌标识 + 主题切换 + 系统按钮
-├── 左侧导航导轨             208px：Logo 区、5 个 NavItem、底部运行状态卡
-├── 内容舞台                 StackLayout，5 页，切换时 180ms 淡入
+├── 左侧导航导轨             208px：Logo 区、6 个 NavItem、底部运行状态卡
+├── 内容舞台                 StackLayout，6 页，切换时 180ms 淡入
 ├── ModDrawer               右侧详情抽屉（全局单例）
-├── DoctorModal             体检弹窗
 ├── SavePackModal           保存整合包弹窗
 └── Toast 浮层              顶部居中，按严重程度 3.2s / 5.5s / 7s
 ```
 
-五个页面：启动与工作台（`LaunchHubView`）、模组管理（`ArmouryView`）、整合包预设（`ModPackView`）、全局配置（`SettingsView`）、关于（`AboutView`）。
+六个页面：启动与工作台（`LaunchHubView`）、模组管理（`ArmouryView`）、整合包预设（`ModPackView`）、环境检测（`DiagnosticsView`）、全局配置（`SettingsView`）、关于（`AboutView`）。
 
 ## 分册目录
 

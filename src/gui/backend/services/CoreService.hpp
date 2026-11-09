@@ -46,8 +46,8 @@ public:
     /// of walking the tree again; pass nullptr to scan inside core.
     static HealthInfo diagnose(const QString& gameDir, const QString& stagingDir,
                                const Snapshot* snapshot);
-    /// Re-evaluates only the parts that can change while the GUI runs (running processes).
-    static HealthInfo withRuntimeProbe(const HealthInfo& base);
+    /// True when the process runs with an administrator token.
+    static bool isElevated();
 
     /// Deployed file count and linked bytes, read from the manifest core owns.
     struct DeploymentTelemetry {

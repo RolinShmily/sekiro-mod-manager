@@ -25,7 +25,7 @@ HusWindow {
     }
 
     // 页面顺序与导航栏一致；StackLayout 的下标由它推导，避免嵌套三元表达式随页面增加而失控。
-    readonly property var navOrder: ["hub", "armoury", "packs", "settings", "about"]
+    readonly property var navOrder: ["hub", "armoury", "packs", "diagnostics", "settings", "about"]
     property string currentNav: "hub"
 
     /// 后台任务进行中（部署/导入/扫描/诊断），用于底部状态条
@@ -47,11 +47,15 @@ HusWindow {
     Shortcut { sequence: "Ctrl+1"; onActivated: mainWindow.currentNav = "hub" }
     Shortcut { sequence: "Ctrl+2"; onActivated: mainWindow.currentNav = "armoury" }
     Shortcut { sequence: "Ctrl+3"; onActivated: mainWindow.currentNav = "packs" }
-    Shortcut { sequence: "Ctrl+4"; onActivated: mainWindow.currentNav = "settings" }
+    Shortcut { sequence: "Ctrl+4"; onActivated: mainWindow.currentNav = "diagnostics" }
+    Shortcut { sequence: "Ctrl+5"; onActivated: mainWindow.currentNav = "settings" }
     Shortcut { sequence: "Ctrl+,"; onActivated: mainWindow.currentNav = "settings" }
     Shortcut {
         sequence: "Ctrl+R"
-        onActivated: if (smmBackend && !smmBackend.isBusy) smmBackend.refreshDoctor()
+        onActivated: {
+            mainWindow.currentNav = "diagnostics";
+            if (smmBackend && !smmBackend.isBusy) smmBackend.refreshDoctor();
+        }
     }
     Shortcut {
         sequence: "Ctrl+F"
@@ -176,6 +180,14 @@ HusWindow {
 
                 NavItem {
                     Layout.fillWidth: true
+                    label: qsTr("环境检测")
+                    iconSource: HusIcon.SafetyCertificateOutlined
+                    active: mainWindow.currentNav === "diagnostics"
+                    onClicked: mainWindow.currentNav = "diagnostics"
+                }
+
+                NavItem {
+                    Layout.fillWidth: true
                     label: qsTr("全局配置")
                     iconSource: HusIcon.SettingOutlined
                     active: mainWindow.currentNav === "settings"
@@ -192,7 +204,7 @@ HusWindow {
 
                 Item { Layout.fillHeight: true }
 
-                // 运行状态摘要（点击唤起全景健康诊断）
+                // 运行状态摘要（点击进入环境检测页）
                 Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: statusCol.implicitHeight + 24
@@ -204,7 +216,7 @@ HusWindow {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: doctorModal.open()
+                        onClicked: mainWindow.currentNav = "diagnostics"
                     }
 
                     ColumnLayout {
@@ -226,7 +238,7 @@ HusWindow {
                             Item { Layout.fillWidth: true }
 
                             HusText {
-                                text: qsTr("诊断 ↗")
+                                text: qsTr("检测 ↗")
                                 font.pixelSize: 12
                                 color: HusTheme.Primary.colorPrimary
                             }
@@ -234,17 +246,20 @@ HusWindow {
 
                         HusText {
                             Layout.fillWidth: true
-                            text: smmBackend.isDoctorChecking ? qsTr("检查中…") :
-                                  smmBackend.healthOverall === "healthy" ? qsTr("诊断通过") :
-                                  qsTr("%1 项异常 · %2 项警告").arg(smmBackend.healthErrorCount).arg(smmBackend.healthWarnCount)
+                            text: smmBackend.isDoctorChecking ? qsTr("检测中…")
+                                  : smmBackend.healthOverall === "" ? qsTr("尚未检测")
+                                  : smmBackend.canLaunch ? qsTr("检测通过")
+                                  : qsTr("%1 项异常 · %2 项警告").arg(smmBackend.healthErrorCount).arg(smmBackend.healthWarnCount)
                             font.pixelSize: 13
                             font.bold: true
                             wrapMode: Text.WordWrap
-                            color: smmBackend.canLaunch ? HusTheme.Primary.colorSuccess : HusTheme.Primary.colorWarning
+                            color: smmBackend.healthOverall === "" ? HusTheme.Primary.colorTextTertiary
+                                   : smmBackend.canLaunch ? HusTheme.Primary.colorSuccess
+                                   : HusTheme.Primary.colorWarning
                         }
                         HusText {
                             Layout.fillWidth: true
-                            visible: smmBackend.healthOverall !== "healthy"
+                            visible: smmBackend.healthOverall !== "" && !smmBackend.canLaunch
                             text: smmBackend.healthSummary
                             font.pixelSize: 12
                             wrapMode: Text.Wrap
@@ -254,8 +269,8 @@ HusWindow {
                         }
                         HusButton {
                             Layout.fillWidth: true
-                            text: qsTr("查看诊断")
-                            onClicked: doctorModal.open()
+                            text: qsTr("查看检测")
+                            onClicked: mainWindow.currentNav = "diagnostics"
                         }
 
                         Repeater {
@@ -346,7 +361,7 @@ HusWindow {
 
             Loader {
                 sourceComponent: LaunchHubView {
-                    onRequestDiagnosis: doctorModal.open()
+                    onRequestDiagnosis: mainWindow.currentNav = "diagnostics"
                     onNavigateToArmoury: mainWindow.currentNav = "armoury"
                     onNavigateToModPacks: mainWindow.currentNav = "packs"
                 }
@@ -383,6 +398,18 @@ HusWindow {
                 sourceComponent: ModPackView {
                     onRequestSavePack: savePackModal.open()
                 }
+            }
+
+            Loader {
+                objectName: "diagnosticsLoader"
+                property bool visited: false
+                active: visited || StackLayout.isCurrentItem
+                asynchronous: true
+                onLoaded: {
+                    visited = true;
+                    if (StackLayout.isCurrentItem) stageStack.animatePage();
+                }
+                sourceComponent: DiagnosticsView {}
             }
 
             Loader {
@@ -458,10 +485,6 @@ HusWindow {
 
     ModDrawer {
         id: modDrawer
-    }
-
-    DoctorModal {
-        id: doctorModal
     }
 
     SavePackModal {
@@ -576,7 +599,7 @@ HusWindow {
 
     Connections {
         target: smmBackend
-        function onLaunchBlocked() { doctorModal.open(); }
+        function onLaunchBlocked() { mainWindow.currentNav = "diagnostics"; }
         function onNotification(type, message) {
             toastBanner.show(type, message);
         }

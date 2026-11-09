@@ -24,7 +24,7 @@
 
 ### 平台代码
 
-Windows 专属 API 放在 `#ifdef _WIN32` 后面，并给出非 Windows 的降级分支（哪怕只是 `fail(Unsupported)`）。`executor.cpp`、`runtime_doctor.cpp`、`doctor.cpp` 是参考实现。
+Windows 专属 API 放在 `#ifdef _WIN32` 后面，并给出非 Windows 的降级分支（哪怕只是 `fail(Unsupported)`）。`executor.cpp`、`doctor.cpp` 是参考实现。
 
 ### 注释
 
@@ -54,7 +54,7 @@ Windows 专属 API 放在 `#ifdef _WIN32` 后面，并给出非 Windows 的降�
 ## 测试
 
 - 测试是独立可执行文件，不引入测试框架；`check(condition, "name")` 失败即抛异常，进程退出码非零。
-- 每个断言的名字要能被单独读懂（`"Steam PreferSystem32 blocks"`），因为 CI 只会打印它。
+- 每个断言的名字要能被单独读懂（`"stale deployment blocks"`），因为 CI 只会打印它。
 
 ## 文档
 
