@@ -26,7 +26,8 @@ endif()
 # add_compile_options() is directory-scoped and inherited by every subdirectory added afterwards,
 # which silently put vendor code under /W4: a clean build then printed ~100 unused-parameter
 # warnings from HuskarUI and buried anything we actually wrote. Third-party targets get /W0
-# at the point they are declared instead - see third_party/CMakeLists.txt and src/gui.
+# at the point they are declared instead - see src/core/third_party/CMakeLists.txt and
+# src/gui/CMakeLists.txt.
 add_library(smm_warnings INTERFACE)
 add_library(smm::warnings ALIAS smm_warnings)
 if(MSVC)
@@ -68,7 +69,6 @@ if(SMM_BUILD_TESTS)
     enable_testing()
 endif()
 
-add_subdirectory(third_party)
 add_subdirectory(src/core)
 
 if(BUILD_CLI)

@@ -1,3 +1,5 @@
+add_subdirectory(third_party)
+
 add_library(smm_core STATIC
     src/error.cpp
     src/types.cpp

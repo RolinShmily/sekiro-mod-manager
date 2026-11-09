@@ -47,7 +47,7 @@ cmake --build --preset build-release
 ./build/msvc-x64-debug/src/cli/smm.exe doctor --json
 
 # Run QML linting (ensure Qt bin is in PATH)
-qmllint.exe -I third_party/HuskarUI/src/imports -I src/gui/qml src/gui/qml/Main.qml src/gui/qml/components/*.qml src/gui/qml/views/*.qml
+qmllint.exe -I src/gui/third_party/HuskarUI/src/imports -I src/gui/qml src/gui/qml/Main.qml src/gui/qml/components/*.qml src/gui/qml/views/*.qml
 ```
 
 ---

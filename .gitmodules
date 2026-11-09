@@ -1,3 +1,3 @@
-[submodule "third_party/HuskarUI"]
-	path = third_party/HuskarUI
+[submodule "src/gui/third_party/HuskarUI"]
+	path = src/gui/third_party/HuskarUI
 	url = https://github.com/mengps/HuskarUI.git

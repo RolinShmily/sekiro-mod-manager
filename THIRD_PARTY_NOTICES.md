@@ -9,7 +9,7 @@ below. Each component's full licence text is kept next to its source.
 
 - Upstream: https://github.com/nlohmann/json
 - Licence: MIT — Copyright (c) 2013-2023 Niels Lohmann
-- Text: `third_party/nlohmann/LICENSE`
+- Text: `src/core/third_party/nlohmann/LICENSE`
 - Used for: parsing `mod.json` and emitting the CLI's `--json` output. Vendored as a single header
   because it is a header-only library and a package manager would be a heavier dependency than the
   file itself.
@@ -19,7 +19,7 @@ below. Each component's full licence text is kept next to its source.
 - Upstream: https://github.com/richgel999/miniz
 - Licence: MIT — Copyright 2013-2014 RAD Game Tools and Valve Software; Copyright 2010-2014 Rich
   Geldreich and Tenacious Software LLC
-- Text: `third_party/miniz/LICENSE`
+- Text: `src/core/third_party/miniz/LICENSE`
 - Used for: reading and writing `.zip` archives (mod import, `.smmpack` export). Built as a static
   library at `/W0`: the warning policy in the root `CMakeLists.txt` applies to first-party code
   only, so vendor code does not have to satisfy it.
@@ -31,7 +31,7 @@ below. Each component's full licence text is kept next to its source.
 
 - Upstream: https://github.com/mengps/HuskarUI
 - Licence: MIT — Copyright (c) 2024 mengps (MenPenS)
-- Text: `third_party/HuskarUI/LICENSE` (inside the submodule)
+- Text: `src/gui/third_party/HuskarUI/LICENSE` (inside the submodule)
 - Used for: the entire QML component library behind `smm_gui` (Ant-Design-style controls:
   `HusWindow`, `HusButton`, `HusCard`, `HusModal`, `HusDrawer`, `HusSelect`, `HusSwitch`,
   `HusSegmented`, `HusEmpty`, `HusTag`, `HusDivider`, `HusInput`, `HusIconText`, …), plus the

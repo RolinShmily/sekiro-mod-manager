@@ -25,9 +25,9 @@ SMM links against and incorporates several open-source libraries. Each is govern
 
 | Component | Upstream / Author | License | Usage in SMM |
 | :--- | :--- | :--- | :--- |
-| **HuskarUI** | [mengps/HuskarUI](https://github.com/mengps/HuskarUI) | **MIT** | Modern Ant Design style QML UI component library, theme tokens, and icon fonts (`third_party/HuskarUI`) |
-| **nlohmann/json** | [nlohmann/json](https://github.com/nlohmann/json) | **MIT** | Header-only JSON library for metadata parsing and JSON serialization (`third_party/nlohmann/`) |
-| **miniz** | [richgel999/miniz](https://github.com/richgel999/miniz) | **MIT** | Lossless data compression and ZIP archive reader/writer for mod import and `.smmpack` export (`third_party/miniz/`) |
+| **HuskarUI** | [mengps/HuskarUI](https://github.com/mengps/HuskarUI) | **MIT** | Modern Ant Design style QML UI component library, theme tokens, and icon fonts (`src/gui/third_party/HuskarUI`) |
+| **nlohmann/json** | [nlohmann/json](https://github.com/nlohmann/json) | **MIT** | Header-only JSON library for metadata parsing and JSON serialization (`src/core/third_party/nlohmann/`) |
+| **miniz** | [richgel999/miniz](https://github.com/richgel999/miniz) | **MIT** | Lossless data compression and ZIP archive reader/writer for mod import and `.smmpack` export (`src/core/third_party/miniz/`) |
 | **Qt 6** | [The Qt Company](https://www.qt.io/) | **LGPLv3** / GPLv3 | Dynamic C++ / QML application framework. SMM dynamically links Qt 6 shared libraries and does not modify Qt itself. |
 
 Detailed third-party copyright texts, vendor notices, and build flags are provided in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

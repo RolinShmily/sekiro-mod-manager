@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Automated patch script for third_party/HuskarUI.
+Automated patch script for src/gui/third_party/HuskarUI.
 Ensures HuskarUI builds reliably on standard Qt 6 installations without ShaderTools,
 and includes crash fixes for HusSegmented and button tactile transitions.
 """
@@ -31,9 +31,9 @@ def patch_file(filepath, replacements):
 
 def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    huskarui_dir = os.path.join(repo_root, "third_party", "HuskarUI")
+    huskarui_dir = os.path.join(repo_root, "src", "gui", "third_party", "HuskarUI")
     if not os.path.exists(huskarui_dir):
-        print("[patch_huskarui] third_party/HuskarUI not found, skipping.")
+        print("[patch_huskarui] src/gui/third_party/HuskarUI not found, skipping.")
         return 0
 
     # 1. Patch src/CMakeLists.txt: remove required ShaderTools & conditionally wrap qt_add_shaders

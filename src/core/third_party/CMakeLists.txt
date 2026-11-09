@@ -1,5 +1,9 @@
-# Vendored third-party code. Deliberately minimal: the GUI's UI toolkit (ElaWidgetTools) is a
-# git submodule consumed by src/gui/CMakeLists.txt, not from here.
+# Vendored third-party code owned by the core library.
+#
+# These two libraries belong to smm_core and nothing else: json is part of the core's public
+# types, miniz backs archive import/export. Keeping them next to their consumer means the
+# dependency is visible where it is used and `core-only` builds do not need the GUI tree.
+# The GUI's UI toolkit (HuskarUI) is a submodule consumed by src/gui/CMakeLists.txt instead.
 
 # ---------------------------------------------------------------------------
 # nlohmann/json - header-only JSON.
@@ -14,7 +18,7 @@ add_library(smm::json ALIAS smm_json)
 
 # ---------------------------------------------------------------------------
 # miniz - zip container reading/writing for mod import and modpack export.
-# Public domain / MIT (see third_party/miniz/LICENSE).
+# Public domain / MIT (see miniz/LICENSE).
 # ---------------------------------------------------------------------------
 add_library(smm_miniz STATIC
     miniz/miniz.c
