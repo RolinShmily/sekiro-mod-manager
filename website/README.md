@@ -4,7 +4,7 @@ Sekiro Mod Manager 产品展示网站：介绍桌面工作台、模组管理能�
 
 官网：<https://sekiro.srprolin.com/>。
 
-技术栈：**Next.js 16 / React 19 / TypeScript / Tailwind CSS 4 / Radix UI / Lucide / Motion / Cloudflare Workers**。App Router 静态导出，不需要 Next.js 运行服务器。依赖版本固定在 `package.json` 和 `package-lock.json`。
+技术栈：**Vite 8 / React 19 / TypeScript / Tailwind CSS 4 / Radix UI / Lucide / Motion / Cloudflare Workers**。单页应用（SPA），构建时把首页预渲染成静态 HTML；不需要任何运行服务器。依赖版本固定在 `package.json` 和 `package-lock.json`。
 
 ## 本地运行
 
@@ -16,7 +16,7 @@ npm ci --ignore-scripts
 npm run dev
 ```
 
-开发地址：`http://127.0.0.1:3000`。
+开发地址：`http://127.0.0.1:5173`。开发服务器只提供空壳 `#root`，由 React 在浏览器里渲染；生产构建才带预渲染内容，因此两种模式下客户端分别走 `createRoot` 与 `hydrateRoot`（见 `src/main.tsx`）。
 
 生产预览：
 
@@ -27,7 +27,7 @@ npm run build
 npm run preview
 ```
 
-打开 `http://127.0.0.1:4173/`。`build` 自动打包当前 `skills/smm-cli`，生成 `public/downloads/smm-cli.zip` 和大小 / SHA-256 元数据，再静态导出到 `website/out/`。技能包仅包含技能说明、命令参考、调用脚本和 MIT LICENSE，不包含 CLI、模组或测试数据。
+打开 `http://127.0.0.1:4173/`。`build` 自动打包当前 `skills/smm-cli`，生成 `public/downloads/smm-cli.zip` 和大小 / SHA-256 元数据，然后依次执行三次构建步骤：`vite build` 产出 `dist/`（脚本与样式在 `dist/static/`），`vite build --ssr src/entry-server.tsx` 产出 `.ssr/entry-server.js`，`node scripts/prerender.mjs` 用 `react-dom/server` 渲染首页并注入 `dist/index.html` 的 `#root`，最后删除 `.ssr/`。预渲染失败只打印警告，仍然产出可用的纯客户端构建。技能包仅包含技能说明、命令参考、调用脚本和 MIT LICENSE，不包含 CLI、模组或测试数据。
 
 ## 页面
 
@@ -42,7 +42,7 @@ npm run preview
 
 ## 软件下载
 
-支持通过环境变量 `NEXT_PUBLIC_DOWNLOAD_MIRROR`（或 `NEXT_PUBLIC_GH_PROXY`）自定义配置默认加速源（缺省为 `https://gh-proxy.org/`）。
+支持通过环境变量 `VITE_DOWNLOAD_MIRROR`（或 `VITE_GH_PROXY`）自定义配置默认加速源（缺省为 `https://gh-proxy.org/`）。
 
 页面提供「加速源 · 默认」与「GitHub 原生」下载通道切换按钮，并自动将用户选择记忆在 `localStorage`（键名 `smm_download_source`）中，切换时即时同步更新安装包、便携版和独立 CLI 的下载链接。
 
@@ -58,7 +58,7 @@ gh api repos/RolinShmily/sekiro-mod-manager/releases/latest > public/release.jso
 
 ## Cloudflare Workers
 
-仓库根 `wrangler.toml` 定义静态 Worker `sekiro-mod-manager`，资源目录 `website/out/`。正式域名 `sekiro.srprolin.com` 的 DNS 和域名路由沿用 Cloudflare 控制台中的现有配置。缺失资源返回 404，不把 ZIP / JSON 请求回退成首页；没有服务器入口代码。
+仓库根 `wrangler.toml` 定义静态 Worker `sekiro-mod-manager`，资源目录 `website/dist/`。正式域名 `sekiro.srprolin.com` 的 DNS 和域名路由沿用 Cloudflare 控制台中的现有配置。缺失资源返回 404，不把 ZIP / JSON 请求回退成首页；没有服务器入口代码。`public/_headers` 给 `dist/static/` 下的哈希构建产物加上一年不可变缓存，`release.json` 与 `downloads/` 保持 no-cache。
 
 CI `website.yml` 在网站 / Skill 改动时运行测试、类型检查、构建并上传 `smm-website` 产物。`main` 推送通过验证后自动部署到 Cloudflare；Pull Request 只验证。也支持手动触发部署。使用仓库 Secrets：
 
@@ -78,7 +78,7 @@ npx --yes wrangler@4.147.0 deploy --config wrangler.toml
 
 ## 子路径
 
-需要 GitHub Pages 式仓库路径时，在构建时设置 `NEXT_PUBLIC_BASE_PATH=/sekiro-mod-manager`。Windows Git Bash 同时设置 `MSYS_NO_PATHCONV=1`，避免前缀被转换为本地路径。图片、静态纹理、Skill 链接、favicon 和 release snapshot 都适配此前缀；preview 自动识别构建后的前缀。Cloudflare 默认部署使用根路径，不需要设置该变量。
+需要 GitHub Pages 式仓库路径时，在构建时设置 `VITE_BASE_PATH=/sekiro-mod-manager`（`vite.config.ts` 的 `base`，同时用于 `index.html` 的 canonical / favicon、`src/lib/paths.ts` 的 `assetPath` 和 `/static/` 前缀）。Windows Git Bash 同时设置 `MSYS_NO_PATHCONV=1`，避免前缀被转换为本地路径。图片、静态纹理、Skill 链接、favicon 和 release snapshot 都适配此前缀；preview 自动识别构建后的前缀。Cloudflare 默认部署使用根路径，不需要设置该变量。
 
 ## 验证
 

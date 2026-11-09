@@ -2,8 +2,17 @@ export const RELEASES_URL = "https://github.com/RolinShmily/sekiro-mod-manager/r
 export const RELEASE_API = "https://api.github.com/repos/RolinShmily/sekiro-mod-manager/releases/latest";
 export const DEFAULT_MIRROR = "https://gh-proxy.org/";
 
+type EnvSource = { env?: Record<string, string | undefined> };
+
+/** Reads a Vite env var, falling back to process.env for node tests and scripts. */
+function readEnv(name: string): string | undefined {
+  const viteEnv = (import.meta as EnvSource).env?.[name];
+  if (typeof viteEnv === "string") return viteEnv;
+  return (globalThis as { process?: EnvSource }).process?.env?.[name];
+}
+
 export function getDownloadMirror(): string {
-  const raw = process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR ?? process.env.NEXT_PUBLIC_GH_PROXY ?? DEFAULT_MIRROR;
+  const raw = readEnv("VITE_DOWNLOAD_MIRROR") ?? readEnv("VITE_GH_PROXY") ?? DEFAULT_MIRROR;
   if (!raw || raw === "none" || raw === "direct" || raw === "false") return "";
   return raw.endsWith("/") ? raw : `${raw}/`;
 }

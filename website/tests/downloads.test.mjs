@@ -28,15 +28,15 @@ test("softwareUrl prefixes with MIRROR by default and supports direct GitHub and
 
   assert.equal(softwareUrl(url, "mirror", "https://custom.mirror/"), "https://custom.mirror/" + url);
 
-  const prev = process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR;
+  const prev = process.env.VITE_DOWNLOAD_MIRROR;
   try {
-    process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR = "https://env-mirror.org/";
+    process.env.VITE_DOWNLOAD_MIRROR = "https://env-mirror.org/";
     assert.equal(softwareUrl(url, "mirror"), "https://env-mirror.org/" + url);
-    process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR = "none";
+    process.env.VITE_DOWNLOAD_MIRROR = "none";
     assert.equal(softwareUrl(url, "mirror"), url);
   } finally {
-    if (prev === undefined) delete process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR;
-    else process.env.NEXT_PUBLIC_DOWNLOAD_MIRROR = prev;
+    if (prev === undefined) delete process.env.VITE_DOWNLOAD_MIRROR;
+    else process.env.VITE_DOWNLOAD_MIRROR = prev;
   }
 });
 test("rejects draft/prerelease and malformed metadata rather than fabricating links", () => {

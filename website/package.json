@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "python scripts/package_skill.py && next dev --hostname 127.0.0.1",
-    "build": "python scripts/package_skill.py && next build",
+    "dev": "python scripts/package_skill.py && vite",
+    "build": "python scripts/package_skill.py && vite build && vite build --ssr src/entry-server.tsx --outDir .ssr --emptyOutDir && node scripts/prerender.mjs",
     "preview": "node scripts/preview.mjs",
     "lint": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs"
@@ -15,16 +15,17 @@
     "@radix-ui/react-tabs": "1.1.22",
     "lucide-react": "1.52.0",
     "motion": "14.0.0",
-    "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
-    "tailwindcss": "4.3.3",
-    "typescript": "5.9.3",
+    "@types/node": "24.12.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@types/node": "24.12.0"
+    "@vitejs/plugin-react": "6.2.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.3.6"
   }
 }

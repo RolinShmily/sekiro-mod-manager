@@ -55,15 +55,14 @@ jobs:
         run: |
           npm test
           npm run lint
-      - name: Export static website and skill ZIP
+      - name: Build static website and skill ZIP
         working-directory: website
         env:
-          NEXT_TELEMETRY_DISABLED: '1'
         run: npm run build
       - uses: actions/upload-artifact@v4
         with:
           name: smm-website
-          path: website/out
+          path: website/dist
       - name: Deploy to Cloudflare Workers
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy))
         env:

@@ -53,20 +53,15 @@ export function WindowsIcon({ className = "w-5 h-5" }: { className?: string }) {
   );
 }
 
-export function NextjsIcon({ className = "w-4 h-4" }: { className?: string }) {
+export function ViteIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg
       className={className}
-      viewBox="0 0 180 180"
+      viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden="true"
     >
-      <circle cx="90" cy="90" r="90" fill="currentColor" fillOpacity="0.1" />
-      <path
-        d="M149.508 157.438L69.1419 54H54V125.969H66.5273V69.8315L139.923 164.78C143.239 162.518 146.438 160.065 149.508 157.438Z"
-        fill="currentColor"
-      />
-      <rect x="115" y="54" width="12" height="72" fill="currentColor" />
+      <path d="M13.056 23.238a.57.57 0 0 1-1.02-.355v-5.202c0-.63-.512-1.143-1.144-1.143H5.148a.57.57 0 0 1-.464-.903l3.777-5.29c.54-.753 0-1.804-.93-1.804H.57a.574.574 0 0 1-.543-.746.6.6 0 0 1 .08-.157L5.008.78a.57.57 0 0 1 .467-.24h14.589a.57.57 0 0 1 .466.903l-3.778 5.29c-.54.755 0 1.806.93 1.806h5.745c.238 0 .424.138.513.322a.56.56 0 0 1-.063.603z" />
     </svg>
   );
 }

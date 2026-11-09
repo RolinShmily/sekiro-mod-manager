@@ -17,7 +17,6 @@ import {
   FileQuestion,
   BookOpen,
 } from "lucide-react";
-import Image from "next/image";
 import { useI18n } from "@/components/i18n";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -30,7 +29,7 @@ import {
   BrandLogo,
   WindowsIcon,
   GithubIcon,
-  NextjsIcon,
+  ViteIcon,
   ReactIcon,
   TypescriptIcon,
   TailwindIcon,
@@ -72,7 +71,7 @@ const features = [
 ] as const;
 
 const stack = [
-  { label: "Next.js", Icon: NextjsIcon, url: "https://nextjs.org/" },
+  { label: "Vite", Icon: ViteIcon, url: "https://vite.dev/" },
   { label: "React", Icon: ReactIcon, url: "https://react.dev/" },
   { label: "TypeScript", Icon: TypescriptIcon, url: "https://www.typescriptlang.org/" },
   { label: "Tailwind CSS", Icon: TailwindIcon, url: "https://tailwindcss.com/" },
@@ -89,7 +88,7 @@ export function Landing() {
     <Navbar />
     <main id="main">
       <section className="hero" id="top" aria-labelledby="hero-title">
-        <Image className="hero-art" src={assetPath("/assets/wolf.webp")} alt="" fill priority sizes="100vw" />
+        <img className="hero-art" src={assetPath("/assets/wolf.webp")} alt="" fetchPriority="high" decoding="async" />
         <div className="hero-shade" aria-hidden="true" />
         <div className="hero-copy container">
           <p className="eyebrow hero-eyebrow">
@@ -147,11 +146,12 @@ export function Landing() {
             </div>
             <span className="hero-window-title">Sekiro Mod Manager</span>
           </div>
-          <Image
+          <img
             src={assetPath(`/assets/app/armoury-${locale}.webp`)}
             width={1360}
             height={880}
             alt={t("screenArmoury")}
+            decoding="async"
           />
           <span>
             <span className="caption-dot" />
@@ -257,6 +257,5 @@ export function Landing() {
       </section>
     </main>
     <Footer />
-    <noscript><p className="noscript-note">软件下载 / Software downloads: <a href="https://github.com/RolinShmily/sekiro-mod-manager/releases">GitHub Releases</a></p></noscript>
   </RevealProvider>;
 }

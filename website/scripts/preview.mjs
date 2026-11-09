@@ -2,12 +2,12 @@ import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, relative, extname } from "node:path";
 
-const root = resolve(import.meta.dirname, "../out");
+const root = resolve(import.meta.dirname, "../dist");
 const port = Number(process.env.PORT || 4173);
 let prefix = "";
 try {
   const html = await readFile(resolve(root, "index.html"), "utf8");
-  prefix = html.match(/src="([^"]*)\/_next\/static\//)?.[1] || "";
+  prefix = html.match(/src="([^"]*)\/static\//)?.[1] || "";
 } catch (error) {
   if (error.code === "ENOENT") { console.error("Run npm run build before preview."); process.exit(1); }
   throw error;

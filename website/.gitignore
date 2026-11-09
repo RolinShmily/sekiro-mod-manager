@@ -1,5 +1,5 @@
 node_modules/
-.next/
-out/
+dist/
+.ssr/
 *.tsbuildinfo
 public/downloads/

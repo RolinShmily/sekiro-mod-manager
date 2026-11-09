@@ -3,7 +3,6 @@
 import { useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { ArrowLeft, ArrowRight, Monitor, LayoutGrid, Layers, SlidersHorizontal, CheckCircle2, Terminal } from "lucide-react";
-import Image from "next/image";
 import { useI18n } from "./i18n";
 import { assetPath } from "@/lib/paths";
 import { BrandLogo } from "./icons";
@@ -58,12 +57,13 @@ export function Showcase() {
                 </div>
                 <div className="window-tag">Desktop GUI</div>
               </div>
-              <Image
+              <img
                 src={assetPath(`/assets/app/${screen.id}-${locale}.webp`)}
                 alt={`${t(screen.label)} — ${t("actualScreenshot")}`}
                 width={1360}
                 height={880}
                 loading="lazy"
+                decoding="async"
               />
             </div>
             <div className="screen-caption">
