@@ -47,22 +47,6 @@ Rectangle {
         NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
     }
 
-    function getCategoryLabel(cat) {
-        const c = (cat || "").toLowerCase();
-        if (c === "weapon_skin" || c === "weapon" || c === "parts") return qsTr("武器外观");
-        if (c === "character_skin" || c === "chr") return qsTr("人物外观");
-        if (c === "gameplay_overhaul" || c === "param") return qsTr("玩法重构");
-        if (c === "ui" || c === "menu") return qsTr("界面增强");
-        if (c === "animation") return qsTr("动作招式");
-        if (c === "audio" || c === "sound") return qsTr("音效音乐");
-        if (c === "vfx" || c === "sfx") return qsTr("特效光影");
-        if (c === "map") return qsTr("地图场景");
-        if (c === "script") return qsTr("脚本扩展");
-        if (c === "loader") return qsTr("前置钩子");
-        if (c === "general" || c === "other") return qsTr("其它扩展");
-        return cat.toUpperCase();
-    }
-
     function getDomainInfo(url) {
         if (!url) return { label: "", icon: "", color: "" };
         const u = url.toLowerCase();
@@ -123,6 +107,31 @@ Rectangle {
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
         z: 0
+    }
+
+    // -------------------------------------------------------------------------
+    // 键盘可达：Tab 可聚焦，Enter/Space 打开详情（与 NavItem 保持一致的模式）。
+    // 批量模式下焦点留给复选框，避免和选择操作抢按键。
+    // -------------------------------------------------------------------------
+    activeFocusOnTab: !rootCard.batchMode
+
+    Keys.onReturnPressed: rootCard.requestDetails()
+    Keys.onEnterPressed: rootCard.requestDetails()
+    Keys.onSpacePressed: rootCard.requestDetails()
+
+    Accessible.role: Accessible.Grouping
+    Accessible.name: rootCard.modName
+    Accessible.description: rootCard.modEnabled
+                            ? qsTr("已启用，顺位 %1").arg(rootCard.modRank)
+                            : qsTr("已禁用，顺位 %1").arg(rootCard.modRank)
+
+    Rectangle {
+        anchors.fill: parent
+        radius: rootCard.radius
+        color: "transparent"
+        border.width: rootCard.activeFocus ? 2 : 0
+        border.color: HusTheme.Primary.colorPrimary
+        z: 100
     }
 
     // -------------------------------------------------------------------------
@@ -249,7 +258,7 @@ Rectangle {
 
         HusTag {
             Layout.alignment: Qt.AlignVCenter
-            text: rootCard.getCategoryLabel(rootCard.modCategory)
+            text: (smmBackend ? smmBackend.categoryLabel(rootCard.modCategory) : rootCard.modCategory)
         }
 
         HusText {
@@ -371,7 +380,7 @@ Rectangle {
 
             HusTag {
                 Layout.alignment: Qt.AlignVCenter
-                text: rootCard.getCategoryLabel(rootCard.modCategory)
+                text: (smmBackend ? smmBackend.categoryLabel(rootCard.modCategory) : rootCard.modCategory)
             }
 
             Item { Layout.fillWidth: true }

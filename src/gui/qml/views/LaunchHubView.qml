@@ -140,20 +140,11 @@ ScrollView {
                         }
                     }
 
-                    RowLayout {
-                        spacing: 10
-
-                        HusText {
-                            text: qsTr("隻狼：影逝二度")
-                            font.pixelSize: 28
-                            font.bold: true
-                            color: HusTheme.Primary.colorTextPrimary
-                        }
-
-                        HusTag {
-                            Layout.alignment: Qt.AlignVCenter
-                            text: "v1.06"
-                        }
+                    HusText {
+                        text: qsTr("隻狼：影逝二度")
+                        font.pixelSize: 28
+                        font.bold: true
+                        color: HusTheme.Primary.colorTextPrimary
                     }
 
                     HusText {
@@ -183,6 +174,15 @@ ScrollView {
                             onClicked: smmBackend.launchGame()
                         }
 
+                        // 启动被拦住时，把"为什么"的入口放在灰掉的按钮旁边，而不是只留在侧栏。
+                        HusButton {
+                            implicitHeight: 40
+                            type: HusButton.Type_Text
+                            visible: !smmBackend.canLaunch && !smmBackend.launchPending
+                            text: qsTr("查看诊断")
+                            onClicked: rootView.requestDiagnosis()
+                        }
+
                         // 核心操作 2：部署模组生效
                         HusButton {
                             implicitHeight: 40
@@ -192,9 +192,10 @@ ScrollView {
                             onClicked: smmBackend.deploy()
                         }
 
-                        // 还原游戏原始纯净环境
+                        // 还原游戏原始纯净环境：破坏性低于删除，但会清空已部署链接，视觉上退居次级
                         HusButton {
                             implicitHeight: 40
+                            type: HusButton.Type_Outlined
                             text: qsTr("纯净还原")
                             enabled: !smmBackend.isBusy && !smmBackend.launchPending
                             onClicked: smmBackend.restore()

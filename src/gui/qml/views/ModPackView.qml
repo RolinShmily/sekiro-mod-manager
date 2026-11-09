@@ -21,8 +21,7 @@ ColumnLayout {
         nameFilters: ["SMM Pack (*.smmpack)"]
         onAccepted: {
             if (selectedFile) {
-                const path = selectedFile.toString().replace("file:///", "");
-                smmBackend.importModPack(path);
+                smmBackend.importModPack(smmBackend.localPath(selectedFile));
             }
         }
     }
@@ -35,8 +34,7 @@ ColumnLayout {
         property string targetPresetId: ""
         onAccepted: {
             if (selectedFile && targetPresetId !== "") {
-                const path = selectedFile.toString().replace("file:///", "");
-                smmBackend.exportModPack(targetPresetId, path);
+                smmBackend.exportModPack(targetPresetId, smmBackend.localPath(selectedFile));
             }
         }
     }

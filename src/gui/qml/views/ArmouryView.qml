@@ -23,6 +23,30 @@ ColumnLayout {
         return options;
     }
 
+    /// 是否处于筛选/搜索状态：空态文案要区分"暂存区为空"和"筛选无结果"。
+    readonly property bool isFiltering: smmBackend !== null
+        && (smmBackend.modListModel.filterText.trim().length > 0
+            || smmBackend.modListModel.selectedCategory !== "all"
+            || smmBackend.modListModel.onlyEquippedPackMods)
+
+    /// 首次扫描尚未返回：此时列表为空并不代表暂存区为空。
+    readonly property bool firstScanPending: !smmBackend || smmBackend.healthOverall === ""
+
+    /// 由 Main.qml 的 Ctrl+F 调用。
+    function focusSearch() {
+        modSearchInput.forceActiveFocus();
+        modSearchInput.selectAll();
+    }
+
+    function clearFilters() {
+        modSearchInput.text = "";
+        if (smmBackend) {
+            smmBackend.modListModel.filterText = "";
+            smmBackend.modListModel.selectedCategory = "all";
+            smmBackend.modListModel.onlyEquippedPackMods = false;
+        }
+    }
+
     function isModSelected(id) {
         return selectedModIds.indexOf(id) >= 0;
     }
@@ -51,23 +75,6 @@ ColumnLayout {
     /// 右侧为滚动条预留的宽度，避免卡片压在滚动条下方
     readonly property int scrollBarSpace: 12
 
-    function getCategoryLabel(cat) {
-        if (!cat || cat === "all") return qsTr("全部模组");
-        const c = cat.toLowerCase();
-        if (c === "weapon_skin" || c === "weapon" || c === "parts") return qsTr("武器外观");
-        if (c === "character_skin" || c === "chr") return qsTr("人物外观");
-        if (c === "gameplay_overhaul" || c === "param") return qsTr("玩法重构");
-        if (c === "ui" || c === "menu") return qsTr("界面增强");
-        if (c === "animation") return qsTr("动作招式");
-        if (c === "audio" || c === "sound") return qsTr("音效音乐");
-        if (c === "vfx" || c === "sfx") return qsTr("特效光影");
-        if (c === "map") return qsTr("地图场景");
-        if (c === "script") return qsTr("脚本扩展");
-        if (c === "loader") return qsTr("前置钩子");
-        if (c === "general" || c === "other") return qsTr("其它扩展");
-        return cat.toUpperCase();
-    }
-
     signal requestOpenDrawer(string modId)
     signal requestSavePack()
 
@@ -77,20 +84,9 @@ ColumnLayout {
         fileMode: FileDialog.OpenFiles
         nameFilters: ["Mod Archives (*.zip *.7z *.rar)", "All Files (*.*)"]
         onAccepted: {
+            // The backend converts dialog urls to local paths; QML does not re-implement it.
             if (selectedFiles && selectedFiles.length > 0) {
-                let paths = [];
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    let p = selectedFiles[i].toString();
-                    if (p.startsWith("file:///")) {
-                        p = p.substring(8);
-                    } else if (p.startsWith("file://")) {
-                        p = p.substring(7);
-                    }
-                    p = decodeURIComponent(p);
-                    p = p.replace(/\//g, "\\");
-                    paths.push(p);
-                }
-                smmBackend.importArchives(paths);
+                smmBackend.importUrls(selectedFiles);
             }
         }
     }
@@ -159,16 +155,18 @@ ColumnLayout {
         }
     }
 
-    // ---------------------------------- 工具栏第二行：搜索、分类胶囊与视图控制 ----------------------------------
+    // ---------------------------------- 工具栏第二行：搜索与视图控制 ----------------------------------
     RowLayout {
         Layout.fillWidth: true
         spacing: 10
 
         HusInput {
             id: modSearchInput
-            Layout.preferredWidth: 220
+            objectName: "modSearchInput"
+            Layout.preferredWidth: 240
             implicitHeight: 30
-            placeholderText: qsTr("搜索模组、作者…")
+            placeholderText: qsTr("搜索模组、作者… (Ctrl+F)")
+            clearEnabled: "active"
             onTextChanged: searchDebounce.restart()
 
             Timer {
@@ -180,39 +178,14 @@ ColumnLayout {
             }
         }
 
-        Flickable {
-            id: categoryFlickable
-            Layout.fillWidth: true
-            Layout.preferredHeight: 32
-            contentWidth: categoryRow.implicitWidth
-            contentHeight: 32
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-
-            RowLayout {
-                id: categoryRow
-                spacing: 6
-
-                Repeater {
-                    model: smmBackend ? smmBackend.modListModel.availableCategories : ["all"]
-
-                    delegate: HusButton {
-                        id: catBtn
-                        required property string modelData
-                        implicitHeight: 30
-                        type: (smmBackend && smmBackend.modListModel.selectedCategory === catBtn.modelData)
-                              ? HusButton.Type_Primary
-                              : HusButton.Type_Default
-                        text: rootView.getCategoryLabel(catBtn.modelData)
-                        onClicked: {
-                            if (smmBackend) {
-                                smmBackend.modListModel.selectedCategory = catBtn.modelData;
-                            }
-                        }
-                    }
-                }
-            }
+        HusText {
+            Layout.alignment: Qt.AlignVCenter
+            text: qsTr("%1 个").arg(smmBackend ? smmBackend.modListModel.count : 0)
+            font.pixelSize: 12
+            color: HusTheme.Primary.colorTextQuaternary
         }
+
+        Item { Layout.fillWidth: true }
 
         HusSegmented {
             id: viewModeSegmented
@@ -241,6 +214,35 @@ ColumnLayout {
         }
     }
 
+    // ---------------------------------- 工具栏第三行：分类胶囊 ----------------------------------
+    // 用 Flow 换行而不是横向 Flickable：分类最多十来个，全部可见比藏在横向滚动里更好发现，
+    // 也避免"新分类把内容推到末尾"的滚动状态问题。
+    Flow {
+        id: categoryFlow
+        Layout.fillWidth: true
+        Layout.preferredHeight: implicitHeight
+        spacing: 6
+
+        Repeater {
+            model: smmBackend ? smmBackend.modListModel.availableCategories : ["all"]
+
+            delegate: HusButton {
+                id: catBtn
+                required property string modelData
+                implicitHeight: 30
+                type: (smmBackend && smmBackend.modListModel.selectedCategory === catBtn.modelData)
+                      ? HusButton.Type_Primary
+                      : HusButton.Type_Default
+                text: (smmBackend ? smmBackend.categoryLabel(catBtn.modelData) : catBtn.modelData)
+                onClicked: {
+                    if (smmBackend) {
+                        smmBackend.modListModel.selectedCategory = catBtn.modelData;
+                    }
+                }
+            }
+        }
+    }
+
     // ---------------------------------- 批量操作浮动工具条 ----------------------------------
     Rectangle {
         visible: rootView.batchMode && smmBackend && smmBackend.modListModel.count > 0
@@ -258,7 +260,7 @@ ColumnLayout {
             spacing: 12
 
             HusButton {
-                implicitHeight: 28
+                implicitHeight: 30
                 text: (rootView.selectedModIds.length === (smmBackend ? smmBackend.modListModel.count : 0))
                       ? qsTr("全不选") : qsTr("全选")
                 onClicked: {
@@ -280,30 +282,35 @@ ColumnLayout {
             Item { Layout.fillWidth: true }
 
             HusButton {
-                implicitHeight: 28
+                implicitHeight: 30
                 enabled: rootView.selectedModIds.length > 0
                 text: qsTr("批量启用")
                 onClicked: smmBackend.setModsEnabled(rootView.selectedModIds, true)
             }
 
             HusButton {
-                implicitHeight: 28
+                implicitHeight: 30
                 enabled: rootView.selectedModIds.length > 0
                 text: qsTr("批量禁用")
                 onClicked: smmBackend.setModsEnabled(rootView.selectedModIds, false)
             }
 
             HusButton {
-                implicitHeight: 28
+                implicitHeight: 30
                 enabled: rootView.selectedModIds.length > 0
-                type: HusButton.Type_Primary
                 text: qsTr("批量删除 (%1)").arg(rootView.selectedModIds.length)
+                // 删除是危险操作：红色文字提示风险，但不抢走主按钮的位置。
+                colorText: enabled ? HusTheme.Primary.colorError : HusTheme.Primary.colorTextDisabled
                 onClicked: batchDeleteConfirmModal.open()
             }
         }
     }
 
     // ---------------------------------- 空状态 ----------------------------------
+    // 列表为空有三种完全不同的原因，不能都用同一句话解释：
+    //   1. 首次扫描还没回来  -> 显示加载，而不是"没有模组"
+    //   2. 搜索/筛选没有命中 -> 给出"清除筛选"的出口
+    //   3. 暂存区确实为空    -> 引导去配置目录或导入
     ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
@@ -312,19 +319,66 @@ ColumnLayout {
 
         Item { Layout.fillHeight: true }
 
-        HusEmpty {
+        // 1) 首次扫描中
+        ColumnLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 170
-            imageStyle: HusEmpty.Style_Default
-            description: qsTr("尚未纳管任何模组。请先在全局配置中指定游戏目录与暂存区，然后导入模组压缩包。")
+            visible: rootView.firstScanPending
+            spacing: 12
+
+            HusSpin {
+                Layout.alignment: Qt.AlignHCenter
+                spinSize: 26
+                indicatorItemCount: 4
+            }
+
+            HusText {
+                Layout.alignment: Qt.AlignHCenter
+                text: qsTr("正在读取暂存区…")
+                font.pixelSize: 13
+                color: HusTheme.Primary.colorTextTertiary
+            }
         }
 
-        HusButton {
-            Layout.alignment: Qt.AlignHCenter
-            Layout.topMargin: 16
-            type: HusButton.Type_Primary
-            text: qsTr("导入模组压缩包")
-            onClicked: archiveDialog.open()
+        // 2) 筛选无结果
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: !rootView.firstScanPending && rootView.isFiltering
+            spacing: 12
+
+            HusEmpty {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 150
+                imageStyle: HusEmpty.Style_Simple
+                description: qsTr("没有符合当前筛选条件的模组。换一个关键词，或清除筛选后再看。")
+            }
+
+            HusButton {
+                Layout.alignment: Qt.AlignHCenter
+                type: HusButton.Type_Primary
+                text: qsTr("清除筛选条件")
+                onClicked: rootView.clearFilters()
+            }
+        }
+
+        // 3) 暂存区为空
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: !rootView.firstScanPending && !rootView.isFiltering
+            spacing: 12
+
+            HusEmpty {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 170
+                imageStyle: HusEmpty.Style_Default
+                description: qsTr("尚未纳管任何模组。请先在全局配置中指定游戏目录与暂存区，然后导入模组压缩包。")
+            }
+
+            HusButton {
+                Layout.alignment: Qt.AlignHCenter
+                type: HusButton.Type_Primary
+                text: qsTr("导入模组压缩包")
+                onClicked: archiveDialog.open()
+            }
         }
 
         Item { Layout.fillHeight: true }
@@ -449,7 +503,13 @@ ColumnLayout {
                 }
 
                 HusButton {
-                    type: HusButton.Type_Primary
+                    id: batchDeleteConfirmButton
+                    colorBg: batchDeleteConfirmButton.active
+                             ? Qt.darker(HusTheme.Primary.colorError, 1.15)
+                             : batchDeleteConfirmButton.hovered
+                               ? Qt.lighter(HusTheme.Primary.colorError, 1.08)
+                               : HusTheme.Primary.colorError
+                    colorText: "#ffffff"
                     text: qsTr("彻底删除")
                     onClicked: {
                         if (smmBackend) {

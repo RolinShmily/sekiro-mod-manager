@@ -111,13 +111,14 @@ qt_add_qml_module(smm_gui
         qml/views/LaunchHubView.qml
         qml/views/ArmouryView.qml
         qml/views/ModPackView.qml
+        qml/views/SettingsView.qml
+        qml/views/AboutView.qml
+        qml/components/PageHeader.qml
+        qml/components/SectionCard.qml
         qml/components/ModCard.qml
         qml/components/ModDrawer.qml
-        qml/components/SettingsModal.qml
         qml/components/SavePackModal.qml
-        qml/components/AboutModal.qml
         qml/components/DoctorModal.qml
-        qml/components/UpdateModal.qml
         qml/components/NavItem.qml
 )
 

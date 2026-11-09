@@ -16,6 +16,10 @@ Rectangle {
     implicitHeight: 42
     radius: HusTheme.Primary.radiusPrimary
 
+    // 固定在布局中的高度：导航项被压缩会让命中区域与绘制区域分离。
+    Layout.preferredHeight: implicitHeight
+    Layout.minimumHeight: implicitHeight
+
     scale: navHover.pressed && HusTheme.animationEnabled ? 0.985 : 1.0
     opacity: navHover.pressed ? 0.92 : 1.0
 

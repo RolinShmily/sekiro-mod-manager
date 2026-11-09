@@ -58,11 +58,7 @@ HusDrawer {
         nameFilters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
         onAccepted: {
             if (selectedFile) {
-                let p = selectedFile.toString();
-                if (p.startsWith("file:///")) p = p.substring(8);
-                else if (p.startsWith("file://")) p = p.substring(7);
-                p = decodeURIComponent(p).replace(/\//g, "\\");
-                smmBackend.setModPreview(smmBackend.currentModId, p);
+                smmBackend.setModPreview(smmBackend.currentModId, smmBackend.localPath(selectedFile));
             }
         }
     }
@@ -74,6 +70,18 @@ HusDrawer {
         description: qsTr("删除后该模组及其所有资产文件将从暂存区中永久抹除，此操作不可逆。")
         confirmText: qsTr("确认删除")
         cancelText: qsTr("取消")
+        confirmButtonDelegate: HusButton {
+            id: drawerDeleteConfirmButton
+            animationEnabled: confirmDeleteModal.animationEnabled
+            text: confirmDeleteModal.confirmText
+            colorBg: drawerDeleteConfirmButton.active
+                     ? Qt.darker(HusTheme.Primary.colorError, 1.15)
+                     : drawerDeleteConfirmButton.hovered
+                       ? Qt.lighter(HusTheme.Primary.colorError, 1.08)
+                       : HusTheme.Primary.colorError
+            colorText: "#ffffff"
+            onClicked: confirmDeleteModal.confirm()
+        }
         onConfirm: {
             if (smmBackend) {
                 smmBackend.deleteMod(smmBackend.currentModId);
@@ -282,7 +290,7 @@ HusDrawer {
 
             HusButton {
                 Layout.fillWidth: true
-                implicitHeight: 28
+                implicitHeight: 30
                 text: qsTr("打开目录")
                 onClicked: {
                     if (smmBackend) smmBackend.openModFolder(smmBackend.currentModId);
@@ -291,7 +299,7 @@ HusDrawer {
 
             HusButton {
                 Layout.fillWidth: true
-                implicitHeight: 28
+                implicitHeight: 30
                 text: qsTr("导出 (.zip)")
                 onClicked: {
                     if (smmBackend) smmBackend.exportSingleMod(smmBackend.currentModId);
@@ -299,8 +307,9 @@ HusDrawer {
             }
 
             HusButton {
-                implicitHeight: 28
+                implicitHeight: 30
                 text: qsTr("删除模组")
+                colorText: HusTheme.Primary.colorError
                 onClicked: confirmDeleteModal.open()
             }
         }

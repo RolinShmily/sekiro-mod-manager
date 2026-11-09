@@ -24,7 +24,55 @@ HusWindow {
         ColorAnimation { duration: 180; easing.type: Easing.OutQuad }
     }
 
-    property string currentNav: "hub" // "hub" | "armoury" | "packs"
+    // 页面顺序与导航栏一致；StackLayout 的下标由它推导，避免嵌套三元表达式随页面增加而失控。
+    readonly property var navOrder: ["hub", "armoury", "packs", "settings", "about"]
+    property string currentNav: "hub"
+
+    /// 后台任务进行中（部署/导入/扫描/诊断），用于底部状态条
+    readonly property bool backendBusy: smmBackend ? (smmBackend.isBusy || smmBackend.isDoctorChecking) : false
+
+    /// Ctrl+F 要聚焦搜索框：视图可能尚未加载完成，短暂重试而不是静默失败
+    function focusCurrentViewSearch() {
+        const view = stageStack.currentItem;
+        if (view && view.focusSearch) {
+            view.focusSearch();
+            return true;
+        }
+        return false;
+    }
+
+    // =========================================================================
+    // 全局快捷键：页面切换、搜索、重新诊断（可在帮助提示中看到）
+    // =========================================================================
+    Shortcut { sequence: "Ctrl+1"; onActivated: mainWindow.currentNav = "hub" }
+    Shortcut { sequence: "Ctrl+2"; onActivated: mainWindow.currentNav = "armoury" }
+    Shortcut { sequence: "Ctrl+3"; onActivated: mainWindow.currentNav = "packs" }
+    Shortcut { sequence: "Ctrl+4"; onActivated: mainWindow.currentNav = "settings" }
+    Shortcut { sequence: "Ctrl+,"; onActivated: mainWindow.currentNav = "settings" }
+    Shortcut {
+        sequence: "Ctrl+R"
+        onActivated: if (smmBackend && !smmBackend.isBusy) smmBackend.refreshDoctor()
+    }
+    Shortcut {
+        sequence: "Ctrl+F"
+        onActivated: {
+            mainWindow.currentNav = "armoury";
+            searchFocusTimer.attempts = 0;
+            searchFocusTimer.start();
+        }
+    }
+    Timer {
+        id: searchFocusTimer
+        interval: 60
+        repeat: true
+        property int attempts: 0
+        onTriggered: {
+            attempts++;
+            if (mainWindow.focusCurrentViewSearch() || attempts >= 8) {
+                stop();
+            }
+        }
+    }
 
     // =========================================================================
     // 标题栏：品牌标识 + 主题切换 + 系统按钮（全部交由 HusCaptionBar 处理）
@@ -124,6 +172,22 @@ HusWindow {
                     iconSource: HusIcon.InboxOutlined
                     active: mainWindow.currentNav === "packs"
                     onClicked: mainWindow.currentNav = "packs"
+                }
+
+                NavItem {
+                    Layout.fillWidth: true
+                    label: qsTr("全局配置")
+                    iconSource: HusIcon.SettingOutlined
+                    active: mainWindow.currentNav === "settings"
+                    onClicked: mainWindow.currentNav = "settings"
+                }
+
+                NavItem {
+                    Layout.fillWidth: true
+                    label: qsTr("关于")
+                    iconSource: HusIcon.InfoCircleOutlined
+                    active: mainWindow.currentNav === "about"
+                    onClicked: mainWindow.currentNav = "about"
                 }
 
                 Item { Layout.fillHeight: true }
@@ -249,29 +313,19 @@ HusWindow {
                     }
                 }
 
-                NavItem {
-                    Layout.fillWidth: true
-                    label: qsTr("关于")
-                    iconSource: HusIcon.InfoCircleOutlined
-                    onClicked: aboutModal.open()
-                }
-
-                NavItem {
-                    Layout.fillWidth: true
-                    label: qsTr("全局配置")
-                    iconSource: HusIcon.SettingOutlined
-                    onClicked: settingsModal.open()
-                }
             }
         }
 
         // ------------------------------ 内容舞台 ------------------------------
-        StackLayout {
-            id: stageStack
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.margins: 20
-            currentIndex: mainWindow.currentNav === "hub" ? 0 : (mainWindow.currentNav === "armoury" ? 1 : 2)
+
+        StackLayout {
+            id: stageStack
+            anchors.fill: parent
+            currentIndex: Math.max(0, mainWindow.navOrder.indexOf(mainWindow.currentNav))
 
             function animatePage() {
                 viewAnim.stop();
@@ -330,6 +384,68 @@ HusWindow {
                     onRequestSavePack: savePackModal.open()
                 }
             }
+
+            Loader {
+                objectName: "settingsLoader"
+                property bool visited: false
+                active: visited || StackLayout.isCurrentItem
+                asynchronous: true
+                onLoaded: {
+                    visited = true;
+                    if (StackLayout.isCurrentItem) stageStack.animatePage();
+                }
+                sourceComponent: SettingsView {}
+            }
+
+            Loader {
+                objectName: "aboutLoader"
+                property bool visited: false
+                active: visited || StackLayout.isCurrentItem
+                asynchronous: true
+                onLoaded: {
+                    visited = true;
+                    if (StackLayout.isCurrentItem) stageStack.animatePage();
+                }
+                sourceComponent: AboutView {}
+            }
+        }
+
+        // 后台任务徽标：只在忙碌时浮在内容右下角，不占用布局空间，也不推动列表。
+        Rectangle {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: 8
+            z: 500
+            visible: mainWindow.backendBusy
+            implicitHeight: 30
+            implicitWidth: busyRow.implicitWidth + 26
+            radius: 15
+            color: HusTheme.isDark ? Qt.rgba(0.12, 0.12, 0.15, 0.92)
+                                   : Qt.rgba(0.98, 0.98, 0.98, 0.95)
+            border.width: 1
+            border.color: HusTheme.Primary.colorPrimaryBorder
+
+            RowLayout {
+                id: busyRow
+                anchors.centerIn: parent
+                spacing: 8
+
+                HusSpin {
+                    Layout.alignment: Qt.AlignVCenter
+                    spinSize: 13
+                    indicatorItemCount: 4
+                }
+
+                HusText {
+                    Layout.alignment: Qt.AlignVCenter
+                    text: smmBackend && smmBackend.statusText !== ""
+                          ? smmBackend.statusText
+                          : qsTr("处理中…")
+                    font.pixelSize: 12
+                    color: HusTheme.Primary.colorTextSecondary
+                }
+            }
+        }
         }
     }
 
@@ -337,20 +453,8 @@ HusWindow {
         id: modDrawer
     }
 
-    SettingsModal {
-        id: settingsModal
-    }
-
-    AboutModal {
-        id: aboutModal
-    }
-
     DoctorModal {
         id: doctorModal
-    }
-
-    UpdateModal {
-        id: updateModal
     }
 
     SavePackModal {
@@ -373,9 +477,12 @@ HusWindow {
             }
         }
         anchors.horizontalCenter: parent.horizontalCenter
-        implicitHeight: 36
-        implicitWidth: toastContent.implicitWidth + 32
+        // 长错误信息不再撑出屏幕：限制最大宽度并换行，最多三行。
+        implicitHeight: Math.max(36, toastContent.implicitHeight + 18)
+        implicitWidth: Math.min(toastContent.implicitWidth + 34, mainWindow.width - 160)
         radius: 18
+        Accessible.role: Accessible.AlertMessage
+        Accessible.name: toastMessage
         color: HusTheme.isDark ? Qt.rgba(0.12, 0.12, 0.15, 0.95) : Qt.rgba(0.98, 0.98, 0.98, 0.95)
         border.width: 1
         border.color: toastType === "error" ? HusTheme.Primary.colorError :
@@ -393,9 +500,14 @@ HusWindow {
             NumberAnimation { duration: 160; easing.type: Easing.OutQuad }
         }
 
+        // 错误/警告需要阅读时间：按严重程度决定停留时长。
+        readonly property int toastDuration: toastType === "error" ? 7000
+                                          : toastType === "warning" ? 5500
+                                          : 3200
+
         Timer {
             id: toastTimer
-            interval: 3200
+            interval: toastBanner.toastDuration
             onTriggered: toastBanner.toastVisible = false
         }
 
@@ -406,9 +518,20 @@ HusWindow {
             toastTimer.restart();
         }
 
+        // 点击可立即关闭，不必等它自动消失。
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: toastBanner.toastVisible = false
+        }
+
         RowLayout {
             id: toastContent
-            anchors.centerIn: parent
+            anchors.fill: parent
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
+            anchors.topMargin: 9
+            anchors.bottomMargin: 9
             spacing: 8
 
             HusIconText {
@@ -421,11 +544,15 @@ HusWindow {
             }
 
             HusText {
+                Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 text: toastBanner.toastMessage
                 font.pixelSize: 12
                 font.bold: true
                 color: HusTheme.Primary.colorTextPrimary
+                wrapMode: Text.WordWrap
+                maximumLineCount: 3
+                elide: Text.ElideRight
             }
         }
     }
