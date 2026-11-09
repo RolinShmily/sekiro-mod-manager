@@ -53,7 +53,7 @@ int main() {
               "release page uses the tagged version");
         check(links.setupDownload ==
                   "https://github.com/RolinShmily/sekiro-mod-manager/releases/download/v0.4.2/"
-                  "sekiro-mod-manager-v0.4.2-windows-x64-gui-setup.exe",
+                  "sekiro-mod-manager-v0.4.2-windows-x64-setup.exe",
               "setup download points at the tagged installer");
         check(UpdateFeed::linksFor("v0.4.2").setupDownload == links.setupDownload,
               "links are stable with or without the leading v");

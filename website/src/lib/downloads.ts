@@ -41,7 +41,7 @@ export function parseRelease(payload: unknown): StableRelease | null {
   if (!/^v\d+\.\d+\.\d+$/.test(tag) || release.html_url !== `${RELEASES_URL}/tag/${tag}` || !Array.isArray(release.assets)) return null;
   const result: StableRelease = { tag, page: release.html_url, assets: {} };
   const names: Record<AssetKind, string> = {
-    setup: `sekiro-mod-manager-${tag}-windows-x64-gui-setup.exe`,
+    setup: `sekiro-mod-manager-${tag}-windows-x64-setup.exe`,
     portable: `sekiro-mod-manager-${tag}-windows-x64-gui.zip`,
     cli: `sekiro-mod-manager-${tag}-windows-x64-cli.zip`,
   };

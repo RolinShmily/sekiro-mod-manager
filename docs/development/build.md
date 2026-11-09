@@ -127,7 +127,7 @@ PATH="/c/Qt/6.11.2/msvc2022_64/bin:$PATH" ./build/msvc-x64-debug/src/gui/smm_gui
 
 ```powershell
 $env:QT_ROOT_DIR = 'C:/Qt/6.11.2/msvc2022_64'
-pwsh scripts/package-windows.ps1 -BuildDir build/msvc-x64-release -Version v0.4.3
+pwsh scripts/package-windows.ps1 -BuildDir build/msvc-x64-release -Version v0.4.4
 ```
 
 输出在 `dist/`：GUI 便携目录 + GUI/CLI 两个 zip；检测到 `ISCC.exe` 时顺带生成 Inno Setup 安装包（`-SkipInstaller` 可跳过）。
@@ -151,6 +151,19 @@ pwsh scripts/package-windows.ps1 -BuildDir build/msvc-x64-release -Version v0.4.
 裁剪后的目录 **3/3 次启动成功**（`Get-Process` 存活 + 拿到窗口句柄），且带上了 VC++ 运行时，不依赖目标机预装 `vc_redist`。
 
 脚本在压缩前会断言必需项（`Qt6OpenGL.dll`、`platforms/qwindows.dll`、Basic 样式、CRT…）仍然存在，裁剪写错时在打包阶段就失败，而不是等用户双击。
+
+### 安装包装了什么
+
+`installer/installer.iss` 的 `[Files]` 复制整个 GUI 目录，所以装完 `{app}` 里同时有：
+
+- `SekiroModManager.exe`（GUI）、`smm.exe`（CLI）、Qt 运行时与 CRT；
+- `skill/smm-cli.zip` 与解压好的 `skill/smm-cli/`（`SKILL.md`、`references/`、`scripts/`、`LICENSE.txt`）。压缩包由 `website/scripts/package_skill.py` 生成，和官网下载的是同一个文件，白名单保持一致。
+
+「命令行」任务（默认勾选）会把 `{app}` 追加到**当前用户** `PATH`（`HKCU\Environment`）。安装与卸载两个方向都写在 `[Code]` 里，而不是用 `[Registry]` 的自动回滚：
+
+- 安装时只在末尾追加，已存在则跳过（避免重复安装叠加条目）；
+- 卸载时按 `;` 拆分、只丢掉 `{app}` 这一项，保留用户顺序与后来添加的其他项；
+- `ChangesEnvironment=yes` 让安装结束后广播环境变更；已经打开的终端与资源管理器仍需重启才能看到新 `PATH`。
 
 裁剪后务必跑一次冒烟，而且要看**进程是否存活**，不要只看截图：
 

@@ -14,7 +14,7 @@
 #   sekiro-mod-manager-<version>-windows-x64-gui/      portable bundle
 #   sekiro-mod-manager-<version>-windows-x64-gui.zip
 #   sekiro-mod-manager-<version>-windows-x64-cli.zip
-#   sekiro-mod-manager-<version>-windows-x64-gui-setup.exe   (unless -SkipInstaller)
+#   sekiro-mod-manager-<version>-windows-x64-setup.exe   (unless -SkipInstaller)
 
 [CmdletBinding()]
 param(
@@ -72,6 +72,19 @@ try {
     Copy-Item $cliExe -Destination (Join-Path $guiDir 'smm.exe')
     Copy-Item $cliExe -Destination (Join-Path $cliDir 'smm.exe')
 
+    # --- agent skill -----------------------------------------------------------------------
+    # `website/scripts/package_skill.py` owns the file allowlist (it deliberately keeps eval
+    # fixtures and local settings out) and the website serves the same archive, so the installer
+    # ships that exact zip plus an extracted copy for agents that read the folder directly.
+    $skillDir = Join-Path $guiDir 'skill'
+    New-Item -ItemType Directory -Force -Path $skillDir | Out-Null
+    & python website/scripts/package_skill.py
+    if ($LASTEXITCODE -ne 0) { throw "skill packaging failed with exit code $LASTEXITCODE." }
+    $skillZip = 'website/public/downloads/smm-cli.zip'
+    if (-not (Test-Path $skillZip)) { throw "skill archive not found at $skillZip" }
+    Copy-Item $skillZip -Destination (Join-Path $skillDir 'smm-cli.zip') -Force
+    Expand-Archive -Path $skillZip -DestinationPath $skillDir -Force
+
     # --skip-plugin-types drops the QML debugger/tooling plugins (qmltooling) and the
     # touch-screen plugin (generic); neither is reachable from a released build.
     # --no-system-d3d-compiler relies on Windows 10 1809+ shipping d3dcompiler_47.dll, and
@@ -119,6 +132,9 @@ try {
     # QSG_RHI_BACKEND=d3d12 (3/3 runs each). Keep it if a future Qt starts compiling RHI shaders
     # at run time.
     Remove-Item -Path (Join-Path $guiDir 'dxcompiler.dll') -Force -ErrorAction SilentlyContinue
+    # dxil.dll only carries meaning next to dxcompiler.dll (both are the DXC HLSL toolchain), so it
+    # goes with it. Verified: the app starts 3/3 without either, on the default and on D3D12.
+    Remove-Item -Path (Join-Path $guiDir 'dxil.dll') -Force -ErrorAction SilentlyContinue
     # Do NOT prune Qt6OpenGL.dll: Qt6Quick.dll imports it directly (dumpbin /dependents), and the
     # bundle then dies at process start with "missing DLL" (exit 127) before any QML loads.
 
@@ -130,7 +146,10 @@ try {
         'Qt6Core.dll', 'Qt6Gui.dll', 'Qt6Qml.dll', 'Qt6Quick.dll', 'Qt6OpenGL.dll',
         'Qt6QuickControls2.dll', 'Qt6QuickControls2Basic.dll',
         'platforms/qwindows.dll',
-        'qml/QtQuick/Controls/Basic'
+        'qml/QtQuick/Controls/Basic',
+        'smm.exe',
+        'skill/smm-cli.zip',
+        'skill/smm-cli/SKILL.md'
     )
     $missing = @()
     foreach ($item in $required) {

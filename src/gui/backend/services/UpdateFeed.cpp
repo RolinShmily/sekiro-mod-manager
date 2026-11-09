@@ -113,7 +113,7 @@ UpdateLinks UpdateFeed::linksFor(const std::string& version) {
     }
     links.releasePage = std::string(kReleasesBase) + "/tag/" + tag;
     links.setupDownload = std::string(kReleasesBase) + "/download/" + tag +
-                          "/sekiro-mod-manager-" + tag + "-windows-x64-gui-setup.exe";
+                          "/sekiro-mod-manager-" + tag + "-windows-x64-setup.exe";
     return links;
 }
 

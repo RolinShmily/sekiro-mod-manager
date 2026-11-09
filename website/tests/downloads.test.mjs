@@ -4,7 +4,7 @@ import { parseRelease, formatSize, fetchRelease, RELEASE_API, MIRROR, softwareUr
 
 const repository = "https://github.com/RolinShmily/sekiro-mod-manager/releases";
 function asset(tag, kind) {
-  const suffix = { setup: "gui-setup.exe", portable: "gui.zip", cli: "cli.zip" }[kind];
+  const suffix = { setup: "setup.exe", portable: "gui.zip", cli: "cli.zip" }[kind];
   const name = `sekiro-mod-manager-${tag}-windows-x64-${suffix}`;
   return { name, state: "uploaded", size: 10485760, digest: "sha256:" + "a".repeat(64), browser_download_url: `${repository}/download/${tag}/${name}` };
 }
@@ -13,7 +13,7 @@ function fixture() { return { tag_name: "v1.2.3", draft: false, prerelease: fals
 test("separates GUI installer, portable and CLI from a real stable release shape", () => {
   const parsed = parseRelease(fixture());
   assert.equal(parsed.tag, "v1.2.3");
-  assert.equal(parsed.assets.setup.name.endsWith("gui-setup.exe"), true);
+  assert.equal(parsed.assets.setup.name.endsWith("windows-x64-setup.exe"), true);
   assert.equal(parsed.assets.portable.name.endsWith("gui.zip"), true);
   assert.equal(parsed.assets.cli.name.endsWith("cli.zip"), true);
   assert.equal(parsed.assets.portable.digest, "a".repeat(64));
