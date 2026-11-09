@@ -4,6 +4,8 @@
 #include <QFileInfo>
 #include <QUrl>
 
+#include <algorithm>
+#include <cmath>
 #include <utility>
 #include <smm/manager.hpp>
 
@@ -18,7 +20,14 @@
 
 namespace {
 
-QImage decode_image_wic(const std::wstring& filePath) {
+/// Decodes `filePath` at (approximately) the requested cover size.
+///
+/// WIC can scale while decoding, so a 4K preview that a 480x270 card will only ever show is
+/// never materialised as a 4K BGRA buffer. Decoding at display size cuts both the peak memory
+/// (a 3840x2160 frame is 33 MB) and the CPU spent on the smooth resample the caller used to do
+/// afterwards. `targetW`/`targetH` follow KeepAspectRatioByExpanding: the result covers the
+/// requested box, and images smaller than the request are left untouched (never upscaled).
+QImage decode_image_wic(const std::wstring& filePath, int targetW, int targetH) {
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
     IWICImagingFactory* pFactory = NULL;
     HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFactory));
@@ -32,17 +41,48 @@ QImage decode_image_wic(const std::wstring& filePath) {
     hr = pDecoder->GetFrame(0, &pFrame);
     if (FAILED(hr)) { pDecoder->Release(); pFactory->Release(); return {}; }
 
+    // Scale during decode when a target box is known and the source is bigger than it.
+    IWICBitmapScaler* pScaler = NULL;
+    IWICBitmapSource* pSource = pFrame;
+    if (targetW > 0 && targetH > 0) {
+        UINT srcW = 0, srcH = 0;
+        if (SUCCEEDED(pFrame->GetSize(&srcW, &srcH)) && srcW > 0 && srcH > 0 &&
+            (srcW > static_cast<UINT>(targetW) || srcH > static_cast<UINT>(targetH))) {
+            const double scale = std::max(static_cast<double>(targetW) / srcW,
+                                          static_cast<double>(targetH) / srcH);
+            UINT dstW = static_cast<UINT>(std::lround(srcW * scale));
+            UINT dstH = static_cast<UINT>(std::lround(srcH * scale));
+            dstW = std::min(std::max(dstW, static_cast<UINT>(targetW)), srcW);
+            dstH = std::min(std::max(dstH, static_cast<UINT>(targetH)), srcH);
+            if (SUCCEEDED(pFactory->CreateBitmapScaler(&pScaler)) &&
+                SUCCEEDED(pScaler->Initialize(pFrame, dstW, dstH, WICBitmapInterpolationModeFant))) {
+                pSource = pScaler;
+            }
+        }
+    }
+
     IWICFormatConverter* pConverter = NULL;
     hr = pFactory->CreateFormatConverter(&pConverter);
-    if (FAILED(hr)) { pFrame->Release(); pDecoder->Release(); pFactory->Release(); return {}; }
+    if (FAILED(hr)) {
+        if (pScaler) pScaler->Release();
+        pFrame->Release(); pDecoder->Release(); pFactory->Release();
+        return {};
+    }
 
-    hr = pConverter->Initialize(pFrame, GUID_WICPixelFormat32bppBGRA, WICBitmapDitherTypeNone, NULL, 0.0, WICBitmapPaletteTypeCustom);
-    if (FAILED(hr)) { pConverter->Release(); pFrame->Release(); pDecoder->Release(); pFactory->Release(); return {}; }
+    hr = pConverter->Initialize(pSource, GUID_WICPixelFormat32bppBGRA, WICBitmapDitherTypeNone, NULL, 0.0, WICBitmapPaletteTypeCustom);
+    if (FAILED(hr)) {
+        pConverter->Release();
+        if (pScaler) pScaler->Release();
+        pFrame->Release(); pDecoder->Release(); pFactory->Release();
+        return {};
+    }
 
     UINT width = 0, height = 0;
     hr = pConverter->GetSize(&width, &height);
     if (FAILED(hr) || width == 0 || height == 0) {
-        pConverter->Release(); pFrame->Release(); pDecoder->Release(); pFactory->Release();
+        pConverter->Release();
+        if (pScaler) pScaler->Release();
+        pFrame->Release(); pDecoder->Release(); pFactory->Release();
         return {};
     }
 
@@ -52,6 +92,7 @@ QImage decode_image_wic(const std::wstring& filePath) {
     hr = pConverter->CopyPixels(NULL, stride, bufferSize, image.bits());
 
     pConverter->Release();
+    if (pScaler) pScaler->Release();
     pFrame->Release();
     pDecoder->Release();
     pFactory->Release();
@@ -144,7 +185,7 @@ QImage ModPreviewImageProvider::requestImage(const QString& id, QSize* size, con
 
     QImage loaded;
 #ifdef _WIN32
-    loaded = decode_image_wic(QDir::toNativeSeparators(targetFilePath).toStdWString());
+    loaded = decode_image_wic(QDir::toNativeSeparators(targetFilePath).toStdWString(), reqW, reqH);
 #endif
     if (loaded.isNull()) {
         loaded.load(targetFilePath);

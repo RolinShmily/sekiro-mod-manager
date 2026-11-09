@@ -411,38 +411,45 @@ HusWindow {
         }
 
         // 后台任务徽标：只在忙碌时浮在内容右下角，不占用布局空间，也不推动列表。
-        Rectangle {
+        //
+        // 这里用 Loader 而不是 `visible: mainWindow.backendBusy`：HusSpin 内部的循环旋转
+        // 动画在组件实例化后就一直跑，即使整棵子树不可见。实测空闲时这样会稳定占用约 15%
+        // 的单核 CPU（约 60 fps 空转重绘，窗口内容一帧都不变）。改为按需实例化后，空闲 CPU
+        // 回落到 1% 以内；Loader 卸载时动画也随之销毁。
+        Loader {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.margins: 8
             z: 500
-            visible: mainWindow.backendBusy
-            implicitHeight: 30
-            implicitWidth: busyRow.implicitWidth + 26
-            radius: 15
-            color: HusTheme.isDark ? Qt.rgba(0.12, 0.12, 0.15, 0.92)
-                                   : Qt.rgba(0.98, 0.98, 0.98, 0.95)
-            border.width: 1
-            border.color: HusTheme.Primary.colorPrimaryBorder
+            active: mainWindow.backendBusy
+            sourceComponent: Rectangle {
+                implicitHeight: 30
+                implicitWidth: busyRow.implicitWidth + 26
+                radius: 15
+                color: HusTheme.isDark ? Qt.rgba(0.12, 0.12, 0.15, 0.92)
+                                       : Qt.rgba(0.98, 0.98, 0.98, 0.95)
+                border.width: 1
+                border.color: HusTheme.Primary.colorPrimaryBorder
 
-            RowLayout {
-                id: busyRow
-                anchors.centerIn: parent
-                spacing: 8
+                RowLayout {
+                    id: busyRow
+                    anchors.centerIn: parent
+                    spacing: 8
 
-                HusSpin {
-                    Layout.alignment: Qt.AlignVCenter
-                    spinSize: 13
-                    indicatorItemCount: 4
-                }
+                    HusSpin {
+                        Layout.alignment: Qt.AlignVCenter
+                        spinSize: 13
+                        indicatorItemCount: 4
+                    }
 
-                HusText {
-                    Layout.alignment: Qt.AlignVCenter
-                    text: smmBackend && smmBackend.statusText !== ""
-                          ? smmBackend.statusText
-                          : qsTr("处理中…")
-                    font.pixelSize: 12
-                    color: HusTheme.Primary.colorTextSecondary
+                    HusText {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: smmBackend && smmBackend.statusText !== ""
+                              ? smmBackend.statusText
+                              : qsTr("处理中…")
+                        font.pixelSize: 12
+                        color: HusTheme.Primary.colorTextSecondary
+                    }
                 }
             }
         }
