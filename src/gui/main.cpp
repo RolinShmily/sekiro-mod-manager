@@ -21,8 +21,8 @@ Q_IMPORT_QML_PLUGIN(HuskarUI_BasicPlugin)
 
 #include <QTimer>
 #include <QTranslator>
-#include "backend/Models.hpp"
-#include "backend/ModPreviewImageProvider.hpp"
+#include "backend/controllers/GuiController.hpp"
+#include "backend/providers/ModPreviewImageProvider.hpp"
 
 #include <theme/hustheme.h>
 #include <husapp.h>
@@ -58,11 +58,15 @@ int main(int argc, char* argv[]) {
                                 : HusTheme::DarkMode::Dark);
 
     bool devMode = false;
+    // An explicit --theme must survive the controller's persisted preferences, which are
+    // applied when GuiController is constructed further down.
+    bool themeOverridden = false;
     for (int i = 1; i < argc; ++i) {
         const QString arg = QString::fromLocal8Bit(argv[i]);
         if (arg == "--dev") {
             devMode = true;
         } else if (arg.startsWith("--theme=")) {
+            themeOverridden = true;
             const QString value = arg.mid(8).toLower();
             if (value == "light")
                 themeMode = HusTheme::DarkMode::Light;
@@ -96,9 +100,22 @@ int main(int argc, char* argv[]) {
     engine.addImportPath(QStringLiteral(SMM_SOURCE_DIR "/qml"));
 #endif
 
-    smm::gui::GuiController controller;
-    engine.rootContext()->setContextProperty("smmBackend", &controller);
-    engine.addImageProvider(QStringLiteral("modpreview"), new smm::gui::ModPreviewImageProvider(&controller));
+    // The controller outlives the QML engine on purpose: the engine is destroyed first at the
+    // end of main(), and the preview provider asks the controller for the staging directory.
+    auto* controller = new smm::gui::GuiController(&app);
+    if (themeOverridden) {
+        // Re-assert the command-line theme: the controller just applied the saved preference.
+        smm::gui::GuiController::applyThemeMode(
+            themeMode == HusTheme::DarkMode::Light ? QStringLiteral("light")
+            : themeMode == HusTheme::DarkMode::System ? QStringLiteral("system")
+                                                      : QStringLiteral("dark"));
+    }
+    engine.rootContext()->setContextProperty("smmBackend", controller);
+    engine.addImageProvider(
+        QStringLiteral("modpreview"),
+        new smm::gui::ModPreviewImageProvider([controller]() -> QString {
+            return controller != nullptr ? controller->previewStagingDir() : QString{};
+        }));
 
     // 语言初始化与动态切换。采用 std::unique_ptr 智能指针管理，
     // 保证重复切换及程序退出时 100% RAII 自动安全回收，彻底杜绝内存泄漏。
@@ -118,10 +135,10 @@ int main(int argc, char* argv[]) {
     };
 
     // 首帧前加载初始化语言
-    if (controller.language() == QLatin1String("en-US")) {
+    if (controller->language() == QLatin1String("en-US")) {
         applyLanguage(QStringLiteral("en-US"));
     }
-    QObject::connect(&controller, &smm::gui::GuiController::languageChanged, &app, applyLanguage);
+    QObject::connect(controller, &smm::gui::GuiController::languageChanged, &app, applyLanguage);
 
 #ifdef SMM_SOURCE_DIR
     const QString sourceQmlDir = QStringLiteral(SMM_SOURCE_DIR "/qml");

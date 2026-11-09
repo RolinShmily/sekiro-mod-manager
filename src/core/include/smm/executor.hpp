@@ -3,12 +3,16 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "types.hpp"
 
 namespace smm {
+
+/// Name of the manifest SMM writes into the game's mods directory.
+inline constexpr std::string_view DEPLOY_MANIFEST_NAME = ".smm_manifest.json";
 
 /// Manifest written into the game's mods directory so a later deploy/restore can
 /// remove exactly what SMM put there and nothing else.
@@ -64,6 +68,16 @@ void to_json(json& j, const RestoreResult& r);
 
 /// Rejects empty paths and filesystem roots. Throws SmmError(DeployError).
 void validate_target_dir(const fs::path& target_dir);
+
+/// The directory ModEngine reads deployed assets from for `game_dir`.
+///
+/// Accepts either the game root ("<game>/mods" is returned) or the mods directory itself
+/// (returned unchanged), so deploy, restore, verification and telemetry cannot disagree.
+fs::path resolve_mods_dir(const fs::path& game_dir);
+
+/// Reads the deployment manifest inside `mods_dir`.
+/// A missing file yields std::nullopt; malformed or unreadable content throws SmmError(Json).
+std::optional<DeployManifest> load_deploy_manifest(const fs::path& mods_dir);
 
 /// Core loader files live beside sekiro.exe, everything else under mods/.
 /// When `target_dir` is not named "mods", every asset is placed inside it.

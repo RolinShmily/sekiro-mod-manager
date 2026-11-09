@@ -46,11 +46,17 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
+          # SMM_BUILD_TESTS builds the headless regression suites (core business rules,
+          # CoreService adapter, update feed). Without it a PR compiles but verifies nothing.
+          cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" -DSMM_BUILD_TESTS=ON
 
       - name: Build All Targets
         run: |
           cmake --build build --config Release
+
+      - name: Run Regression Tests
+        run: |
+          ctest --test-dir build --output-on-failure
 
       - name: CLI Smoke Test
         run: |

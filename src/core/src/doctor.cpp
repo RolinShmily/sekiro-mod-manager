@@ -781,7 +781,7 @@ EngineProvisionResult provision_mod_engine(const fs::path& game_dir,
 }
 
 HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& staging_dir,
-                                  bool verify_deployment) {
+                                  bool verify_deployment, const ScanOutcome* staging_scan) {
     HealthReport report;
     report.game_dir = game_dir;
     report.staging_dir = staging_dir;
@@ -876,7 +876,8 @@ HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& stag
         }
 
         try {
-            const ScanOutcome outcome = ModLoader::scan_mods_directory(staging_dir);
+            const ScanOutcome outcome =
+                staging_scan != nullptr ? *staging_scan : ModLoader::scan_mods_directory(staging_dir);
             std::string detail = std::to_string(outcome.mods.size()) + " mod(s) staged";
             std::size_t enabled = 0;
             for (const auto& mod : outcome.mods) {

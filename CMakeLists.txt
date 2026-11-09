@@ -62,6 +62,12 @@ if(Python3_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tools/patch_huskarui.py
     )
 endif()
 
+# Must precede every add_subdirectory(): a subdirectory's add_test() only takes effect when
+# testing was enabled at the top level first, otherwise its CTestTestfile is never generated.
+if(SMM_BUILD_TESTS)
+    enable_testing()
+endif()
+
 add_subdirectory(third_party)
 add_subdirectory(src/core)
 
@@ -74,10 +80,12 @@ if(BUILD_GUI)
 endif()
 
 if(SMM_BUILD_TESTS)
-    enable_testing()
-    add_executable(smm_doctor_tests src/core/tests/doctor_tests.cpp)
-    target_link_libraries(smm_doctor_tests PRIVATE smm_core smm::warnings)
-    add_test(NAME smm_doctor_tests COMMAND smm_doctor_tests)
+    # Each test file is a standalone executable; none of them needs Qt or a build of the GUI.
+    foreach(test_name doctor_tests core_business_tests)
+        add_executable(smm_${test_name} src/core/tests/${test_name}.cpp)
+        target_link_libraries(smm_${test_name} PRIVATE smm_core smm::warnings)
+        add_test(NAME smm_${test_name} COMMAND smm_${test_name})
+    endforeach()
 endif()
 
 message(STATUS "sekiro_mod_manager configured: BUILD_CLI=${BUILD_CLI} BUILD_GUI=${BUILD_GUI}")

@@ -168,6 +168,84 @@ ModInfo ModManager::load_mod_info(const fs::path& mod_dir) {
     return ModLoader::load_mod_info(mod_dir);
 }
 
+std::string ModManager::sanitize_mod_id(std::string_view requested) {
+    // Mirrors the characters Windows refuses in a directory name. Everything else is kept
+    // verbatim so a rename never silently rewrites more than the user asked for.
+    static constexpr std::string_view kIllegal = "\\/:*?\"<>|";
+    std::string result;
+    result.reserve(requested.size());
+    for (const char c : requested) {
+        result.push_back(kIllegal.find(c) == std::string_view::npos ? c : '-');
+    }
+
+    const auto not_space = [](unsigned char c) { return std::isspace(c) == 0; };
+    result.erase(result.begin(), std::find_if(result.begin(), result.end(), not_space));
+    result.erase(std::find_if(result.rbegin(), result.rend(), not_space).base(), result.end());
+    return result;
+}
+
+ModInfo ModManager::rename_mod(const fs::path& staging_dir, const std::string& mod_id,
+                               const std::string& new_id) {
+    const fs::path mod_dir = find_mod_dir(staging_dir, mod_id);
+    const std::string target_id = sanitize_mod_id(new_id);
+    if (target_id.empty()) {
+        fail(ErrorCode::InvalidArgument, "A mod id needs at least one usable character",
+             mod_dir);
+    }
+
+    ModInfo info = ModLoader::load_mod_info(mod_dir);
+    if (target_id == info.id) {
+        info.root_path = mod_dir;
+        return info;
+    }
+
+    const fs::path target_dir = staging_dir / target_id;
+    std::error_code ec;
+    if (fs::exists(target_dir, ec)) {
+        fail(ErrorCode::ModAlreadyExists,
+             "Another staged mod already uses the id '" + target_id + "'", target_dir);
+    }
+
+    fs::rename(mod_dir, target_dir, ec);
+    if (ec) {
+        fail(ErrorCode::Io,
+             "Cannot rename the mod directory: " + ec.message(), mod_dir);
+    }
+
+    info.id = target_id;
+    info.root_path = target_dir;
+    save_mod_info(target_dir, info);
+    return info;
+}
+
+std::vector<ModInfo> ModManager::reindex_priorities(const fs::path& staging_dir,
+                                                    const std::vector<std::string>& ordered_ids,
+                                                    uint32_t step) {
+    if (step == 0) {
+        fail(ErrorCode::InvalidArgument, "The priority step must be greater than zero");
+    }
+
+    std::vector<ModInfo> updated;
+    updated.reserve(ordered_ids.size());
+    for (std::size_t index = 0; index < ordered_ids.size(); ++index) {
+        const auto priority = static_cast<uint32_t>((index + 1) * step);
+        try {
+            if (ModLoader::load_mod_info(find_mod_dir(staging_dir, ordered_ids[index])).priority ==
+                priority) {
+                continue;
+            }
+            updated.push_back(set_mod_priority(staging_dir, ordered_ids[index], priority));
+        } catch (const SmmError& error) {
+            // A mod removed between the drag and the write must not abort the whole reorder.
+            if (error.code() == ErrorCode::ModNotFound) {
+                continue;
+            }
+            throw;
+        }
+    }
+    return updated;
+}
+
 ModInfo ModManager::set_mod_enabled(const fs::path& staging_dir, const std::string& mod_id, bool enabled) {
     const fs::path mod_dir = find_mod_dir(staging_dir, mod_id);
     ModInfo info = ModLoader::load_mod_info(mod_dir);

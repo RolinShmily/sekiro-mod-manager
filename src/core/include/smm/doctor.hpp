@@ -10,6 +10,8 @@
 
 namespace smm {
 
+struct ScanOutcome;
+
 /// Severity of a single environment check.
 enum class DiagnosticStatus { Ok, Info, Warning, Error };
 
@@ -119,8 +121,12 @@ EngineProvisionResult provision_mod_engine(const fs::path& game_dir,
 
 /// Optionally compares enabled planned files with the current deployment and checks stale manifest entries.
 /// This verification is read-only.
+///
+/// `staging_scan` lets a caller that already scanned staging hand the result in, so a GUI refresh
+/// does not walk the whole staging tree twice. When null the staging directory is scanned here.
 HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& staging_dir,
-                                  bool verify_deployment = false);
+                                  bool verify_deployment = false,
+                                  const ScanOutcome* staging_scan = nullptr);
 
 /// Best-effort location of the Sekiro installation.
 ///

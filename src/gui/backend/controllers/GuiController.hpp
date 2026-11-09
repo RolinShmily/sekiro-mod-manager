@@ -1,190 +1,34 @@
 #pragma once
 
-#include <QAbstractListModel>
-#include <QDesktopServices>
-#include <QFileInfo>
-#include <QJsonObject>
+#include <QMutex>
 #include <QObject>
+#include <QString>
+#include <QStringList>
 #include <QUrl>
-#include <QVector>
+#include <QVariantList>
 
-#include "SmmClient.hpp"
-#include "UpdateManager.hpp"
+#include "backend/GuiTypes.hpp"
+#include "backend/models/AssetListModel.hpp"
+#include "backend/models/ModListModel.hpp"
+#include "backend/models/PresetListModel.hpp"
+#include "backend/services/BackgroundTasks.hpp"
+#include "backend/services/CoreService.hpp"
+#include "backend/services/UpdateService.hpp"
 
 namespace smm::gui {
 
-/// QML-friendly List Model for staged mods.
-class ModListModel : public QAbstractListModel {
-    Q_OBJECT
-
-    Q_PROPERTY(int count READ count NOTIFY countChanged)
-    Q_PROPERTY(QString filterText READ filterText WRITE setFilterText NOTIFY filterTextChanged)
-    Q_PROPERTY(QString selectedCategory READ selectedCategory WRITE setSelectedCategory NOTIFY selectedCategoryChanged)
-    Q_PROPERTY(QStringList availableCategories READ availableCategories NOTIFY availableCategoriesChanged)
-    Q_PROPERTY(bool onlyEquippedPackMods READ onlyEquippedPackMods WRITE setOnlyEquippedPackMods NOTIFY onlyEquippedPackModsChanged)
-
-public:
-    enum ModRoles {
-        IdRole = Qt::UserRole + 1,
-        NameRole,
-        VersionRole,
-        AuthorRole,
-        CategoryRole,
-        DescriptionRole,
-        HomepageRole,
-        SourceUrlRole,
-        EnabledRole,
-        PriorityRole,
-        AssetCountRole,
-        TotalBytesRole,
-        RootPathRole,
-        PreviewImageRole,
-        PreviewImagePathRole,
-        DisabledAssetsRole,
-        RankRole
-    };
-
-    explicit ModListModel(QObject* parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = {}) const override;
-    QVariant data(const QModelIndex& index, int role) const override;
-    QHash<int, QByteArray> roleNames() const override;
-
-    int count() const { return rowCount(); }
-    QString filterText() const { return filterText_; }
-    void setFilterText(const QString& filter);
-
-    QString selectedCategory() const { return selectedCategory_; }
-    void setSelectedCategory(const QString& cat);
-
-    QStringList availableCategories() const { return availableCategories_; }
-
-    bool onlyEquippedPackMods() const { return onlyEquippedPackMods_; }
-    void setOnlyEquippedPackMods(bool only);
-    void setEquippedModIds(const QSet<QString>& ids);
-
-    void setMods(const QVector<ModEntry>& mods);
-    const QVector<ModEntry>& mods() const { return mods_; }
-    const ModEntry* findMod(const QString& id) const;
-
-    Q_INVOKABLE void toggleEnabled(int row);
-    Q_INVOKABLE void setPriority(int row, quint32 priority);
-    Q_INVOKABLE void swapPriority(int rowA, int rowB);
-    Q_INVOKABLE void moveRow(int from, int to);
-    Q_INVOKABLE QStringList allModIds() const {
-        QStringList list;
-        for (const auto& m : mods_) list.append(m.id);
-        return list;
-    }
-
-signals:
-    void countChanged();
-    void filterTextChanged();
-    void selectedCategoryChanged();
-    void availableCategoriesChanged();
-    void onlyEquippedPackModsChanged();
-    void modToggled(const QString& modId, bool enabled);
-    void priorityChanged(const QString& modId, quint32 priority);
-    void prioritiesSwapped(const QString& modIdA, quint32 priA, const QString& modIdB, quint32 priB);
-    void batchPrioritiesChanged(const QMap<QString, quint32>& priorities);
-
-private:
-    void rebuildFilter();
-    QVector<int> filteredIndices(const QVector<ModEntry>& mods) const;
-
-    QVector<ModEntry> mods_;
-    QVector<int> visibleIndices_;
-    QString filterText_;
-    QString selectedCategory_{QStringLiteral("all")};
-    QStringList availableCategories_;
-    bool onlyEquippedPackMods_{false};
-    QSet<QString> equippedModIds_;
-};
-
-/// QML-friendly List Model for individual asset files within one mod.
-class AssetListModel : public QAbstractListModel {
-    Q_OBJECT
-
-    Q_PROPERTY(int count READ count NOTIFY countChanged)
-
-public:
-    enum AssetRoles {
-        RelativePathRole = Qt::UserRole + 1,
-        CategoryRole,
-        FileSizeRole,
-        CriticalRole,
-        ExclusiveSlotRole,
-        EnabledRole,
-        FormattedSizeRole
-    };
-
-    explicit AssetListModel(QObject* parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = {}) const override;
-    QVariant data(const QModelIndex& index, int role) const override;
-    QHash<int, QByteArray> roleNames() const override;
-
-    int count() const { return rowCount(); }
-
-    void setAssets(const QString& modId, const QVector<AssetEntry>& assets);
-    const QVector<AssetEntry>& assets() const { return assets_; }
-    QString currentModId() const { return currentModId_; }
-
-    int activeCount() const;
-    int totalCount() const { return assets_.size(); }
-
-    Q_INVOKABLE void toggleAsset(int row);
-
-signals:
-    void countChanged();
-    void assetToggled(const QString& modId, const QString& relPath, bool enabled);
-    void countsChanged(int active, int total);
-
-private:
-    QString currentModId_;
-    QVector<AssetEntry> assets_;
-};
-
-/// QML-friendly List Model for Mod Pack presets.
-class PresetListModel : public QAbstractListModel {
-    Q_OBJECT
-
-    Q_PROPERTY(int count READ count NOTIFY countChanged)
-
-public:
-    enum PresetRoles {
-        IdRole = Qt::UserRole + 1,
-        NameRole,
-        DescriptionRole,
-        NameEnRole,
-        DescriptionEnRole,
-        ModCountRole,
-        UpdatedAtRole,
-        IsEquippedRole
-    };
-
-    explicit PresetListModel(QObject* parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = {}) const override;
-    QVariant data(const QModelIndex& index, int role) const override;
-    QHash<int, QByteArray> roleNames() const override;
-
-    int count() const { return rowCount(); }
-
-    void setPresets(const QVector<PresetEntry>& presets);
-    void setEquippedId(const QString& id);
-
-    QString equippedId() const { return equippedId_; }
-
-signals:
-    void countChanged();
-
-private:
-    QVector<PresetEntry> presets_;
-    QString equippedId_{"default"};
-};
-
-/// Central controller bridging QML UI with C++ SmmClient and local settings.
+/// The controller QML talks to (`smmBackend`).
+///
+/// Responsibilities:
+///   * user-intent entry points: install, remove, refresh, save/apply presets, deploy, launch;
+///   * flow coordination: which core call follows which, and when a refresh or a health check
+///     has to run afterwards;
+///   * GUI state that is not business data: busy flags, current selection, health summary text,
+///     launch gate, settings persistence;
+///   * owning the models and the background runners.
+///
+/// Explicitly not its job: business rules (they live in smm_core), struct conversion
+/// (CoreMapping), blocking filesystem work (TaskRunner), and update-feed parsing (UpdateFeed).
 class GuiController : public QObject {
     Q_OBJECT
 
@@ -236,7 +80,7 @@ class GuiController : public QObject {
     Q_PROPERTY(int healthWarnCount READ healthWarnCount NOTIFY doctorChanged)
     Q_PROPERTY(int healthErrorCount READ healthErrorCount NOTIFY doctorChanged)
     Q_PROPERTY(QVariantList healthItems READ healthItems NOTIFY doctorChanged)
-    Q_PROPERTY(UpdateManager* updater READ updater CONSTANT)
+    Q_PROPERTY(UpdateService* updater READ updater CONSTANT)
 
 public:
     explicit GuiController(QObject* parent = nullptr);
@@ -244,9 +88,9 @@ public:
     ModListModel* modListModel() { return &modListModel_; }
     AssetListModel* assetListModel() { return &assetListModel_; }
     PresetListModel* presetListModel() { return &presetListModel_; }
-    UpdateManager* updater() { return &updater_; }
+    UpdateService* updater() { return &updater_; }
 
-    bool isBusy() const { return client_.isBusy(); }
+    bool isBusy() const { return tasks_.isBusy(); }
     QString statusText() const { return statusText_; }
 
     QString language() const { return language_; }
@@ -274,7 +118,7 @@ public:
     QString stagingDir() const { return stagingDir_; }
     void setStagingDir(const QString& dir);
 
-    bool isNtfsMatched() const;
+    bool isNtfsMatched() const { return isNtfsMatched_; }
 
     int deployedFiles() const { return deployedFiles_; }
     quint64 bytesSaved() const { return bytesSaved_; }
@@ -296,10 +140,9 @@ public:
     int activeAssetCount() const { return assetListModel_.activeCount(); }
     int totalAssetCount() const { return assetListModel_.totalCount(); }
 
-    bool isDoctorChecking() const { return client_.isDoctorChecking(); }
+    bool isDoctorChecking() const { return diagnoseInFlight_; }
     bool launchPending() const { return launchPending_ || deployLaunchPending_; }
-    bool canLaunch() const { return !isBusy() && !isDoctorChecking() && modScanFailures_.isEmpty() &&
-                                     healthInfo_.overall == QLatin1String("healthy"); }
+    bool canLaunch() const;
     QString healthSummary() const;
     QString healthRemediation() const;
     bool engineReady() const;
@@ -308,6 +151,16 @@ public:
     int healthWarnCount() const { return healthInfo_.warningCount; }
     int healthErrorCount() const { return healthInfo_.errorCount; }
     QVariantList healthItems() const;
+
+    /// Local filesystem path for a QML FileDialog url, so QML stops re-implementing it.
+    Q_INVOKABLE QString localPath(const QUrl& url) const;
+    /// Human readable category label shared by every view.
+    Q_INVOKABLE QString categoryLabel(const QString& category) const;
+
+    /// Staging directory for the preview image provider, which runs on a decoder thread
+    /// while the GUI thread may still be changing the setting. Guarded by a mutex and
+    /// updated from the GUI thread only.
+    QString previewStagingDir() const;
 
     Q_INVOKABLE void refreshAll();
     Q_INVOKABLE void refreshDoctor();
@@ -354,6 +207,8 @@ public:
     Q_INVOKABLE void importModPack(const QString& packPath);
     Q_INVOKABLE void importArchive(const QString& archivePath);
     Q_INVOKABLE void importArchives(const QStringList& archivePaths);
+    /// Same as importArchives but taking FileDialog urls directly.
+    Q_INVOKABLE void importUrls(const QList<QUrl>& urls);
 
 signals:
     void busyChanged();
@@ -379,16 +234,46 @@ protected:
     virtual bool startGameProcess(const QString& executable, const QString& workingDirectory);
 
 private:
-    void initSignals();
+    /// How much work a refresh has to do.
+    enum class RefreshScope {
+        Scan,        ///< staging scan only: mods, conflicts, plan, deployment telemetry
+        Diagnose,    ///< scan plus a full health report (the launch gate)
+        RuntimeOnly  ///< re-observe running processes on top of the last health report
+    };
+    /// Everything a background refresh produces; applied on the GUI thread in one step.
+    struct RefreshResult {
+        StagingSnapshot snapshot;
+        QVector<PresetEntry> presets;
+        HealthInfo health;
+        int deployedFiles{0};
+        quint64 bytesSaved{0};
+        bool diagnosed{false};
+    };
+
+    void initConnections();
     void checkVolumeMatch();
+    void requestRefresh(RefreshScope scope);
+    void applyRefresh(const RefreshResult& result, RefreshScope scope);
     void completeLaunchCheck();
     void scheduleDoctor();
-    bool launchPending_{false};
-    bool deployLaunchPending_{false};
-    bool doctorScheduled_{false};
-    bool doctorRefreshPending_{false};
+    void updateEquippedModIds();
+    void applyModDetail(const ModEntry& mod, const QVector<AssetEntry>& assets);
+    void clearCurrentMod();
+    void notify(const QString& type, const QString& message);
+    void reportFailure(const QString& title, const std::exception& error);
+    void reportFailure(const QString& title, const QString& message);
+    /// Refuses a quick write while a background job owns the staging directory.
+    bool stagingWritable() const;
 
-    SmmClient client_;
+    // Settings / preferences
+    void loadSettings();
+    void persistSetting(const QString& key, const QVariant& value);
+    /// Copies stagingDir_ into the mutex-guarded mirror the image provider reads.
+    void publishPreviewStaging();
+
+    TaskRunner tasks_;       ///< deploy / import / export / preview optimisation
+    TaskRunner scans_;       ///< staging scans and health checks (read-only)
+    UpdateService updater_;
     ModListModel modListModel_;
     AssetListModel assetListModel_;
     PresetListModel presetListModel_;
@@ -401,6 +286,8 @@ private:
     QString themeMode_{QStringLiteral("dark")};
     QString sekiroDir_;
     QString stagingDir_;
+    mutable QMutex previewStagingMutex_;
+    QString previewStagingMirror_;
     bool isNtfsMatched_{false};
 
     int deployedFiles_{0};
@@ -408,9 +295,6 @@ private:
     int conflictCount_{0};
     int previewRevision_{0};
     QString equippedPackId_;
-
-    void updateEquippedModIds();
-    void updateDeploymentTelemetry();
 
     QString currentModId_;
     QString currentModName_;
@@ -424,7 +308,14 @@ private:
 
     HealthInfo healthInfo_;
     QStringList modScanFailures_;
-    UpdateManager updater_;
+
+    bool launchPending_{false};
+    bool deployLaunchPending_{false};
+    bool diagnoseInFlight_{false};
+    bool refreshQueued_{false};
+    RefreshScope queuedScope_{RefreshScope::Scan};
+    QString queuedDetailId_;
+    bool launchAfterDeploy_{false};
 };
 
 } // namespace smm::gui

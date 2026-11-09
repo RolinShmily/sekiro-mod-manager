@@ -17,10 +17,6 @@
 namespace smm::cli {
 namespace {
 
-/// The directory ModEngine actually reads. Keeping this in one place means deploy and restore
-/// can never disagree about where assets live.
-fs::path target_mods_dir(const fs::path& game_dir) { return game_dir / "mods"; }
-
 fs::path require_game_dir(const CliContext& ctx) {
     const fs::path game = resolve_game_dir(ctx);
     if (game.empty()) {
@@ -119,7 +115,7 @@ nlohmann::json plan_json(const DeployPlan& plan, const fs::path& target) {
 nlohmann::json run_plan(CliContext& ctx, bool execute) {
     const fs::path staging = ensure_staging_dir(ctx);
     const fs::path game = require_game_dir(ctx);
-    const fs::path target = target_mods_dir(game);
+    const fs::path target = resolve_mods_dir(game);
 
     // Refuse before doing anything at all when the plan contains a critical collision: the user
     // should see the warning with a chance to reorder priorities, not afterwards.
@@ -172,7 +168,7 @@ nlohmann::json run_plan(CliContext& ctx, bool execute) {
 
 nlohmann::json run_restore(CliContext& ctx) {
     const fs::path game = require_game_dir(ctx);
-    const fs::path target = target_mods_dir(game);
+    const fs::path target = resolve_mods_dir(game);
 
     const DeployProgressCallback on_progress = [&ctx](const DeployProgress& progress) {
         emit_progress(ctx, "restore", progress.done, progress.total, progress.current_path);

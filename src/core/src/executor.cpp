@@ -89,6 +89,49 @@ void to_json(json& j, const RestoreResult& r) {
     };
 }
 
+fs::path resolve_mods_dir(const fs::path& game_dir) {
+    if (game_dir.empty()) {
+        return game_dir;
+    }
+    std::string name = game_dir.filename().string();
+    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    return name == "mods" ? game_dir : game_dir / "mods";
+}
+
+std::optional<DeployManifest> load_deploy_manifest(const fs::path& mods_dir) {
+    const fs::path manifest_path = mods_dir / std::string(DEPLOY_MANIFEST_NAME);
+    std::error_code ec;
+    if (!fs::exists(manifest_path, ec)) {
+        return std::nullopt;
+    }
+
+    std::ifstream stream(manifest_path, std::ios::binary);
+    if (!stream) {
+        fail(ErrorCode::Io, "Cannot read the deployment manifest", manifest_path);
+    }
+
+    json parsed;
+    try {
+        stream >> parsed;
+    } catch (const json::exception& e) {
+        fail(ErrorCode::Json,
+             std::string("The deployment manifest is malformed: ") + e.what(), manifest_path);
+    }
+    if (!parsed.is_object()) {
+        fail(ErrorCode::Json, "The deployment manifest is not a JSON object", manifest_path);
+    }
+
+    try {
+        return parsed.get<DeployManifest>();
+    } catch (const json::exception& e) {
+        fail(ErrorCode::Json,
+             std::string("The deployment manifest has unexpected fields: ") + e.what(),
+             manifest_path);
+    }
+}
+
 void validate_target_dir(const fs::path& target_dir) {
     if (target_dir.empty() || target_dir.string().find_first_not_of(" \t") == std::string::npos) {
         fail(ErrorCode::DeployError, "Target directory path cannot be empty", target_dir);
@@ -336,7 +379,7 @@ DeployResult execute_deploy(const DeployPlan& plan, const fs::path& target_mods_
     result.target_dir = target_mods_dir;
     result.total_files = plan.mappings.size();
 
-    const fs::path manifest_path = target_mods_dir / ".smm_manifest.json";
+    const fs::path manifest_path = target_mods_dir / std::string(DEPLOY_MANIFEST_NAME);
 
     std::set<std::string> planned;
     for (const auto& mapping : plan.mappings) {
@@ -468,7 +511,7 @@ RestoreResult restore_deploy(const fs::path& target_mods_dir, const DeployProgre
         return result;
     }
 
-    const fs::path manifest_path = target_mods_dir / ".smm_manifest.json";
+    const fs::path manifest_path = target_mods_dir / std::string(DEPLOY_MANIFEST_NAME);
 
     std::ifstream stream(manifest_path, std::ios::binary);
     if (stream) {
@@ -517,7 +560,7 @@ RestoreResult restore_deploy(const fs::path& target_mods_dir, const DeployProgre
             std::error_code type_ec;
             const fs::path path = it->path();
             const bool is_file = it->is_regular_file(type_ec) || it->is_symlink(type_ec);
-            if (is_file && path.filename() != ".smm_manifest.json") {
+            if (is_file && path.filename() != DEPLOY_MANIFEST_NAME) {
                 std::error_code remove_ec;
                 if (fs::remove(path, remove_ec) && !remove_ec) {
                     ++result.removed_files;

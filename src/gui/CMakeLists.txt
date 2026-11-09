@@ -23,12 +23,43 @@ if(NOT EXISTS ${SMM_HUSKAR_ROOT}/CMakeLists.txt)
         "    git submodule update --init --recursive")
 endif()
 
-# Suppress vendor warnings on HuskarUI
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267 /wd4244 /wd4100")
-endif()
-
 add_subdirectory(${SMM_HUSKAR_ROOT} ${CMAKE_BINARY_DIR}/huskarui EXCLUDE_FROM_ALL)
+
+# ---------------------------------------------------------------------------
+# Silence warnings on the vendor targets only.
+#
+# This used to be `set(CMAKE_CXX_FLAGS "... /wd4267 ...")`, which is a cache variable read at
+# generation time for EVERY target: it silenced our own sources too and contradicted the
+# project-wide /W4 policy. Applying `/w` (or -w) per target keeps third-party noise out while
+# leaving smm_gui and the GUI tests under /W4.
+#
+# HuskarUI creates its targets in nested directories (3rdparty/qwindowkit, qml/...), so the
+# directory tree is walked recursively; interface libraries are skipped because they cannot
+# carry PRIVATE options.
+# ---------------------------------------------------------------------------
+function(smm_silence_vendor_warnings dir)
+    get_property(targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(target ${targets})
+        get_target_property(target_type ${target} TYPE)
+        # Only real compilable targets: HuskarUI also creates UTILITY targets (aotstats,
+        # qmlls helpers) and INTERFACE libraries, neither of which accepts compile options.
+        if(NOT target_type MATCHES "^(STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY|EXECUTABLE)$")
+            continue()
+        endif()
+        if(MSVC)
+            target_compile_options(${target} PRIVATE /w)
+        else()
+            target_compile_options(${target} PRIVATE -w)
+        endif()
+    endforeach()
+
+    get_property(subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
+    foreach(subdir ${subdirs})
+        smm_silence_vendor_warnings("${subdir}")
+    endforeach()
+endfunction()
+
+smm_silence_vendor_warnings("${SMM_HUSKAR_ROOT}")
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -37,16 +68,37 @@ if(WIN32)
     set(SMM_GUI_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/smm_gui.rc")
 endif()
 
+# Layering (see backend/):
+#   controllers/  QML entry points, flow coordination, GUI state only
+#   models/       QAbstractListModel projections; no filesystem access
+#   services/     CoreService (sync core facade), TaskRunner (serialized bg work),
+#                 UpdateFeed (pure update logic), UpdateService (network + UI strings)
+#   adapters/     core value types <-> Qt value types, path encoding in one place
+#   providers/    image resources for QML
 qt_add_executable(smm_gui
     main.cpp
-    backend/SmmClient.hpp
-    backend/SmmClient.cpp
-    backend/Models.hpp
-    backend/Models.cpp
-    backend/UpdateManager.hpp
-    backend/UpdateManager.cpp
-    backend/ModPreviewImageProvider.hpp
-    backend/ModPreviewImageProvider.cpp
+    backend/GuiTypes.hpp
+    backend/adapters/CoreMapping.hpp
+    backend/adapters/CoreMapping.cpp
+    backend/services/TaskTypes.hpp
+    backend/services/CoreService.hpp
+    backend/services/CoreService.cpp
+    backend/services/BackgroundTasks.hpp
+    backend/services/BackgroundTasks.cpp
+    backend/services/UpdateFeed.hpp
+    backend/services/UpdateFeed.cpp
+    backend/services/UpdateService.hpp
+    backend/services/UpdateService.cpp
+    backend/models/ModListModel.hpp
+    backend/models/ModListModel.cpp
+    backend/models/AssetListModel.hpp
+    backend/models/AssetListModel.cpp
+    backend/models/PresetListModel.hpp
+    backend/models/PresetListModel.cpp
+    backend/controllers/GuiController.hpp
+    backend/controllers/GuiController.cpp
+    backend/providers/ModPreviewImageProvider.hpp
+    backend/providers/ModPreviewImageProvider.cpp
     ${SMM_GUI_RC}
 )
 
@@ -143,3 +195,35 @@ set_target_properties(smm_gui PROPERTIES
 )
 
 add_executable(smm-gui ALIAS smm_gui)
+
+# ---------------------------------------------------------------------------
+# GUI-layer unit tests that need no QML engine and no window: the pure update feed and the
+# CoreService adapter. Both are headless, so neither needs HuskarUI nor a display.
+# ---------------------------------------------------------------------------
+if(SMM_BUILD_TESTS)
+    add_executable(smm_update_feed_tests
+        tests/update_feed_tests.cpp
+        backend/services/UpdateFeed.cpp
+    )
+    target_include_directories(smm_update_feed_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(smm_update_feed_tests PRIVATE smm_core smm::warnings)
+    add_test(NAME smm_update_feed_tests COMMAND smm_update_feed_tests)
+
+    # Headless adapter test: CoreService + CoreMapping, Qt Core only. No window, no HuskarUI.
+    add_executable(smm_core_service_tests
+        tests/core_service_tests.cpp
+        backend/adapters/CoreMapping.cpp
+        backend/services/CoreService.cpp
+    )
+    target_include_directories(smm_core_service_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(smm_core_service_tests PRIVATE Qt6::Core smm_core smm::warnings)
+    # The binary links Qt6::Core, so the Qt runtime directory must be on PATH for ctest: the
+    # build tree is not deployed and Windows resolves the test process' DLLs from PATH.
+    if(WIN32)
+        add_test(NAME smm_core_service_tests
+            COMMAND ${CMAKE_COMMAND} -E env "PATH=$<TARGET_FILE_DIR:Qt6::Core>;$ENV{PATH}"
+                    $<TARGET_FILE:smm_core_service_tests>)
+    else()
+        add_test(NAME smm_core_service_tests COMMAND smm_core_service_tests)
+    endif()
+endif()

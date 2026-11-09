@@ -1,7 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 #include "types.hpp"
@@ -14,6 +17,24 @@ public:
     /// Resolves a mod id to its staging directory. Falls back to a case-insensitive match.
     /// Throws SmmError(ModNotFound).
     static fs::path find_mod_dir(const fs::path& staging_dir, const std::string& mod_id);
+
+    /// Turns user input into a directory-safe mod id: path separators and the characters
+    /// Windows forbids in file names become '-', and surrounding whitespace is dropped.
+    /// Returns an empty string when nothing usable is left.
+    static std::string sanitize_mod_id(std::string_view requested);
+
+    /// Renames a staged mod: validates the new id, refuses to overwrite another mod and
+    /// rewrites the metadata id. Returns the reloaded info pointing at the new directory.
+    /// Throws SmmError(ModAlreadyExists) / SmmError(Io) / SmmError(ModNotFound).
+    static ModInfo rename_mod(const fs::path& staging_dir, const std::string& mod_id,
+                              const std::string& new_id);
+
+    /// Assigns priorities in the given order: entry i becomes (i + 1) * step.
+    /// Ids that no longer exist are skipped. Used by drag-to-reorder in the GUI.
+    /// Returns the metadata of every mod that was updated.
+    static std::vector<ModInfo> reindex_priorities(const fs::path& staging_dir,
+                                                  const std::vector<std::string>& ordered_ids,
+                                                  uint32_t step = 10);
 
     static ModInfo set_mod_enabled(const fs::path& staging_dir, const std::string& mod_id, bool enabled);
     static ModInfo set_mod_priority(const fs::path& staging_dir, const std::string& mod_id, uint32_t priority);

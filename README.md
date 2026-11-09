@@ -67,6 +67,21 @@ High-performance mod staging, semantic conflict arbitration, and zero-copy NTFS 
 | `src/cli` | `smm.exe` | C++17 executable | Standalone CLI and headless JSON API for automated workflows and scripting. |
 | `src/gui` | `smm_gui.exe` | Qt 6 Quick / QML | Hardware-accelerated desktop GUI linking `smm_core` directly in-process for instant response times. |
 
+`src/gui/backend` is a thin adaption layer between QML and the core, split by responsibility:
+
+| Layer | Responsibility | Never does |
+|---|---|---|
+| `controllers/GuiController` | QML entry points, flow coordination, GUI state (busy flags, health text, launch gate), settings persistence | Filesystem work, business rules |
+| `models/` | `QAbstractListModel` projections: rows, filters, toggle state | Touch the disk or decide persistence |
+| `services/CoreService` | Synchronous, throwing facade over `smm_core`; one user action maps to one core flow | Threads, signals, `tr()` strings, busy state |
+| `services/TaskRunner` | Serialized background execution (one job at a time), progress relay, cooperative cancellation, safe teardown | Know what the job does |
+| `services/UpdateFeed` / `UpdateService` | Pure manifest/version logic, then the network request around it | Parse JSON inside the Qt network object |
+| `adapters/CoreMapping` | Core value types to Qt value types; path encoding in exactly one place | Own any policy |
+| `providers/ModPreviewImageProvider` | Locate, decode, cache and downsample preview images | Reach into the controller or the models |
+
+Both entry points stay independent processes that share `smm_core`: the CLI never launches the
+GUI and the GUI never shells out to the CLI.
+
 ---
 
 ## Building from Source

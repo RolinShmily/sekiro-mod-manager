@@ -70,6 +70,20 @@
 | `src/cli` | `smm.exe` | C++17 可执行文件 | 独立的终端命令行工具与 JSON 自动化接口，便于脚本驱动与 AI Agent 集成。 |
 | `src/gui` | `smm_gui.exe` | Qt 6 Quick / QML | 硬件加速的高颜值桌面客户端，进程内直接链接 `smm_core`，无任何中间进程损耗。 |
 
+`src/gui/backend` 是 QML 与 Core 之间的薄适配层，按职责拆分：
+
+| 分层 | 职责 | 明确不做 |
+|---|---|---|
+| `controllers/GuiController` | QML 操作入口、流程编排、界面状态（忙碌标记、健康文案、启动闸门）、设置持久化 | 不碰文件系统，不实现业务规则 |
+| `models/` | `QAbstractListModel` 投影：行数据、筛选、开关状态 | 不读磁盘，不决定是否落盘 |
+| `services/CoreService` | `smm_core` 的同步、抛异常门面；一个用户动作对应一条核心流程 | 不管线程、不发信号、不含 `tr()` 文案与忙碌状态 |
+| `services/TaskRunner` | 串行后台执行（同一时刻仅一个任务）、进度回传、协作式取消、安全析构 | 不关心任务内容 |
+| `services/UpdateFeed` / `UpdateService` | 纯更新清单与版本比较逻辑，以及其上的网络请求外壳 | 不在网络对象里解析 JSON |
+| `adapters/CoreMapping` | Core 值类型到 Qt 值类型的转换；路径编码只保留一处 | 不持有策略 |
+| `providers/ModPreviewImageProvider` | 预览图的定位、解码、缓存与降采样 | 不反向依赖控制器或模型 |
+
+两个入口始终是互相独立的进程，只共享 `smm_core`：CLI 不会启动 GUI，GUI 也不会调用 CLI 子进程。
+
 ---
 
 ## 源码编译

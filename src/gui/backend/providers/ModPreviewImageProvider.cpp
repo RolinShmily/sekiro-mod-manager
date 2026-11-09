@@ -1,9 +1,10 @@
-#include "ModPreviewImageProvider.hpp"
-#include "Models.hpp"
+#include "backend/providers/ModPreviewImageProvider.hpp"
 
 #include <QDir>
 #include <QFileInfo>
 #include <QUrl>
+
+#include <utility>
 #include <smm/manager.hpp>
 
 #ifdef _WIN32
@@ -67,8 +68,8 @@ namespace smm::gui {
 QCache<QString, QImage> ModPreviewImageProvider::s_cache(128 * 1024); // 128 MB cache limit
 QMutex ModPreviewImageProvider::s_cacheMutex;
 
-ModPreviewImageProvider::ModPreviewImageProvider(GuiController* controller)
-    : QQuickImageProvider(QQuickImageProvider::Image), controller_(controller) {
+ModPreviewImageProvider::ModPreviewImageProvider(StagingDirResolver stagingDir)
+    : QQuickImageProvider(QQuickImageProvider::Image), stagingDir_(std::move(stagingDir)) {
 }
 
 void ModPreviewImageProvider::clearCache() {
@@ -91,40 +92,34 @@ QImage ModPreviewImageProvider::requestImage(const QString& id, QSize* size, con
 
     QString targetFilePath;
     QFileInfo checkDirect(cleanId);
+    const QString staging = stagingDir_ ? stagingDir_() : QString{};
     if (checkDirect.isAbsolute() && checkDirect.exists()) {
         targetFilePath = checkDirect.absoluteFilePath();
-    } else if (controller_) {
-        const QString staging = controller_->stagingDir();
-        if (!staging.isEmpty()) {
-            const QDir modDir(QDir(staging).filePath(cleanId));
-            if (modDir.exists()) {
-                // 优先寻找规范的 preview.webp
-                if (modDir.exists(QStringLiteral("preview.webp"))) {
-                    targetFilePath = modDir.filePath(QStringLiteral("preview.webp"));
-                } else {
-                    // 寻找其他候选名称
-                    const QStringList candidates = {
-                        QStringLiteral("preview.png"),
-                        QStringLiteral("preview.jpg"),
-                        QStringLiteral("preview.jpeg"),
-                        QStringLiteral("cover.webp"),
-                        QStringLiteral("cover.png"),
-                        QStringLiteral("cover.jpg")
-                    };
-                    for (const auto& cand : candidates) {
-                        if (modDir.exists(cand)) {
-                            targetFilePath = modDir.filePath(cand);
-                            break;
-                        }
+    } else if (!staging.isEmpty()) {
+        const QDir modDir(QDir(staging).filePath(cleanId));
+        if (modDir.exists()) {
+            // preview.webp is what ModManager writes, so it is tried first.
+            if (modDir.exists(QStringLiteral("preview.webp"))) {
+                targetFilePath = modDir.filePath(QStringLiteral("preview.webp"));
+            } else {
+                const QStringList candidates = {
+                    QStringLiteral("preview.png"), QStringLiteral("preview.jpg"),
+                    QStringLiteral("preview.jpeg"), QStringLiteral("cover.webp"),
+                    QStringLiteral("cover.png"), QStringLiteral("cover.jpg")};
+                for (const auto& candidate : candidates) {
+                    if (modDir.exists(candidate)) {
+                        targetFilePath = modDir.filePath(candidate);
+                        break;
                     }
-                    if (targetFilePath.isEmpty()) {
-                        // 寻找任意图片
-                        const auto list = modDir.entryList(
-                            {QStringLiteral("*.webp"), QStringLiteral("*.png"), QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"), QStringLiteral("*.bmp")},
-                            QDir::Files);
-                        if (!list.isEmpty()) {
-                            targetFilePath = modDir.filePath(list.first());
-                        }
+                }
+                if (targetFilePath.isEmpty()) {
+                    // Last resort: any image the pack shipped at its root.
+                    const auto images = modDir.entryList(
+                        {QStringLiteral("*.webp"), QStringLiteral("*.png"), QStringLiteral("*.jpg"),
+                         QStringLiteral("*.jpeg"), QStringLiteral("*.bmp")},
+                        QDir::Files);
+                    if (!images.isEmpty()) {
+                        targetFilePath = modDir.filePath(images.first());
                     }
                 }
             }
