@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.5] - 2026-11-09
+
+### Changed
+
+- The environment doctor is a page in the navigation rail (`DiagnosticsView`) instead of a modal: results, the repair action and "when checks run" stay on screen, and `Ctrl+4` / `Ctrl+R` jump there.
+- The doctor now reports five items — game + `sekiro.exe`, the ModEngine hook, `modengine.ini`, staging, deployment — instead of one row per ini key and per running process. Chinese detail text is assembled in the GUI from those stable ids.
+- Checks only run when the launcher opens, when Launch is pressed, and when "Check environment" is pressed. Other writes rescan the staging directory only, a changed path discards the stale report, and the 10 s process timer is gone.
+- Pressing *Launch* now performs the check itself: the button is clickable unless a task is running, and a failing check blocks the launch and opens the diagnostics page.
+- **The GUI requires administrator rights** (`requireAdministrator` manifest). Steam's `PreferSystem32` DLL policy made an unelevated launch chain load the system `DINPUT8.dll` instead of ModEngine's, which silently disabled every mod; the old workaround asked users to close Steam first. UAC is now shown once per start, and the runtime process/DLL policy diagnostics were removed with the failure mode.
+- Theme switching applies in a single frame: colour transitions are suspended for the switch, the hero art and both calligraphy variants stay decoded (`sourceSize` + `asynchronous`), so changing the theme no longer decodes a 940×1920 PNG on the GUI thread.
+
+### 中文摘要
+
+- 环境诊断从弹窗改成导航分页（`DiagnosticsView`），检测结果、修复入口与「什么时候检测」都留在页面上；`Ctrl+4` / `Ctrl+R` 直达。
+- 体检压缩成五项（游戏与 `sekiro.exe`、ModEngine 钩子、`modengine.ini`、暂存区、部署一致性），不再把 ini 每个键、每个进程各拆一行；中文文案由界面按稳定 `id` 拼装。
+- 只在打开启动器、点击「启动只狼」、点击「检测环境」时体检；其他写操作只重扫暂存区，路径变更直接丢弃过期结果，10 秒定时器删除。
+- 点击「启动只狼」本身就会先检测：按钮不再常灰，检测不过则阻止启动并跳到诊断页。
+- **GUI 改为要求管理员权限**（`requireAdministrator` 清单）：非提权启动链会被 Steam 的 `PreferSystem32` 策略抢走系统 `DINPUT8.dll`，导致模组静默失效；原来的规避办法是让用户先关 Steam。现在每次启动由系统弹一次 UAC，运行态进程与 DLL 策略体检随失败模式一起删除。
+- 主题切换一帧完成：切换期间暂停颜色过渡，首屏画卷与两版书法水印常驻内存（`sourceSize` + `asynchronous`），换肤不再在 GUI 线程解码 940×1920 的 PNG。
+
 ## [0.4.4] - 2026-11-09
 
 ### Added
@@ -363,7 +383,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.1...v0.4.2

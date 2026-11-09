@@ -1,8 +1,8 @@
 ; Sekiro Mod Manager - Inno Setup Installer Script
-; Defines can be passed from command line via /DMyAppVersion=v0.4.4 /DSourceDir=... /DOutputDir=...
+; Defines can be passed from command line via /DMyAppVersion=v0.4.5 /DSourceDir=... /DOutputDir=...
 
 #ifndef MyAppVersion
-  #define MyAppVersion "v0.4.4"
+  #define MyAppVersion "v0.4.5"
 #endif
 
 #ifndef SourceDir

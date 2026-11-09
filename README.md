@@ -24,7 +24,7 @@ core library.
 | **Conflict arbitration** | Three severities — critical (balance tables), warning (exclusive player/weapon slots), info (general overrides) — resolved by user-assigned priority. |
 | **Mod packs** | `.smmpack` presets with bilingual titles, exportable/importable as portable archives. |
 | **Asset-level control** | Inspect a staged mod's files and toggle individual assets, with per-mod backdrop artwork. |
-| **Environment doctor** | Verifies `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini` and NTFS layout, with one-click repair. |
+| **Environment doctor** | A page (not a dialog) with five checks — `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini`, staging, deployment — plus one-click repair. |
 | **Bilingual UI** | Live switching between `zh-CN` and `en-US`, plus a dark/light/system theme and reduced-motion mode. |
 
 ## Interface
@@ -44,7 +44,7 @@ screens:
 <td><img src="docs/design/assets/screenshots/packs.webp" alt="Mod packs" width="400"></td>
 </tr>
 <tr>
-<td><b>Launch hub</b> — one verdict (deployed files, conflicts) plus the evidence behind it. <i>Launch</i> stays disabled until the environment doctor passes, so the reason is visible before anything is clicked.</td>
+<td><b>Launch hub</b> — one verdict (deployed files, conflicts) plus the evidence behind it. Pressing <i>Launch</i> runs the five environment checks first and only starts the game when they pass.</td>
 <td><b>Mod packs</b> — snapshots of "enabled set + priorities", switchable in one click and portable as <code>.smmpack</code> archives.</td>
 </tr>
 <tr>
