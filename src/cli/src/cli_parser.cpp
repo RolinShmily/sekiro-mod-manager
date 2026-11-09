@@ -21,7 +21,7 @@ const std::vector<CommandSpec> kCommands = {
      {"<mod-id>", "<priority>"}, {}, {}},
     {"remove", "Permanently delete a mod from the staging area.", {"<mod-id>"}, {}, {"--yes"}},
     {"import", "Import .zip/.7z/.rar packages or unpacked folders into staging.",
-     {"<path>"},
+     {"<path>", "..."},
      {"--id", "--name", "--priority", "--source-url"},
      {"--overwrite", "--dry-run"}},
     {"plan", "Build and print the deployment plan and its conflicts, without deploying.",
@@ -43,7 +43,7 @@ const std::vector<CommandSpec> kCommands = {
     {"export", "Export mods as a .zip (single) or .smmpack (collection).",
      {"<mod-id>", "..."},
      {"--output", "--name", "--description"},
-     {"--no-source"}},
+     {"--include-source"}},
     {"import-pack", "Import a .smmpack modpack into staging.", {"<pack-file>"}, {}, {"--overwrite"}},
     {"env", "Print the resolved configuration and the detected environment.", {}, {}, {}},
     {"config", "Persist the staging and game directories for future runs.", {}, {"--game-dir"}, {}},
@@ -205,6 +205,13 @@ CliContext parse_arguments(int argc, char** argv) {
     }
 
     // "..." means variadic; anything else fixes the exact count.
+    // Asking for help must work before the required positionals are supplied — that is how a
+    // user discovers what to pass. parse_arguments() has already rejected unknown flags above,
+    // so this shortcut cannot hide a typo.
+    if (ctx.has("--help") || ctx.has("-h")) {
+        return ctx;
+    }
+
     const bool variadic = !spec->positionals.empty() && spec->positionals.back() == "...";
     const std::size_t minimum = variadic ? spec->positionals.size() - 1 : spec->positionals.size();
     if (ctx.positionals.size() < minimum) {
