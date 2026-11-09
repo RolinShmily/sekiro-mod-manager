@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.3] - 2026-11-09
+
+### Added
+
+- Settings, About and the version check are now pages in the navigation rail instead of modal dialogs; each group sits directly on the page background (icon, title, hairline, whitespace) instead of in a nested card.
+- Screenshot gallery under `docs/design/` (seven WebP captures of a fictional demo library) and a screenshot section in both READMEs.
+- Documentation set: `docs/architecture`, `docs/design`, `docs/development`, `docs/reference`, indexed from `docs/README.md`.
+- `smm_gui` accepts `--staging=` and `--game-dir=` for a single run without touching saved settings.
+
+### Changed
+
+- The GUI backend is split by responsibility (adapters, controllers, models, providers, services); `smm_core` gained the rules that used to live in the GUI (`resolve_mods_dir`, `load_deploy_manifest`, `rename_mod`, `sanitize_mod_id`, `reindex_priorities`) and diagnostics reuse a pre-scanned staging directory.
+- `import` accepts several paths and merges them, `export` documents `--include-source`, and `--help` works for commands with required arguments.
+- Mod metadata is written once as `.smm_mod.json`; a legacy `mod.json` is read for compatibility and removed on the next save.
+- Vendored libraries live next to their consumers (`src/core/third_party`, `src/gui/third_party`); development helpers moved to `scripts/`.
+
+### Fixed
+
+- The background-task badge kept a spin animation alive while hidden, repainting the window at ~150 fps and burning about 15% of one core while idle.
+- The portable GUI bundle omitted `Qt6OpenGL.dll` even though `Qt6Quick.dll` imports it, so it could not start on a machine without that DLL.
+- Mod previews are decoded at the size the card asks for instead of full resolution and then downscaled.
+
+### Packaging
+
+- Windows GUI bundle: 114.6 MB → 54.9 MB on disk and 60.6 MB → 22.3 MB zipped, with the VC++ runtime shipped as DLLs instead of the 25 MB redistributable.
+- Pull request CI now builds the headless test suites and runs `ctest`.
+
+### 中文摘要
+
+- 「全局配置」「关于」与版本更新改为导航分页；分组直接落在页面背景上（图标、标题、细分隔线、留白），不再在背景里再套一层卡片。
+- 新增 `docs/design/` 截图集（7 张 WebP，来自虚构演示库）与中英 README 的界面展示；新增 `docs/` 四套文档（架构 / 设计 / 开发 / 参考）。
+- `smm_gui` 支持 `--staging=` / `--game-dir=` 单次运行覆盖，不写回已保存设置。
+- GUI 后端按职责拆分（adapters / controllers / models / providers / services）；原来散在 GUI 的业务规则（部署目录解析、清单读取、改名、优先级重排）回到 `smm_core`，诊断复用同一次暂存扫描。
+- `import` 支持多路径合并、`export` 的开关更正为 `--include-source`、带必填参数的命令也能用 `--help`。
+- 元数据只写 `.smm_mod.json`，旧的 `mod.json` 仅兼容读取并在下次保存时清理。
+- 修掉后台徽标隐藏后仍在旋转、导致空闲时约 15% 单核占用的空转；修掉便携版漏带 `Qt6OpenGL.dll` 导致无法启动的问题；预览图按卡片尺寸解码。
+- 便携包体积 114.6 MB → 54.9 MB（zip 60.6 → 22.3 MB），VC++ 运行时改以 DLL 形式随包发布。
+- PR CI 现在会构建并运行无界面测试套件。
+
 ## [0.4.2] - 2026-10-26
 
 ### Fixed
@@ -305,7 +344,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.3.7...v0.4.0
