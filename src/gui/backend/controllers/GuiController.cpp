@@ -605,12 +605,32 @@ void GuiController::applyFontFamily(const QString& family) {
 
 void GuiController::applyThemeMode(const QString& mode) {
     const QString value = mode.trimmed().toLower();
-    if (value == QLatin1String("light")) {
-        HusTheme::instance()->setDarkMode(HusTheme::DarkMode::Light);
-    } else if (value == QLatin1String("system")) {
-        HusTheme::instance()->setDarkMode(HusTheme::DarkMode::System);
-    } else {
-        HusTheme::instance()->setDarkMode(HusTheme::DarkMode::Dark);
+    const HusTheme::DarkMode target = value == QLatin1String("light") ? HusTheme::DarkMode::Light
+                                     : value == QLatin1String("system") ? HusTheme::DarkMode::System
+                                                                        : HusTheme::DarkMode::Dark;
+
+    HusTheme* theme = HusTheme::instance();
+    if (theme->darkMode() == target) {
+        return;
+    }
+
+    // A theme switch retokenizes every component at once, so each bound colour changes within
+    // the same event. Letting the ~180 ms colour Behaviors animate that storm means the whole
+    // window repaints for a dozen-plus frames just to arrive at the same end state; the switch
+    // is applied in one frame instead. The user's animation preference is restored right after
+    // the event loop delivers the new tokens.
+    const bool animations = theme->animationEnabled();
+    theme->setAnimationEnabled(false);
+    theme->setDarkMode(target);
+    if (animations) {
+        QMetaObject::invokeMethod(
+            theme,
+            [theme, animations]() {
+                if (animations) {
+                    theme->setAnimationEnabled(true);
+                }
+            },
+            Qt::QueuedConnection);
     }
 }
 

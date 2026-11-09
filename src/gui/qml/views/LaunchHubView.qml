@@ -58,14 +58,21 @@ ScrollView {
                     id: heroBgImage
                     anchors.fill: parent
                     source: "qrc:/images/sekiro_hero_art.png"
+                    // Decode at card size and never at full resolution: a mipmap chain on a
+                    // 1376x768 texture costs more than it buys once the image is already
+                    // downscaled by sourceSize.
                     sourceSize.width: 1040
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     autoTransform: true
-                    mipmap: true
                     smooth: true
                     // 亮色模式保留更丰富的水墨山城对比度，避免泛白发虚
                     opacity: HusTheme.isDark ? 0.40 : 0.70
+
+                    Behavior on opacity {
+                        enabled: HusTheme.animationEnabled
+                        NumberAnimation { duration: HusTheme.Primary.durationMid }
+                    }
                 }
 
                 // 渐变蒙版：深色模式暗色遮罩保清晰，亮色模式宣纸水墨过渡显层次
@@ -89,18 +96,44 @@ ScrollView {
                 }
 
                 // 右侧「隻狼」真迹水墨书法水印（亮色模式加深朱砂印泥饱和度）
+                //
+                // 两个变体同时常驻，只切换透明度。以前 theme 变化会改写 source，QML 便要在
+                // GUI 线程同步解码一张 940x1920 的 PNG 并重建 mipmap，主题切换的卡顿就来自
+                // 这里；两张预先按显示尺寸解码后，切换只剩一次透明度插值。
                 Image {
                     anchors.right: parent.right
                     anchors.rightMargin: 36
                     anchors.verticalCenter: parent.verticalCenter
                     height: 210
+                    source: "qrc:/images/sekiro_calligraphy_white.png"
+                    sourceSize.height: 420
                     fillMode: Image.PreserveAspectFit
-                    source: HusTheme.isDark
-                            ? "qrc:/images/sekiro_calligraphy_white.png"
-                            : "qrc:/images/sekiro_calligraphy_crimson.png"
-                    opacity: HusTheme.isDark ? 0.18 : 0.35
+                    asynchronous: true
                     smooth: true
-                    mipmap: true
+                    opacity: HusTheme.isDark ? 0.18 : 0.0
+
+                    Behavior on opacity {
+                        enabled: HusTheme.animationEnabled
+                        NumberAnimation { duration: HusTheme.Primary.durationMid }
+                    }
+                }
+
+                Image {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 36
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 210
+                    source: "qrc:/images/sekiro_calligraphy_crimson.png"
+                    sourceSize.height: 420
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    smooth: true
+                    opacity: HusTheme.isDark ? 0.0 : 0.35
+
+                    Behavior on opacity {
+                        enabled: HusTheme.animationEnabled
+                        NumberAnimation { duration: HusTheme.Primary.durationMid }
+                    }
                 }
             }
 

@@ -17,6 +17,12 @@ Behavior on color {
 
 `Main.qml` 还监听了 `HusTheme.onAnimationEnabledChanged`，在关闭动效的瞬间停止页面淡入并把 `opacity` 复位为 1——否则正在播放的动画会停在中间帧。
 
+## 主题切换不是动画
+
+切换主题会让整棵场景的每个颜色绑定在同一事件里全部变化。如果让 `Behavior on color` 去"过渡"它，一次换肤就变成十几个帧的全窗口重绘，实际观感是卡顿而不是流畅。因此 `GuiController::applyThemeMode()` 在 `setDarkMode()` 前后临时关掉 `animationEnabled`，下一轮事件循环再恢复：换肤一帧完成，之后所有动效照旧。
+
+同理，主题相关的图片不在切换时重新解码：首屏的水墨背景与两个书法水印都常驻（按显示尺寸 `sourceSize` 解码 + `asynchronous: true`），换肤只改 `opacity`。
+
 ## 现有节奏
 
 | 场景 | 时长 | 缓动 | 位置 |
