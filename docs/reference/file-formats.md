@@ -134,7 +134,7 @@ SMM 的唯一权威元数据。写入是原子的：先写 `._smm_mod.json.tmp`�
 
 - 实现是先解析全文再按行重写（`patch_modengine_ini_text`），注释、未知键与顺序都不会丢。
 - 文件不存在时用 `render_default_modengine_ini()` 生成一份最小可用配置。
-- 体检会分别检查这四个键（`modengine-ini` / `modengine-enabled` / `modengine-override` / `modengine-loose-params`）。
+- 体检把 `useModOverrideDirectory` 与 `modOverrideDirectory` 合成一条 `modengine-ini` 判定；`loadLooseParams` 只影响该条的说明文案，不再单独占一行。
 
 ## 预览图
 

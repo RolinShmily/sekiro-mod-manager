@@ -26,8 +26,7 @@
 | `importer.hpp` | `ImportOptions` `ImportResult` | `import_mod()` `import_multiple_files_as_mod()` `collect_documentation_files()` `slugify()` `humanize_name()` `extract_version()` `infer_category()` `default_priority_for_category()` | 先在临时目录构建，最后整体换名进暂存区 |
 | `exporter.hpp` | `ModPackManifest` `ModPackItem` `ExportOptions` `ModPackImportResult` | `export_single_mod()` `export_modpack()` `import_modpack()` | 容器是 ZIP，清单文件 `smm_pack.json` |
 | `preset.hpp` | `ModPreset` `ModPresetEntry` | `PresetManager::list_presets` `save_preset` `create_preset_from_current` `apply_preset` `delete_preset` `find_by_name` | `PRESETS_FILE_NAME = ".smm_presets.json"` |
-| `doctor.hpp` | `DiagnosticItem` `HealthReport` `ModEngineConfig` `EngineProvisionResult` | `diagnose_environment()` `provision_mod_engine()` `patch_or_create_modengine_ini()` `detect_game_dir()` `detect_staging_dir()` | `MOD_ENGINE_DLL_MIN_SIZE = 10'000` |
-| `runtime_doctor.hpp` | `RuntimeProcess` `RuntimeSnapshot` | `inspect_launch_runtime()` `diagnose_launch_runtime()` | 观察与判定分离，判定可在无进程环境测试 |
+| `doctor.hpp` | `DiagnosticItem` `HealthReport` `ModEngineConfig` `EngineProvisionResult` | `diagnose_environment()` `provision_mod_engine()` `patch_or_create_modengine_ini()` `detect_game_dir()` `detect_staging_dir()` `is_process_elevated()` | `MOD_ENGINE_DLL_MIN_SIZE = 10'000`；体检只有五个 `id`（见 [data-flows.md](../architecture/data-flows.md)） |
 
 ## 抛异常 / 不抛异常的边界
 
@@ -71,11 +70,11 @@ const smm::ImportResult result = smm::import_mod(source, staging, options);
 
 ```cpp
 const smm::HealthReport report = smm::diagnose_environment(game, staging, /*verify_deployment=*/true);
-const smm::HealthReport runtime = smm::diagnose_launch_runtime(smm::inspect_launch_runtime(game));
 ```
 
 - 已扫描过暂存区的调用方传 `staging_scan` 指针，避免重复走目录。
 - `overall` 由最差项推导；`items` 已按 error → warning → info → ok 排序。
+- `is_process_elevated()` 只是报告当前进程的令牌状态，供界面提示；GUI 通过 `requireAdministrator` 清单保证这一点。
 
 ## 调用方禁止事项
 

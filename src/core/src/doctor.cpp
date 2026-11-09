@@ -223,101 +223,77 @@ void diagnose_deployment(const fs::path& game_dir, const std::vector<StagedMod>&
     }
 }
 
-/// Adds the ModEngine-related items for one ini file.
-void diagnose_modengine_ini(const fs::path& game_dir, const fs::path& ini_path,
-                            std::vector<DiagnosticItem>& items) {
+/// True when `override_dir` (as written in modengine.ini) points at the managed mods folder.
+bool override_dir_is_managed_mods(const fs::path& game_dir, const std::string& override_dir) {
+    std::string relative = override_dir;
+    while (!relative.empty() && (relative.front() == '\\' || relative.front() == '/')) {
+        relative.erase(relative.begin());
+    }
+    std::error_code ec;
+    const fs::path target = game_dir / relative;
+    const fs::path managed = game_dir / "mods";
+    if (fs::equivalent(target, managed, ec) && !ec) {
+        return true;
+    }
+    ec.clear();
+    const fs::path configured = fs::weakly_canonical(target, ec);
+    if (ec) {
+        return false;
+    }
+    ec.clear();
+    const fs::path expected = fs::weakly_canonical(managed, ec);
+    if (ec) {
+        return false;
+    }
+#ifdef _WIN32
+    return _wcsicmp(configured.c_str(), expected.c_str()) == 0;
+#else
+    return configured == expected;
+#endif
+}
+
+/// One verdict for modengine.ini: the three switches that decide whether a deployment is seen
+/// are collapsed into a single item, because a user either has to run the repair or does not.
+DiagnosticItem diagnose_modengine_ini(const fs::path& game_dir, const fs::path& ini_path) {
     std::error_code ec;
     if (!fs::is_regular_file(ini_path, ec)) {
-        items.push_back(DiagnosticItem{
-            "modengine-ini",
-            "modengine",
-            "modengine.ini",
-            "The ModEngine configuration file is missing from the game directory.",
-            DiagnosticStatus::Error,
-            "Run 'smm setup-engine --game-dir <path>' to generate a standard configuration."});
-        return;
+        return {"modengine-ini", "modengine", "modengine.ini",
+                "modengine.ini is missing from the game directory.", DiagnosticStatus::Error,
+                "Run 'smm setup-engine --game-dir <path>' to write a standard configuration."};
     }
 
     const ModEngineConfig config = parse_modengine_ini(ini_path);
 
-    items.push_back(DiagnosticItem{"modengine-ini", "modengine", "modengine.ini",
-                                   "Configuration file found and readable.",
-                                   DiagnosticStatus::Ok, std::nullopt});
-
-    if (!config.use_mod_override.has_value()) {
-        items.push_back(DiagnosticItem{
-            "modengine-enabled", "modengine", "useModOverrideDirectory",
-            "useModOverrideDirectory is unset; ModEngine defaults to enabled.",
-            DiagnosticStatus::Info, std::nullopt});
-    } else if (!*config.use_mod_override) {
-        items.push_back(DiagnosticItem{
-            "modengine-enabled", "modengine", "useModOverrideDirectory",
-            "Mod overrides are disabled (useModOverrideDirectory=0).",
-            DiagnosticStatus::Error,
-            "Set 'useModOverrideDirectory=1' under [files], or run 'smm setup-engine'."});
-    } else {
-        items.push_back(DiagnosticItem{"modengine-enabled", "modengine", "useModOverrideDirectory",
-                                       "Mod overrides are enabled (useModOverrideDirectory=1).", DiagnosticStatus::Ok,
-                                       std::nullopt});
-    }
-
-    const std::string override_dir =
-        config.mod_override_directory ? *config.mod_override_directory : std::string{};
-    if (override_dir.empty()) {
-        items.push_back(DiagnosticItem{
-            "modengine-override", "modengine", "modOverrideDirectory",
-            "'modOverrideDirectory' is missing or empty, so deployed mods would never be found.",
-            DiagnosticStatus::Error,
-            "Set modOverrideDirectory=\"\\\\mods\" in modengine.ini."});
-    } else {
-        std::string relative = override_dir;
-        while (!relative.empty() && (relative.front() == '\\' || relative.front() == '/')) {
-            relative.erase(relative.begin());
-        }
-        const fs::path target = game_dir / relative;
-        const fs::path managed = game_dir / "mods";
-        const bool exists = fs::is_directory(target, ec) && !ec;
-        bool same_as_managed = false;
-        if (exists && fs::is_directory(managed, ec) && !ec) {
-            same_as_managed = fs::equivalent(target, managed, ec) && !ec;
-        }
-        if (!same_as_managed) {
-            ec.clear();
-            const fs::path configured = fs::weakly_canonical(target, ec);
-            ec.clear();
-            const fs::path expected = fs::weakly_canonical(managed, ec);
-            if (!ec) {
-#ifdef _WIN32
-                same_as_managed = _wcsicmp(configured.c_str(), expected.c_str()) == 0;
-#else
-                same_as_managed = configured == expected;
-#endif
-            }
-        }
-        if (!same_as_managed) {
-            items.push_back({"modengine-override", "modengine", "modOverrideDirectory",
-                "ModEngine is not reading the mods directory where SMM deploys files (configured: '" + override_dir + "').",
+    // ModEngine only reads the override directory when useModOverrideDirectory is on; an absent
+    // key means "on", which is the engine's own default.
+    if (config.use_mod_override.has_value() && !*config.use_mod_override) {
+        return {"modengine-ini", "modengine", "modengine.ini",
+                "Mod overrides are disabled (useModOverrideDirectory=0), so no mod is loaded.",
                 DiagnosticStatus::Error,
-                "Set modOverrideDirectory=\"\\mods\" under [files], then recheck."});
-        } else {
-            items.push_back(DiagnosticItem{
-                "modengine-override", "modengine", "modOverrideDirectory",
-                "Override directory '" + override_dir + "' resolves to the managed mods folder.",
-                DiagnosticStatus::Ok, std::nullopt});
-        }
+                "Set useModOverrideDirectory=1 under [files], or run 'smm setup-engine'."};
     }
 
-    if (!config.load_loose_params.has_value() || !*config.load_loose_params) {
-        items.push_back(DiagnosticItem{
-            "modengine-loose-params", "modengine", "loadLooseParams",
-            "loadLooseParams is off or unset, so loose param files may be ignored.",
-            DiagnosticStatus::Warning,
-            "Set 'loadLooseParams=1' in modengine.ini to allow loose param modifications."});
-    } else {
-        items.push_back(DiagnosticItem{"modengine-loose-params", "modengine", "loadLooseParams",
-                                       "Loose parameter overrides are enabled.",
-                                       DiagnosticStatus::Ok, std::nullopt});
+    if (!config.mod_override_directory || config.mod_override_directory->empty()) {
+        return {"modengine-ini", "modengine", "modengine.ini",
+                "modOverrideDirectory is empty, so ModEngine never finds the deployed mods.",
+                DiagnosticStatus::Error,
+                "Set modOverrideDirectory=\"\\mods\" under [files], or run 'smm setup-engine'."};
     }
+
+    const std::string& override_dir = *config.mod_override_directory;
+    if (!override_dir_is_managed_mods(game_dir, override_dir)) {
+        return {"modengine-ini", "modengine", "modengine.ini",
+                "ModEngine reads '" + override_dir + "', but SMM deploys into 'mods'.",
+                DiagnosticStatus::Error,
+                "Set modOverrideDirectory=\"\\mods\" under [files], or run 'smm setup-engine'."};
+    }
+
+    const bool loose_params = config.load_loose_params.value_or(false);
+    return {"modengine-ini", "modengine", "modengine.ini",
+            loose_params ? "Override directory 'mods' is active and loose params are loaded."
+                         : "Override directory 'mods' is active; loadLooseParams is off, so loose "
+                           "param files are ignored.",
+            DiagnosticStatus::Ok, std::nullopt};
 }
 
 } // namespace
@@ -787,109 +763,83 @@ HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& stag
     report.staging_dir = staging_dir;
     std::error_code ec;
 
-    if (!fs::exists(game_dir, ec)) {
+    // 1. The game root and the executable SMM would start.
+    if (!fs::is_directory(game_dir, ec)) {
         report.items.push_back(DiagnosticItem{
-            "game-dir", "game", "Game Directory",
+            "game", "game", "Game and sekiro.exe",
             "The game directory does not exist: " + game_dir.string(), DiagnosticStatus::Error,
             "Point SMM at the folder that contains sekiro.exe."});
-    } else if (!fs::is_directory(game_dir, ec)) {
+    } else if (!fs::is_regular_file(game_dir / "sekiro.exe", ec)) {
         report.items.push_back(DiagnosticItem{
-            "game-dir", "game", "Game Directory",
-            "The configured game path is not a directory: " + game_dir.string(),
-            DiagnosticStatus::Error, "Point SMM at the folder that contains sekiro.exe."});
+            "game", "game", "Game and sekiro.exe",
+            "sekiro.exe is not in " + game_dir.string() + ".", DiagnosticStatus::Error,
+            "Point SMM at the Sekiro install folder (steamapps/common/Sekiro), not its parent."});
     } else {
-        report.items.push_back(DiagnosticItem{"game-dir", "game", "Game Directory",
-                                              "Game directory found.", DiagnosticStatus::Ok,
-                                              std::nullopt});
-
-        bool exe_found = false;
-        for (const auto& entry : fs::directory_iterator(
-                 game_dir, fs::directory_options::skip_permission_denied, ec)) {
-            if (equals_ignore_case(entry.path().filename().string(), "sekiro.exe") && entry.is_regular_file(ec)) {
-                exe_found = true;
-                break;
-            }
-        }
-        if (exe_found) {
-            report.items.push_back(DiagnosticItem{"sekiro-exe", "game", "sekiro.exe",
-                                                  "The game executable was found.",
-                                                  DiagnosticStatus::Ok, std::nullopt});
-        } else {
-            report.items.push_back(DiagnosticItem{
-                "sekiro-exe", "game", "sekiro.exe",
-                "sekiro.exe was not found in the game directory.", DiagnosticStatus::Error,
-                "Make sure the path points at steamapps/common/Sekiro, not its parent."});
-        }
+        report.items.push_back(DiagnosticItem{"game", "game", "Game and sekiro.exe",
+                                              "sekiro.exe was found in the game directory.",
+                                              DiagnosticStatus::Ok, std::nullopt});
     }
 
+    // 2. The ModEngine loader itself.
     const fs::path dinput8 = game_dir / "dinput8.dll";
     if (is_valid_mod_engine_dll(dinput8)) {
         report.items.push_back(DiagnosticItem{
-            "dinput8", "modengine", "dinput8.dll",
-            "The ModEngine hook is installed (" +
+            "modengine-hook", "modengine", "ModEngine hook",
+            "dinput8.dll is in place (" +
                 format_bytes(static_cast<uint64_t>(fs::file_size(dinput8, ec))) + ").",
             DiagnosticStatus::Ok, std::nullopt});
     } else if (fs::exists(dinput8, ec)) {
         report.items.push_back(DiagnosticItem{
-            "dinput8", "modengine", "dinput8.dll",
-            "dinput8.dll is present but far too small to be the real hook; it looks like a stub.",
+            "modengine-hook", "modengine", "ModEngine hook",
+            "dinput8.dll is far too small to be the real hook; it looks like a stub.",
             DiagnosticStatus::Warning, std::string(MOD_ENGINE_SOURCE_HINT)});
     } else {
-        report.items.push_back(DiagnosticItem{
-            "dinput8", "modengine", "dinput8.dll",
-            "The ModEngine hook library is missing from the game directory.",
-            DiagnosticStatus::Error, std::string(MOD_ENGINE_SOURCE_HINT)});
+        report.items.push_back(DiagnosticItem{"modengine-hook", "modengine", "ModEngine hook",
+                                              "The ModEngine hook is missing from the game "
+                                              "directory (dinput8.dll).",
+                                              DiagnosticStatus::Error,
+                                              std::string(MOD_ENGINE_SOURCE_HINT)});
     }
 
-    diagnose_modengine_ini(game_dir, game_dir / "modengine.ini", report.items);
+    // 3. The switches ModEngine needs in order to see what was deployed.
+    report.items.push_back(diagnose_modengine_ini(game_dir, game_dir / "modengine.ini"));
 
+    // 4. Staging: where mods live plus how deployment will link them.
     if (staging_dir.empty()) {
         report.items.push_back(DiagnosticItem{
-            "staging", "staging", "Staging Directory",
-            "No staging directory is configured.", DiagnosticStatus::Warning,
-            "Choose a staging folder in Settings so SMM knows where your mods live."});
-    } else if (!fs::exists(staging_dir, ec)) {
-        report.items.push_back(DiagnosticItem{
-            "staging", "staging", "Staging Directory",
-            "The staging directory does not exist yet: " + staging_dir.string(),
+            "staging", "staging", "Staging and staged mods", "No staging directory is configured.",
             DiagnosticStatus::Warning,
-            "Import a mod, or create the folder, and SMM will use it."});
+            "Choose a staging folder in Settings so SMM knows where your mods live."});
+    } else if (!fs::is_directory(staging_dir, ec)) {
+        report.items.push_back(DiagnosticItem{
+            "staging", "staging", "Staging and staged mods",
+            "The staging directory does not exist yet: " + staging_dir.string(),
+            DiagnosticStatus::Warning, "Import a mod, and SMM will use the folder."});
     } else {
-        report.items.push_back(DiagnosticItem{"staging", "staging", "Staging Directory",
-                                              "Staging directory found.", DiagnosticStatus::Ok,
-                                              std::nullopt});
-
-        if (is_same_volume(game_dir, staging_dir)) {
-            report.items.push_back(DiagnosticItem{
-                "hardlink-volume", "staging", "Hard Link Volume",
-                "Staging and the game share a volume, so deployment is instant and free of "
-                "duplicated bytes.",
-                DiagnosticStatus::Ok, std::nullopt});
-        } else {
-            report.items.push_back(DiagnosticItem{
-                "hardlink-volume", "staging", "Hard Link Volume",
-                "Staging and the game are on different volumes; deployment will physically "
-                "copy every file.",
-                DiagnosticStatus::Info,
-                "Move the staging directory onto the same drive as the game to get zero-copy "
-                "hard links."});
-        }
-
         try {
             const ScanOutcome outcome =
                 staging_scan != nullptr ? *staging_scan : ModLoader::scan_mods_directory(staging_dir);
-            std::string detail = std::to_string(outcome.mods.size()) + " mod(s) staged";
             std::size_t enabled = 0;
             for (const auto& mod : outcome.mods) {
                 if (mod.info.enabled) {
                     ++enabled;
                 }
             }
-            detail += ", " + std::to_string(enabled) + " enabled";
+            std::string detail = std::to_string(outcome.mods.size()) + " mod(s) staged, " +
+                                 std::to_string(enabled) + " enabled";
+            detail += is_same_volume(game_dir, staging_dir)
+                          ? "; same volume, so deployment links instead of copying"
+                          : "; different volume, so deployment copies every file";
             if (!outcome.failures.empty()) {
-                detail += ", " + std::to_string(outcome.failures.size()) +
-                          " unreadable (see the mod list)";
+                detail += "; " + std::to_string(outcome.failures.size()) + " mod(s) unreadable";
             }
+            report.items.push_back(DiagnosticItem{
+                "staging", "staging", "Staging and staged mods", detail,
+                outcome.failures.empty() ? DiagnosticStatus::Ok : DiagnosticStatus::Error,
+                outcome.failures.empty()
+                    ? std::nullopt
+                    : std::optional<std::string>(
+                          "Re-import the mods reported as unreadable; their metadata is broken.")});
             if (verify_deployment) {
                 try {
                     diagnose_deployment(game_dir, outcome.mods, report.items);
@@ -897,18 +847,11 @@ HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& stag
                     report.items.push_back({"deployment", "deployment", "Deployed mod files",
                         std::string("Cannot verify the current deployment: ") + e.what(),
                         DiagnosticStatus::Error,
-                        "Check the deployment manifest and file access, then deploy and recheck."});
+                        "Check the deployment manifest and file access, then deploy and check again."});
                 }
             }
-            report.items.push_back(DiagnosticItem{
-                "staging-mods", "staging", "Staged Mods", detail,
-                outcome.failures.empty() ? DiagnosticStatus::Ok : DiagnosticStatus::Error,
-                outcome.failures.empty()
-                    ? std::nullopt
-                    : std::optional<std::string>(
-                          "Re-import the mods reported as unreadable; their metadata is broken.")});
         } catch (const std::exception& e) {
-            report.items.push_back(DiagnosticItem{"staging-mods", "staging", "Staged Mods",
+            report.items.push_back(DiagnosticItem{"staging", "staging", "Staging and staged mods",
                                                   e.what(), DiagnosticStatus::Error,
                                                   std::nullopt});
         }
@@ -916,6 +859,24 @@ HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& stag
 
     report.recompute();
     return report;
+}
+
+bool is_process_elevated() {
+#ifdef _WIN32
+    HANDLE token = nullptr;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &token)) {
+        return false;
+    }
+    TOKEN_ELEVATION elevation{};
+    DWORD size = sizeof(elevation);
+    const bool elevated =
+        ::GetTokenInformation(token, TokenElevation, &elevation, size, &size) != 0 &&
+        elevation.TokenIsElevated != 0;
+    ::CloseHandle(token);
+    return elevated;
+#else
+    return false;
+#endif
 }
 
 fs::path detect_game_dir(const fs::path& hint) {

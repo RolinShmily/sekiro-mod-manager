@@ -119,14 +119,26 @@ void to_json(json& j, const EngineProvisionResult& r);
 EngineProvisionResult provision_mod_engine(const fs::path& game_dir,
                                            const fs::path& source_or_staging = {});
 
-/// Optionally compares enabled planned files with the current deployment and checks stale manifest entries.
-/// This verification is read-only.
+/// Condensed read-only environment report: five items, one per thing a user can act on.
+///
+///   game           game directory plus sekiro.exe
+///   modengine-hook dinput8.dll usable as the ModEngine loader
+///   modengine-ini  modengine.ini switches, folded into a single verdict
+///   staging        staging directory, staged mods, scan failures, hard-link volume
+///   deployment     only when `verify_deployment`: enabled files match the deployment
 ///
 /// `staging_scan` lets a caller that already scanned staging hand the result in, so a GUI refresh
 /// does not walk the whole staging tree twice. When null the staging directory is scanned here.
 HealthReport diagnose_environment(const fs::path& game_dir, const fs::path& staging_dir,
                                   bool verify_deployment = false,
                                   const ScanOutcome* staging_scan = nullptr);
+
+/// True when this process runs with an elevated (administrator) token.
+///
+/// The GUI ships a `requireAdministrator` manifest: Sekiro's ModEngine hook is shadowed by
+/// Steam's `PreferSystem32` DLL search policy in unelevated launch chains, and deploying into a
+/// Steam library under Program Files needs write access anyway. Always false off Windows.
+bool is_process_elevated();
 
 /// Best-effort location of the Sekiro installation.
 ///

@@ -22,7 +22,7 @@ src/core   ←  src/cli
 | 计划与执行 | `smm/deploy.hpp`、`smm/executor.hpp` | 计划生成、硬链接/复制、清单、还原 |
 | 归档 | `smm/extractor.hpp`、`smm/importer.hpp`、`smm/exporter.hpp` | zip（内置 miniz）、7z/rar（外部工具）、`.smmpack` |
 | 预设 | `smm/preset.hpp` | `.smm_presets.json` 的读写与应用 |
-| 环境 | `smm/doctor.hpp`、`smm/runtime_doctor.hpp` | 体检、`modengine.ini` 修补、ModEngine 部署 |
+| 环境 | `smm/doctor.hpp` | 体检、`modengine.ini` 修补、ModEngine 部署、进程提权状态 |
 
 core 允许做的事：读写文件系统、抛 `SmmError`、解析 JSON。
 

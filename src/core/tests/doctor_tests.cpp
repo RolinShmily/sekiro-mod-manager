@@ -1,5 +1,4 @@
 #include "smm/doctor.hpp"
-#include "smm/runtime_doctor.hpp"
 #include "smm/manager.hpp"
 #include "smm/executor.hpp"
 #include <fstream>
@@ -18,31 +17,6 @@ void write(const fs::path& path, const std::string& value) {
 }
 int main() {
     try {
-        RuntimeSnapshot snapshot;
-        snapshot.supported = true;
-        snapshot.processes.push_back({1, "launcher", {}, false});
-        check(diagnose_launch_runtime(snapshot).is_healthy(), "clean launcher passes");
-        snapshot.processes.push_back({2, "steam", {}, true});
-        check(diagnose_launch_runtime(snapshot).error_count == 1, "Steam PreferSystem32 blocks");
-        snapshot.processes.back().prefer_system32 = false;
-        snapshot.processes.front().prefer_system32 = true;
-        check(!diagnose_launch_runtime(snapshot).is_healthy(), "SMM PreferSystem32 blocks");
-        snapshot.processes.front().prefer_system32 = false;
-        snapshot.processes.back().prefer_system32.reset();
-        check(!diagnose_launch_runtime(snapshot).is_healthy(), "unreadable policy fails closed");
-        snapshot.processes.back().prefer_system32 = false;
-        snapshot.processes.push_back({3,"game",{},false,true,false});
-        check(!diagnose_launch_runtime(snapshot).is_healthy(), "system-only hook blocks");
-        snapshot.processes.back().local_hook_loaded = true;
-        check(diagnose_launch_runtime(snapshot).is_healthy(), "local plus system DLL passes");
-        snapshot.processes.back().modules_readable = false;
-        check(!diagnose_launch_runtime(snapshot).is_healthy(), "unreadable game modules block");
-        snapshot.enumeration_failure = "Access denied";
-        check(diagnose_launch_runtime(snapshot).error_count == 2, "enumeration failure blocks");
-        check(!diagnose_launch_runtime({}).is_healthy(), "unsupported runtime blocks");
-        RuntimeSnapshot empty; empty.supported = true;
-        check(!diagnose_launch_runtime(empty).is_healthy(), "missing launcher observation blocks");
-
         const auto ini = parse_modengine_ini_text("[files]\nuseModOverrideDirectory = 0\nloadLooseParams = 1\nmodOverrideDirectory = \"\\mods\"\n[mods]\nuseModOverrideDirectory=1\n");
         check(ini.use_mod_override == false, "INI reads override switch from files section");
         check(ini.load_loose_params == true && ini.mod_override_directory == "\\mods", "INI trims key whitespace");

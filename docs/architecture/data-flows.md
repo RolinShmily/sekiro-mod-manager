@@ -77,29 +77,22 @@ apply_preset(staging, preset_id)
 
 ## 4. 诊断：读环境，不修环境
 
-入口：`diagnose_environment()`、`provision_mod_engine()`（`src/core/src/doctor.cpp`）、`diagnose_launch_runtime()`（`runtime_doctor.cpp`），CLI `smm doctor` / `smm setup-engine`，GUI 诊断弹窗与启动门禁。
+入口：`diagnose_environment()`、`provision_mod_engine()`（`src/core/src/doctor.cpp`），CLI `smm doctor` / `smm setup-engine`，GUI「环境检测」页与启动前检查。
 
-检查项按 `category` 分组，`id` 是稳定键：
+体检被刻意压缩成五项，每项对应一个用户能直接处理的对象，`id` 是稳定键：
 
 | id | category | 检查内容 |
 |---|---|---|
-| `game-dir` | game | 游戏目录是否存在、是否可访问 |
-| `sekiro-exe` | game | `sekiro.exe` 是否存在 |
-| `staging` | staging | 暂存目录是否存在、可写 |
-| `hardlink-volume` | staging | 暂存区与游戏是否同卷（跨卷只能复制） |
-| `staging-mods` | staging | 扫描到的模组数量与失败项 |
-| `dinput8` | modengine | 游戏根目录的钩子 DLL 是否存在、是否小于 `MOD_ENGINE_DLL_MIN_SIZE`（占位物） |
-| `modengine-ini` | modengine | `modengine.ini` 是否存在、可解析 |
-| `modengine-enabled` | modengine | `useModOverrideDirectory` 是否为 1 |
-| `modengine-override` | modengine | `modOverrideDirectory` 是否指向 `mods` |
-| `modengine-loose-params` | modengine | `loadLooseParams` 是否为 1 |
-| `deployment` | deployment | 当前部署文件数与清单一致性（`verify_deployment` 时） |
-| `runtime-<role>-<pid>` | runtime | 运行时进程与 DLL 搜索策略，`role` 为 `launcher` / `steam` / `game` |
+| `game` | game | 游戏目录是否存在、`sekiro.exe` 是否在其中 |
+| `modengine-hook` | modengine | 游戏根目录的 `dinput8.dll` 是否存在、是否小于 `MOD_ENGINE_DLL_MIN_SIZE`（占位物） |
+| `modengine-ini` | modengine | `modengine.ini` 存在，且 `useModOverrideDirectory` / `modOverrideDirectory` 指向 `mods` |
+| `staging` | staging | 暂存目录、模组数量与读取失败项、同卷/跨卷部署方式 |
+| `deployment` | deployment | 当前启用文件与部署结果是否一致（`verify_deployment` 时） |
 
 - `OverallHealth` 由最差项推导：`healthy` / `degraded` / `action_required`。
 - `provision_mod_engine()` 只在用户提供 payload 时安装 `dinput8.dll`，SMM 自身不打包、不伪造钩子（见 [decisions.md](decisions.md)）。
-- 运行时探测是**只读观察**：`inspect_launch_runtime()` 收集进程与 `PreferSystem32` 状态，`diagnose_launch_runtime()` 只负责判定。这样判定逻辑可以在没有进程的测试里跑（`smm_doctor_tests`）。
-- 体检结果只改变界面文案与启动门禁，不修改磁盘——修复永远是显式动作（`setup-engine`、`smm config`）。
+- 不检查运行中的进程与 DLL 搜索策略：GUI 以管理员权限运行（见 [decisions.md](decisions.md)），`PreferSystem32` 这条启动链失败模式因此在源头消失，判定逻辑也随之从 core 里删掉。
+- 体检结果只改变界面文案与启动前检查，不修改磁盘——修复永远是显式动作（`setup-engine`、`smm config`）。
 
 ## 失败时留下的状态
 
