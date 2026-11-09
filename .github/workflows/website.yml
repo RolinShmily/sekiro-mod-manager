@@ -57,7 +57,6 @@ jobs:
           npm run lint
       - name: Build static website and skill ZIP
         working-directory: website
-        env:
         run: npm run build
       - uses: actions/upload-artifact@v4
         with:
