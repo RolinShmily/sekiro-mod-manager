@@ -23,6 +23,42 @@ SMM 把模组留在独立的暂存区，只把生效的那部分用 **NTFS 硬�
 | **环境诊断** | 校验 `sekiro.exe`、ModEngine `dinput8.dll`、`modengine.ini` 注入参数与 NTFS 卷一致性，支持一键修复。 |
 | **双语与主题** | 中英实时切换，深色 / 浅色 / 跟随系统，以及减少动效模式。 |
 
+## 界面
+
+<img src="docs/design/assets/screenshots/armoury.webp" alt="模组管理：顺位、逐模组开关、分类胶囊与冲突徽标" width="880">
+
+模组管理是日常停留最久的一屏：顺位（数字小的赢得共享文件）、逐模组开关、分类胶囊，以及点开详情抽屉的
+冲突徽标。其余四屏：
+
+<details>
+<summary>启动与工作台 · 整合包预设 · 全局配置（深浅两套） · 关于</summary>
+
+<table>
+<tr>
+<td><img src="docs/design/assets/screenshots/hub.webp" alt="启动与工作台" width="400"></td>
+<td><img src="docs/design/assets/screenshots/packs.webp" alt="整合包预设" width="400"></td>
+</tr>
+<tr>
+<td><b>启动与工作台</b> —— 一句结论（已部署文件数、冲突数）加支撑它的证据。体检未通过时「启动只狼」置灰，不用点了才知道不行。</td>
+<td><b>整合包预设</b> —— 「启用集合 + 顺位」的快照，一键切换整套配置，也能导出成 <code>.smmpack</code>。</td>
+</tr>
+<tr>
+<td><img src="docs/design/assets/screenshots/settings.webp" alt="全局配置（深色）" width="400"></td>
+<td><img src="docs/design/assets/screenshots/settings-light.webp" alt="全局配置（浅色）" width="400"></td>
+</tr>
+<tr>
+<td><b>全局配置</b> —— 游戏与暂存目录（同卷时提示零拷贝硬链接）、主题、语言、字体与减少动效。分组直接落在页面背景上：图标、标题、细分隔线与留白。</td>
+<td><b>全局配置（浅色）</b> —— 同一套 token 而不是第二套配色；首屏画作上的按钮对比度就是在这里核对的。</td>
+</tr>
+</table>
+
+<img src="docs/design/assets/screenshots/about.webp" alt="关于" width="880">
+
+</details>
+
+所有截图都拍自 `scripts/local/seed_demo.ps1` 生成的虚构演示库，不是真实安装；可用
+`scripts/local/capture_screenshots.ps1` 重新生成，说明见 [docs/design/screenshots.md](docs/design/screenshots.md)。
+
 ## 模块架构
 
 ```

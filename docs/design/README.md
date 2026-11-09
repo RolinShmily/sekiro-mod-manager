@@ -6,7 +6,8 @@
 
 - 一只狼的模组装配工坊：深色为默认，纸墨与金的点缀，不用大面积高饱和色。
 - 主色基座在 `src/gui/main.cpp` 安装为 `#c29f5d`（`installThemePrimaryColorBase`），所有强调色由它派生。
-- 表面分层靠"更亮的半透明白"（深色）与"纯白 + 细边框"（浅色），而不是靠投影；投影只在需要抬升层级时使用（见 `SectionCard.qml` 的 `HusShadow`）。
+- 内容直接落在页面背景上，分组靠图标、标题、细分隔线与留白；不给分组套卡片表面，也不给分组加投影。
+- 只有真正浮起的元素（Toast、忙碌徽标、抽屉、弹窗）才有阴影。
 - 颜色、圆角、动效时长一律来自 `HusTheme.Primary.*`，不在视图里写死十六进制值。
 
 ## 页面骨架
@@ -26,6 +27,7 @@ HusWindow (Main.qml)
 
 ## 分册目录
 
+- [screenshots.md](screenshots.md) — 五个页面的实拍，以及每屏在证明什么
 - [tokens.md](tokens.md) — 颜色、字号、圆角、间距、动效时长的取值与语义
 - [components.md](components.md) — PageHeader / SectionCard / ModCard / ModDrawer / NavItem 等复用组件
 - [motion.md](motion.md) — 动效预算、缓动、减少动效

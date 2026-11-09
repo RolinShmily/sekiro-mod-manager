@@ -37,6 +37,7 @@
 ### design
 
 - [README.md](design/README.md) — 设计分册导读
+- [screenshots.md](design/screenshots.md) — 五个页面的实拍与重新生成方式
 - [tokens.md](design/tokens.md) — 颜色、字体、间距、圆角、动效时长
 - [components.md](design/components.md) — PageHeader / SectionCard / ModCard / NavItem 等复用组件
 - [motion.md](design/motion.md) — 动效预算、缓动、减少动效

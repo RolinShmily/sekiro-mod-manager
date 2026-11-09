@@ -178,6 +178,9 @@ ScrollView {
                         HusButton {
                             implicitHeight: 40
                             type: HusButton.Type_Text
+                            // 浅色主题下首屏是明亮的画作，默认文本按钮会糊进背景；跟随正文色
+                            // 而不是主色，才在深浅两套主题里都够对比度。
+                            colorText: HusTheme.Primary.colorTextPrimary
                             visible: !smmBackend.canLaunch && !smmBackend.launchPending
                             text: qsTr("查看诊断")
                             onClicked: rootView.requestDiagnosis()
@@ -192,10 +195,11 @@ ScrollView {
                             onClicked: smmBackend.deploy()
                         }
 
-                        // 还原游戏原始纯净环境：破坏性低于删除，但会清空已部署链接，视觉上退居次级
+                        // 还原游戏原始纯净环境。
+                        // 用默认按钮而不是描边按钮：首屏是明亮画作，描边按钮在浅色主题下几乎
+                        // 没有边界；默认按钮在深浅两种主题里都有实底，可读性稳定。
                         HusButton {
                             implicitHeight: 40
-                            type: HusButton.Type_Outlined
                             text: qsTr("纯净还原")
                             enabled: !smmBackend.isBusy && !smmBackend.launchPending
                             onClicked: smmBackend.restore()
@@ -205,6 +209,7 @@ ScrollView {
                         HusButton {
                             implicitHeight: 40
                             type: HusButton.Type_Text
+                            colorText: HusTheme.Primary.colorTextPrimary
                             text: qsTr("管理模组")
                             onClicked: rootView.navigateToArmoury()
                         }

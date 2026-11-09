@@ -44,7 +44,7 @@ ColumnLayout {
         ColumnLayout {
             id: aboutColumn
             width: parent.width - (aboutScrollView.ScrollBar.vertical.visible ? 12 : 4)
-            spacing: 14
+            spacing: 24
 
             // ------------------------------ 品牌 ------------------------------
             SectionCard {

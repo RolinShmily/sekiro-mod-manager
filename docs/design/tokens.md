@@ -81,11 +81,10 @@ HuskarUI 默认 `durationFast = 100`、`durationMid = 200`、`durationSlow = 300
 
 现有代码混用了 token 与字面量：`PageHeader` 用 `durationMid`，`NavItem` 的按压用字面量 `80`，页面淡入用 `180`，Toast 用 `160`。新增动效优先用 token；需要更细的节奏时用字面量并在注释里说明原因（见 [motion.md](motion.md)）。
 
-## 阴影
+## 层级与阴影
 
-`HusShadow` 需要源纹理，因此 `SectionCard` 的做法是：投影层在 `z: -1`，卡片本体再画一遍盖住中间区域。
+内容分组**不靠阴影**：设置页与关于页的分组直接落在页面背景上，用图标、标题、`HusDivider`
+和留白分层。给每组再套一层带投影的卡片，会在背景上又出现一个矩形，视觉上像页面里另开了一块区域。
 
-- 深色：`shadowOpacity 0.55`、`shadowVerticalOffset 6`、颜色 `#000000`。
-- 浅色：`shadowOpacity 0.16`、`shadowVerticalOffset 4`、颜色 `#6b7280`。
-
-阴影只用于"需要抬升层级"的卡片，不要给列表项逐个加阴影。
+阴影只用于真正"浮在内容之上"的元素：Toast 浮层、右下角忙碌徽标、抽屉与弹窗。它们用
+`HusShadow` / 主题自带的 popup 投影，取值由 HuskarUI 决定，不在视图里手写。

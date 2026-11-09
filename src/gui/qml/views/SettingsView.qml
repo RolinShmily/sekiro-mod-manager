@@ -140,7 +140,7 @@ ColumnLayout {
         ColumnLayout {
             id: bodyColumn
             width: parent.width - (settingsScrollView.ScrollBar.vertical.visible ? 12 : 4)
-            spacing: 14
+            spacing: 26
 
             FolderDialog {
                 id: gameDirDialog

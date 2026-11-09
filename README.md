@@ -27,6 +27,44 @@ core library.
 | **Environment doctor** | Verifies `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini` and NTFS layout, with one-click repair. |
 | **Bilingual UI** | Live switching between `zh-CN` and `en-US`, plus a dark/light/system theme and reduced-motion mode. |
 
+## Interface
+
+<img src="docs/design/assets/screenshots/armoury.webp" alt="Mod library: priority order, per-mod toggles, category filters and conflict badges" width="880">
+
+The mod library is the working screen: priority order (lower number wins a shared file), per-mod
+toggles, category filters, and the conflict badge that opens the detail drawer. The other four
+screens:
+
+<details>
+<summary>Launch hub · Mod packs · Settings (dark and light) · About</summary>
+
+<table>
+<tr>
+<td><img src="docs/design/assets/screenshots/hub.webp" alt="Launch hub" width="400"></td>
+<td><img src="docs/design/assets/screenshots/packs.webp" alt="Mod packs" width="400"></td>
+</tr>
+<tr>
+<td><b>Launch hub</b> — one verdict (deployed files, conflicts) plus the evidence behind it. <i>Launch</i> stays disabled until the environment doctor passes, so the reason is visible before anything is clicked.</td>
+<td><b>Mod packs</b> — snapshots of "enabled set + priorities", switchable in one click and portable as <code>.smmpack</code> archives.</td>
+</tr>
+<tr>
+<td><img src="docs/design/assets/screenshots/settings.webp" alt="Settings, dark theme" width="400"></td>
+<td><img src="docs/design/assets/screenshots/settings-light.webp" alt="Settings, light theme" width="400"></td>
+</tr>
+<tr>
+<td><b>Settings</b> — game and staging roots (with the same-volume hard-link hint), theme, language, font and reduced motion. Groups sit directly on the page background: icon, title, hairline, whitespace.</td>
+<td><b>Settings, light theme</b> — the same tokens, not a second palette; this is where button contrast on artwork gets checked.</td>
+</tr>
+</table>
+
+<img src="docs/design/assets/screenshots/about.webp" alt="About page" width="880">
+
+</details>
+
+Every screenshot is taken against the fictional demo library from `scripts/local/seed_demo.ps1`,
+not a real install, and can be regenerated with `scripts/local/capture_screenshots.ps1` — see
+[docs/design/screenshots.md](docs/design/screenshots.md).
+
 ## Architecture
 
 ```

@@ -28,7 +28,6 @@ Behavior on color {
 | Toast 位移与淡入 | 180 / 160 ms | `OutCubic` / `OutQuad` | `Main.qml` |
 | 卡片底色 | `durationMid`（200 ms） | 默认 | `SectionCard.qml` |
 | 卡片入场 | 200 ms 淡入 + 220 ms 上浮 10px | `OutCubic` | `SectionCard.qml` |
-| 卡片投影 | `durationMid` | 默认 | `SectionCard.qml` |
 
 经验区间：按压反馈 80–120 ms，状态过渡 150–200 ms，入场 200–250 ms。超过 300 ms 的过渡会让人觉得界面"黏"。
 
