@@ -117,8 +117,9 @@ nlohmann::json run_plan(CliContext& ctx, bool execute) {
     const fs::path game = require_game_dir(ctx);
     const fs::path target = resolve_mods_dir(game);
 
-    // Refuse before doing anything at all when the plan contains a critical collision: the user
-    // should see the warning with a chance to reorder priorities, not afterwards.
+    // Critical collisions are reported, not blocked: a balance-table overlap can be deliberate, so
+    // the decision stays with the user. With `execute` off the plan and its conflicts are printed,
+    // which is where the warning is meant to be seen before anything is linked.
     const ScanOutcome outcome = ModLoader::scan_mods_directory(staging);
     const DeployPlan plan = DeploymentPlanner::build_plan(profile_of(ctx), outcome.mods);
 

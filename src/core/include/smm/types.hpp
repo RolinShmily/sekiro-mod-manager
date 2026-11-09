@@ -41,8 +41,9 @@ fs::path utf8_to_path(const std::string& str);
 
 /// Metadata describing a Sekiro mod package.
 ///
-/// Persisted to disk twice - as `.smm_mod.json` (SMM's own, authoritative) and as
-/// `mod.json` (widely understood by the modding ecosystem) - so the two must stay in sync.
+/// Persisted once, as `.smm_mod.json` (authoritative, written atomically). A `mod.json` from
+/// the wider modding ecosystem is still *read* for compatibility, and is removed when SMM
+/// next saves the mod so the two cannot drift apart.
 struct ModInfo {
     std::string id;         ///< Slug-like unique identifier, e.g. "dream-of-the-damned"
     std::string name;       ///< Human readable display name
