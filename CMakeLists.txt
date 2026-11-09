@@ -55,9 +55,9 @@ endif()
 # ---------------------------------------------------------------------------
 # Automatically apply compatibility & stability patches to third-party submodules if present
 find_package(Python3 COMPONENTS Interpreter QUIET)
-if(Python3_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tools/patch_huskarui.py")
+if(Python3_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/scripts/patch_huskarui.py")
     execute_process(
-        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/patch_huskarui.py"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/patch_huskarui.py"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         OUTPUT_QUIET
     )

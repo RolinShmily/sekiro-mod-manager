@@ -63,7 +63,7 @@ jobs:
 
       - name: Patch Submodules
         run: |
-          python tools/patch_huskarui.py
+          python scripts/patch_huskarui.py
 
       - name: Configure CMake
         run: |

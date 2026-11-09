@@ -17,11 +17,20 @@ $root    = Join-Path $env:TEMP 'smm-demo'
 $staging = Join-Path $root 'staging'
 $game    = Join-Path $root 'game'
 $src     = Join-Path $root 'pkgs'
-$smm     = Join-Path $PSScriptRoot '..\..\build\gui\src\cli\smm.exe'
-$smm     = [System.IO.Path]::GetFullPath($smm)
+# cmake presets put the binary under build/<presetName>/src/cli; older trees used build/gui.
+# Probe both, newest first, so this keeps working whichever preset was built last.
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$candidates = @(
+    'build\msvc-x64-debug\src\cli\smm.exe',
+    'build\msvc-x64-release\src\cli\smm.exe',
+    'build\vs2022-x64\src\cli\Debug\smm.exe',
+    'build\vs2022-x64\src\cli\Release\smm.exe',
+    'build\gui\src\cli\smm.exe'
+) | ForEach-Object { Join-Path $repoRoot $_ }
 
-if (-not (Test-Path $smm)) {
-    Write-Error "smm.exe not found at $smm`nBuild it first:  cmake --preset msvc-x64-debug ; cmake --build --preset build-debug --target smm"
+$smm = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $smm) {
+    Write-Error "smm.exe not found. Looked in:`n  $($candidates -join "`n  ")`nBuild it first:  cmake --preset msvc-x64-debug ; cmake --build --preset build-debug --target smm"
 }
 
 # id, display name, priority (lower wins), and the asset paths the mod provides.
