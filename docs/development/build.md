@@ -101,6 +101,17 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliar
 PATH="/c/Qt/6.11.2/msvc2022_64/bin:$PATH" ./build/msvc-x64-debug/src/gui/smm_gui.exe
 ```
 
+**想用另一套库跑 GUI（演示、截图、多开对比）**
+不要改设置页或注册表，直接把两个目录传给进程：
+
+```bash
+./build/msvc-x64-release/src/gui/smm_gui.exe --staging=D:/demo/staging --game-dir=D:/demo/game
+```
+
+`--staging=` / `--game-dir=` 只对本次进程生效，不写回 `QSettings`（`HKCU\Software\SekiroModManager\SMM`），
+所以用户的保存设置不受影响。截图脚本 `scripts/local/capture_screenshots.ps1` 就靠这个参数指向演示库。
+`--theme=dark|light|system` 同理，只覆盖本次运行的主题。
+
 **中文界面字体发虚 / 字重不一致**
 先看设置页的字体选择。默认优先 `Noto Sans SC`；没有安装时回退到 `Microsoft YaHei UI`。字体在 `GuiController::applyFontFamily()` 中统一应用。
 
@@ -109,3 +120,44 @@ PATH="/c/Qt/6.11.2/msvc2022_64/bin:$PATH" ./build/msvc-x64-debug/src/gui/smm_gui
 - 构建目录在 `build/<presetName>`，已被 `.gitignore` 忽略。
 - 改了 `CMakeLists.txt` 或 QML 文件列表后增量构建会自动重新配置；改了 `qt_add_qml_module` 的 `QML_FILES` 若未生效，删掉 `build/<preset>/src/gui` 下的 `*_qmlcache_*` 再构建。
 - 完整的 `rm -rf build/` 只在工具链或 Qt 版本变化时才需要。
+
+## 打包便携版与安装包
+
+发版流程和本地验证用同一个脚本，避免“本机量的体积”和“用户下载的体积”不是一回事：
+
+```powershell
+$env:QT_ROOT_DIR = 'C:/Qt/6.11.2/msvc2022_64'
+pwsh scripts/package-windows.ps1 -BuildDir build/msvc-x64-release -Version v0.4.3
+```
+
+输出在 `dist/`：GUI 便携目录 + GUI/CLI 两个 zip；检测到 `ISCC.exe` 时顺带生成 Inno Setup 安装包（`-SkipInstaller` 可跳过）。
+
+脚本做的不只是 `windeployqt`，还有四件事，改动前请先读完理由：
+
+1. **只保留 `QtQuick.Controls.Basic`**。`src/gui/main.cpp` 里 `QQuickStyle::setStyle("Basic")` 把这个选择钉死，否则 Windows 上默认样式（`FluentWinUI3`）会连带它的插件和 QML 一起进安装包。
+2. **丢弃工具件**：`qmltooling`、`generic` 插件组和所有 `*.qmltypes` 只服务调试器和 Qt Creator，运行时从不读取。
+3. **丢弃软件渲染回退与未用编译器**：`opengl32sw.dll`（约 20 MB）、`D3Dcompiler_47.dll`（Windows 10 1809+ 自带副本）、`dxcompiler.dll`（约 14 MB，实测默认与 `QSG_RHI_BACKEND=d3d12` 都不需要）。
+4. **运行时用 DLL 而不是安装器**：`--compiler-runtime` 在能发现工具链时会塞进 25 MB 的 `vc_redist.x64.exe`；脚本删掉它，改为带 3 个 CRT DLL（约 2.5 MB），并同步进 CLI 包。
+
+**`Qt6OpenGL.dll` 必须保留**：`Qt6Quick.dll` 硬导入它（`dumpbin /dependents Qt6Quick.dll` 可复现），D3D11 路径下同样需要；缺失时进程在 QML 加载前就以 127 退出——这正是旧发布流程的问题：它把 `Qt6OpenGL.dll` 当"未使用"删掉了。
+
+实测（Qt 6.11.2 / Release，同一台机、同一套参数）：
+
+| | 未裁剪 | 打包脚本 |
+|---|---|---|
+| GUI 目录 | 114.6 MB | **54.9 MB**（-52%） |
+| GUI zip | 60.6 MB | **22.3 MB**（-63%） |
+
+裁剪后的目录 **3/3 次启动成功**（`Get-Process` 存活 + 拿到窗口句柄），且带上了 VC++ 运行时，不依赖目标机预装 `vc_redist`。
+
+脚本在压缩前会断言必需项（`Qt6OpenGL.dll`、`platforms/qwindows.dll`、Basic 样式、CRT…）仍然存在，裁剪写错时在打包阶段就失败，而不是等用户双击。
+
+裁剪后务必跑一次冒烟，而且要看**进程是否存活**，不要只看截图：
+
+```powershell
+$p = Start-Process "dist/sekiro-mod-manager-<ver>-windows-x64-gui/SekiroModManager.exe" -PassThru
+Start-Sleep 6
+Get-Process -Id $p.Id -ErrorAction SilentlyContinue   # 拿不到就是缺 DLL，已退出
+```
+
+缺一个硬依赖 DLL 时进程会立刻退出（退出码 127），窗口根本不会出现；只截到白屏或黑图都说明不了问题。

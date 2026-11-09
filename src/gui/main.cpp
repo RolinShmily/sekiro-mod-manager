@@ -2,6 +2,7 @@
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQuickStyle>
 #include <QQuickWindow>
 #include <QFileSystemWatcher>
 #include <QDir>
@@ -40,6 +41,13 @@ int main(int argc, char* argv[]) {
     QQuickWindow::setDefaultAlphaBuffer(true);
 
     QGuiApplication app(argc, argv);
+
+    // Pin the Controls style: the QML only imports QtQuick.Controls.Basic, while an unpinned
+    // app can pull the platform default style (FluentWinUI3 on Windows) and everything it
+    // depends on into the installer. Pinning also keeps the look identical across Windows
+    // versions instead of following the system theme's style choice.
+    QQuickStyle::setStyle(QStringLiteral("Basic"));
+
     app.setWindowIcon(QIcon(QStringLiteral(":/images/sekiro_icon_256.png")));
     app.setOrganizationName("SekiroModManager");
     app.setApplicationName("SMM");
@@ -61,10 +69,18 @@ int main(int argc, char* argv[]) {
     // An explicit --theme must survive the controller's persisted preferences, which are
     // applied when GuiController is constructed further down.
     bool themeOverridden = false;
+    // Per-run path overrides (demo libraries, portable use). They are handed to the controller
+    // after construction and never written back to QSettings, so saved settings stay untouched.
+    QString stagingOverride;
+    QString gameOverride;
     for (int i = 1; i < argc; ++i) {
         const QString arg = QString::fromLocal8Bit(argv[i]);
         if (arg == "--dev") {
             devMode = true;
+        } else if (arg.startsWith("--staging=")) {
+            stagingOverride = arg.mid(10);
+        } else if (arg.startsWith("--game-dir=")) {
+            gameOverride = arg.mid(11);
         } else if (arg.startsWith("--theme=")) {
             themeOverridden = true;
             const QString value = arg.mid(8).toLower();
@@ -111,6 +127,12 @@ int main(int argc, char* argv[]) {
                                                       : QStringLiteral("dark"));
     }
     engine.rootContext()->setContextProperty("smmBackend", controller);
+    if (!stagingOverride.isEmpty()) {
+        controller->setStagingDir(QDir::toNativeSeparators(stagingOverride));
+    }
+    if (!gameOverride.isEmpty()) {
+        controller->setSekiroDir(QDir::toNativeSeparators(gameOverride));
+    }
     engine.addImageProvider(
         QStringLiteral("modpreview"),
         new smm::gui::ModPreviewImageProvider([controller]() -> QString {
