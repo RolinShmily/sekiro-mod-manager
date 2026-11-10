@@ -127,7 +127,7 @@ PATH="/c/Qt/6.11.2/msvc2022_64/bin:$PATH" ./build/msvc-x64-debug/src/gui/smm_gui
 
 ```powershell
 $env:QT_ROOT_DIR = 'C:/Qt/6.11.2/msvc2022_64'
-pwsh scripts/package-windows.ps1 -BuildDir build/msvc-x64-release -Version v0.4.5
+pwsh scripts/package-windows.ps1 -BuildDir build/msvc-x64-release -Version v0.4.6
 ```
 
 输出在 `dist/`：GUI 便携目录 + GUI/CLI 两个 zip；检测到 `ISCC.exe` 时顺带生成 Inno Setup 安装包（`-SkipInstaller` 可跳过）。

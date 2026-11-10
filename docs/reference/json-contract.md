@@ -153,7 +153,7 @@
 - **字节数**：整数，不做单位换算；人类可读的 `format_bytes()` 只出现在非 JSON 输出。
 - **路径**：字符串，尽量保持调用方传入的写法（`--staging` 给正斜杠就回正斜杠），由 `resolve_mods_dir()` 拼出的子路径用本机分隔符。比较前先归一化。
 - **排序**：`mods` 按优先级升序、同级按 id 升序；`conflicts` 按 critical → warning → info；`mappings` 按目标路径。
-- **版本**：`smm --version` 输出 `smm (Sekiro Mod Manager) 0.4.5`，版本号来自 `project(... VERSION ...)`。
+- **版本**：`smm --version` 输出 `smm (Sekiro Mod Manager) 0.4.6`，版本号来自 `project(... VERSION ...)`。
 
 ## 消费示例
 

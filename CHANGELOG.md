@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.6] - 2026-11-10
+
+### Changed
+
+- **The GUI no longer animates at all.** `HusTheme.animationEnabled` is pinned to `false` before the QML engine starts, and every `Behavior` / `*Animation` / `Transition` is gone from the QML: no page fades, card entrances, hover colour transitions or toast slides. The "reduce motion" setting, its `GuiController` property and its QSettings key were removed with it, so a theme switch is now just one `setDarkMode()` call with nothing to suspend and restore.
+- **The settings page is a two-column form.** Each setting is a row with the label and its explanation on the left and the control aligned in one 340 px column on the right; groups are spaced 30 px apart, rows 18 px. The three icon-only path buttons became labelled buttons (Browse / Open / Auto-detect), and the motion card is gone.
+- `scripts/local/capture_screenshots.ps1` follows the six-item navigation rail (the settings page was being captured as the diagnostics page) and retries each frame once, because `PrintWindow` can return the previous page's composited frame right after a switch.
+- **The CLI requires administrator rights too** (`/MANIFESTUAC:level='requireAdministrator'`), matching the GUI. Deploy, restore and `modengine.ini` writes all land in the game directory, so the CLI was already failing with `Access is denied` whenever that directory lived under `Program Files`. Both entry points now share one permission model. Note the Windows rule this exposes: `CreateProcess` cannot raise UAC, so `smm` started from an unelevated cmd/PowerShell/VS Code terminal/Python `subprocess` fails with `ERROR_ELEVATION_REQUIRED` (740) and no prompt — run it from an elevated terminal, or via `start smm ...`. This supersedes the 0.4.4 note that the installer's `PATH` entry lets you "run smm from any terminal": the entry is still written, it just only resolves in an elevated terminal now.
+
+### Removed
+
+- The "reduce motion" switch, `GuiController::reducedMotion` and the `reducedMotion` QSettings key.
+
+### 中文摘要
+
+- **GUI 彻底不做动效**：QML 引擎创建前把 `HusTheme.animationEnabled` 固定为 `false`，QML 里的 `Behavior` / `*Animation` / `Transition` 全部删除——没有页面淡入、卡片入场、悬停颜色过渡与 Toast 位移。“减少动效”开关、对应的 `GuiController` 属性与 QSettings 键一并移除，换肤只剩一次 `setDarkMode()`。
+- **设置页改成两列布局**：每个设置项是“标签 + 说明在左、控件在右”的一行，右列统一 340 px；分组间距 30 px、组内项间距 18 px。三个只有 tooltip 的路径图标按钮换成带文字的按钮（浏览 / 打开 / 自动探测），动效分组整张卡片删除。
+- `scripts/local/capture_screenshots.ps1` 跟上六项导航（之前把设置页拍成了环境检测页），并给每页多拍一帧：`PrintWindow` 在切页瞬间可能返回上一页的合成帧。
+
+
+### 中文摘要
+
+- **CLI 也改为要求管理员权限**（`/MANIFESTUAC:level='requireAdministrator'`），与 GUI 一致。部署、还原、写 `modengine.ini` 都落在游戏目录，该目录在 `Program Files` 下时本来就会失败于 `Access is denied`；现在两个入口共用一套权限模型。需要知道 Windows 的这条规则：`CreateProcess` 弹不出 UAC，所以从非提权的 cmd / PowerShell / VS Code 终端 / Python `subprocess` 启动 `smm` 会直接返回 `ERROR_ELEVATION_REQUIRED`（740）且没有任何弹窗——请在提权终端里运行，或用 `start smm ...`。这条推翻了 0.4.4 里"装完即可在任意终端直接运行 `smm`"的说法：`PATH` 条目仍然会写入，只是在非提权终端里解析不到能启动的进程。
+
 ## [0.4.5] - 2026-11-09
 
 ### Changed
@@ -383,7 +407,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.5...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.6...HEAD
+[0.4.6]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.2...v0.4.3
