@@ -52,8 +52,31 @@ CLI 与 GUI 互为"另一个客户端"：同一份 `.smm_mod.json`、`.smm_prese
 
 **代价**：没有管理员权限就无法运行 GUI（对模组管理器是合理要求）；同时 core 里的进程与 DLL 搜索策略体检（原 `runtime_doctor.cpp`）整体删除——问题不再可能出现，留着只会制造噪音。
 
-### 体检只有五项，只在三个入口运行
+### CLI 与 GUI 一致，同样声明 `requireAdministrator`
 
+**选择**：`smm` 目标用链接器开关 `/MANIFESTUAC:level='requireAdministrator' uiAccess='false'`（`src/cli/CMakeLists.txt`），不用独立的 `.manifest` 文件。
+
+**理由**：部署、还原、写 `modengine.ini` 都发生在游戏目录（通常是 `Program Files` 下的 Steam 库），非提权时这些写操作只得到 `Access is denied`；GUI 已在启动时统一提权，两个入口的权限语义一致，用户不必记"哪条命令要管理员"。之所以用 `/MANIFESTUAC` 而不是 `/MANIFESTINPUT` 挂一个清单文件：link.exe 自己生成的清单里已经有 `requestedExecutionLevel level="asInvoker"`，再合并一份就会出现两个同名元素，链接直接失败（`c1010001: Values of attribute "level" not equal in different manifest snippets`，报为 `LNK1327`）。
+
+**代价**（不知道这条会误判成程序坏了）：`CreateProcess` 无法弹 UAC。cmd、PowerShell、VS Code 任务、Python `subprocess` 直接启动 `smm.exe` 一律得到 `ERROR_ELEVATION_REQUIRED`（740），**没有任何弹窗**；只有 shell 启动路径（资源管理器、`start smm ...`、`ShellExecuteEx` + `runas`）或已提权的父进程能拉起它。因此 `smm ... --json > out.json` 这类管道只能在提权终端里用，安装包把 CLI 加进用户 `PATH` 的承诺也只在提权终端成立；`scripts/local/*.ps1` 与 `skills/smm-cli` 都按此前提运行。CI 不受影响，因为 runner 进程本身是提权的。
+
+### GUI 不做动效，也不再提供“减少动效”开关
+
+**选择**：`main.cpp` 在创建 QML 引擎前固定 `HusTheme::instance()->setAnimationEnabled(false)`；QML 里不再出现 `Behavior` / `*Animation` / `Transition`；`GuiController` 删除 `reducedMotion` 属性、QSettings 键与设置页开关。
+
+**理由**：换肤本身就会让整棵场景的颜色绑定在同一事件里变化，用 `Behavior on color` 过渡它只能得到十几帧的全窗重绘（以前的绕法是在 `applyThemeMode()` 里临时关掉再恢复，现在连绕的对象都没了）。这个界面的主要操作是长任务，进度与结果由进度条、状态标签与 Toast 文案承担，位移动画不增加信息；少一层“用户偏好 × 系统设置”也少一类验收状态。
+
+**代价**：切页与悬停是硬切，没有过渡缓冲。对 1280×840 的桌面窗口可接受。HuskarUI 的 `durationFast/Mid` token 保留但当前不会被触发。规则写在 [../design/motion.md](../design/motion.md)。
+
+### 设置页改成两列布局，而不是一张卡片里堆控件
+
+**选择**：每个设置项是“标签 + 说明在左、控件在右”的 `RowLayout`，右列统一 `controlWidth = 340`；页内分组间距 30 > 组内项间距 18 > 标签与说明 4。路径类控件下面放带文字的按钮（浏览 / 打开 / 自动探测），不再用三个只有 tooltip 的图标按钮。
+
+**理由**：上一版把标签、说明、输入框和三个图标按钮塞进同一行，密度由“能塞下多少”决定，说明文字被 `elide` 成一句话；改成两列后说明拿到整行宽度自然换行，控件对齐到同一条竖线，视线只需上下移动。图标按钮换成文字按钮是因为三个相同大小的图标需要悬停才能分辨。
+
+**代价**：页面变长，1280×840 下字体预览需要滚动才能看全；右列宽度被固定后，超长路径在输入框内横向滚动。
+
+### 体检只有五项，只在三个入口运行
 **选择**：`diagnose_environment()` 把 ini 的三个键、目录与同卷状态、模组读取失败都折叠进各自的条目，总共五项；`Diagnose` 刷新只在打开启动器、点击「启动只狼」、诊断页点「检测环境」时发生，其余写操作只做 `Scan`，路径变更直接丢弃过期结果（`invalidateHealth()`）。
 
 **理由**：条目越细，用户越难判断"下一步该动什么"；轮询式体检让空闲窗口持续扫盘。启动门禁仍然存在，只是从"按钮灰着"变成"点了就检，检出问题就拦下并跳到诊断页"。
