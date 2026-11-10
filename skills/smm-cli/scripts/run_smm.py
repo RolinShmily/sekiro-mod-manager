@@ -78,6 +78,14 @@ def invoke(executable: str, args: Sequence[str], timeout: float) -> Dict[str, An
                 "stdout": (error.stdout or b"").decode("utf-8", errors="replace"),
                 "stderr": (error.stderr or b"").decode("utf-8", errors="replace")}
     except OSError as error:
+        # Windows cannot raise UAC from CreateProcess: an unelevated parent gets 740 instead of a
+        # prompt, so name the fix instead of returning a bare "Access is denied".
+        if getattr(error, "winerror", None) == 740:
+            return {"ok": False, "exit_code": 126, "argv": command,
+                    "error": {"code": "elevation_required",
+                              "message": "SMM requires administrator rights and CreateProcess cannot "
+                                         "raise UAC. Run this from an elevated terminal (or launch "
+                                         "smm.exe via ShellExecuteEx with the runas verb)."}}
         return {"ok": False, "exit_code": 126, "argv": command,
                 "error": {"code": "process_error", "message": str(error)}}
 

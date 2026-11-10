@@ -2,7 +2,7 @@
 name: smm-cli
 description: >-
   使用 Sekiro Mod Manager 的 smm.exe CLI 管理《只狼》模组：检查暂存区与游戏环境、导入压缩包、分析覆盖冲突、调整优先级和资产开关、部署与还原、管理预设、导入导出 .smmpack。用户提及 smm、smm-cli、只狼模组部署/冲突/整合包，或需要脚本化调用 SMM 时使用本技能，即使没有明确要求技能。纯 QML 外观、字体或 GUI 动效修改不属于本技能。
-compatibility: Windows 上可执行的 smm.exe；直接调用不需要 Python。附带的 JSON 调用器需要 Python 3.9+ 标准库。.7z/.rar 解压可能需要已安装的 7-Zip 或 WinRAR。
+compatibility: Windows 上可执行的 smm.exe，**必须在提权终端（管理员 PowerShell / cmd）里运行**；直接调用不需要 Python。附带的 JSON 调用器需要 Python 3.9+ 标准库。.7z/.rar 解压可能需要已安装的 7-Zip 或 WinRAR。
 ---
 
 # SMM CLI
@@ -16,6 +16,8 @@ compatibility: Windows 上可执行的 smm.exe；直接调用不需要 Python。
 3. 使用 `smm --json env` 查看解析到的暂存区和游戏根目录；如果用户给了路径，为每次调用显式传 `--staging` 与 `--game-dir`。不要为了临时操作自动执行 `config`。
 4. `--game-dir` 指向包含 `sekiro.exe` 的安装根目录；CLI 部署目标固定为其下的 `mods/`，不要传入 `mods/` 本身。
 5. 当程序不存在时报告查找位置。在用户要求构建、且源码和工具链已就绪时，只构建 CMake 目标 `smm`；不要安装 Qt 来运行独立 CLI。
+
+**权限前提**：`smm.exe` 的清单是 `requireAdministrator`。`CreateProcess`（`subprocess`、`& "smm.exe"`、VS Code 任务）弹不出 UAC，在非提权终端里调用会直接失败为 `ERROR_ELEVATION_REQUIRED`（740），`run_smm.py` 把它报成 `elevation_required`。此时正确做法是让用户在一个提权终端里执行，或由用户自己用 `start smm ...` 拉起；不要尝试绕过权限，也不要建议关闭 UAC 或改写清单。
 
 CLI 持久化设置与 GUI 的 QSettings 不同：CLI 默认使用 `%APPDATA%/SMM/settings.json`，可通过 `SMM_SETTINGS_FILE` 指向隔离配置。以 `env.data.settings_file` 和解析结果为准，不要假定 GUI 设置已同步。路径解析顺序是命令行参数、CLI 设置、自动探测。
 
@@ -58,7 +60,7 @@ python "SKILL_DIR/scripts/run_smm.py" --exe "C:/Tools/SMM/smm.exe" -- --staging 
 python "SKILL_DIR/scripts/run_smm.py" --exe "C:/Tools/SMM/smm.exe" -- --staging "D:/SMM staging" --game-dir "D:/SteamLibrary/steamapps/common/Sekiro" plan
 ```
 
-将 `SKILL_DIR` 替换为本技能的实际绝对路径。不使用脚本也可以直接运行 CLI；PowerShell 中用 `& "C:/Tools/SMM/smm.exe" ...` 调用带空格的可执行路径。使用 Bash 时给每个路径加引号，或通过进程 API 的参数数组调用。
+将 `SKILL_DIR` 替换为本技能的实际绝对路径。不使用脚本也可以直接运行 CLI，但两种方式都必须在提权终端里：`run_smm.py` 走 `subprocess`，非提权时只会得到 `elevation_required`。需要用户在普通终端里启动时，让他们执行 `start smm ...`（走 shell，会弹 UAC，输出进新窗口）。
 
 ## 4. 按任务执行
 

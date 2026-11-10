@@ -157,6 +157,8 @@
 
 ## 消费示例
 
+以下示例都要求**提权终端**：`smm.exe` 声明 `requireAdministrator`，而 `CreateProcess` 弹不出 UAC，普通终端里直接启动只会得到 `ERROR_ELEVATION_REQUIRED`（740），管道也拿不到任何输出。
+
 ```bash
 # 拿启用模组的 id
 smm list --json | jq -r '.data.mods[] | select(.enabled) | .id'

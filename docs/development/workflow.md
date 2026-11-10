@@ -70,6 +70,8 @@ PR 描述里应包含：
 | Test | `ctest --test-dir build --output-on-failure` |
 | CLI Smoke Test | `smm.exe --help`、`smm.exe doctor --json` |
 
+`smm.exe` 的清单是 `requireAdministrator`（见 [decisions.md](../architecture/decisions.md)），而 `CreateProcess` 弹不出 UAC：本地跑 CLI、`scripts/local/seed_demo.ps1`、`capture_screenshots.ps1` 都要先开一个提权终端，否则得到 `ERROR_ELEVATION_REQUIRED`（740）。CI 上 runner 进程本身已提权，无需额外处理。
+
 `.github/workflows/release.yml` 额外做：SemVer 标签校验、标签与 `project(... VERSION ...)` 一致性校验、Inno Setup 安装包、附件与 GitHub Release 发布。发布版本的唯一事实来源是 `CMakeLists.txt` 的 `project(VERSION)`。
 
 ## 文档规则

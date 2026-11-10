@@ -74,7 +74,7 @@ const smm::HealthReport report = smm::diagnose_environment(game, staging, /*veri
 
 - 已扫描过暂存区的调用方传 `staging_scan` 指针，避免重复走目录。
 - `overall` 由最差项推导；`items` 已按 error → warning → info → ok 排序。
-- `is_process_elevated()` 只是报告当前进程的令牌状态，供界面提示；GUI 通过 `requireAdministrator` 清单保证这一点。
+- `is_process_elevated()` 只是报告当前进程的令牌状态，供界面提示；GUI 与 CLI 都通过 `requireAdministrator` 清单保证这一点（CLI 用 `/MANIFESTUAC`，见 [decisions.md](../architecture/decisions.md)）。
 
 ## 调用方禁止事项
 

@@ -21,6 +21,21 @@ smm [--json] [--staging <path>] [--game-dir <path>] <command> [args]
 
 `--opt value` 与 `--opt=value` 都接受。**未知选项或开关直接报错**，不会被静默忽略。
 
+## 管理员权限
+
+`smm.exe` 的清单是 `requireAdministrator`，与 GUI 一致：进程整体以管理员身份运行。部署、还原、写 `modengine.ini` 都需要写游戏目录，非提权时只会得到 `Access is denied`。
+
+由此带来一条必须知道的限制：**`CreateProcess` 无法弹 UAC**。从 cmd、PowerShell、VS Code 任务或 Python `subprocess` 直接启动会失败并返回 `ERROR_ELEVATION_REQUIRED`（740），不会出现任何弹窗。能拉起它的只有：
+
+- 已经提权的终端（管理员 PowerShell / cmd）——推荐，管道与重定向照常工作；
+- shell 启动路径：资源管理器双击、`start smm ...`、`ShellExecuteEx` + `runas`（会弹 UAC，但输出进入新窗口）。
+
+```powershell
+# 普通终端里：先提权一个终端，再照常用管道
+Start-Process powershell -Verb RunAs
+smm doctor --json > doctor.json
+```
+
 裸执行 `smm`（既无命令也无 `--help`）会打印总帮助并以退出码 `2` 结束：它是用法错误，不是“请求帮助”。`smm <command> --help` 会先校验选项合法性，再跳过位置参数检查，所以“这条命令要传什么”总问得出来。
 
 ## 退出码

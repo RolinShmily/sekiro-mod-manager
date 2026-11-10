@@ -36,6 +36,7 @@ ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 ; The CLI is installed next to the GUI; announce PATH edits to the shell.
+; smm.exe declares requireAdministrator, so the PATH entry only helps from an elevated terminal.
 ChangesEnvironment=yes
 
 [Languages]
@@ -43,9 +44,9 @@ Name: "chinesesimplified"; MessagesFile: "ChineseSimplified.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-AddToPath=Add SMM to the user PATH (run smm from any terminal)
+AddToPath=Add SMM to the user PATH (run smm from an elevated terminal)
 CommandLineGroup=Command line
-chinesesimplified.AddToPath=将 SMM 加入当前用户的 PATH（在任意终端直接运行 smm）
+chinesesimplified.AddToPath=将 SMM 加入当前用户的 PATH（在管理员终端中运行 smm）
 chinesesimplified.CommandLineGroup=命令行
 
 [Tasks]
