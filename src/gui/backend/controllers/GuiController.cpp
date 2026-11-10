@@ -56,8 +56,6 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
     if (fontFamily_.isEmpty()) {
         fontFamily_ = defaultFontFamily();
     }
-    reducedMotion_ = settings.value(QStringLiteral("reducedMotion"), false).toBool();
-    HusTheme::instance()->setAnimationEnabled(!reducedMotion_);
 
     themeMode_ = settings.value(QStringLiteral("themeMode"), QStringLiteral("dark")).toString();
     if (themeMode_.trimmed().isEmpty()) {
@@ -560,17 +558,6 @@ void GuiController::setThemeMode(const QString& mode) {
     emit themeModeChanged(themeMode_);
 }
 
-void GuiController::setReducedMotion(bool reduced) {
-    if (reducedMotion_ == reduced) {
-        return;
-    }
-    reducedMotion_ = reduced;
-    HusTheme::instance()->setAnimationEnabled(!reducedMotion_);
-    QSettings settings(kSettingsScope, kSettingsApp);
-    settings.setValue(QStringLiteral("reducedMotion"), reducedMotion_);
-    emit reducedMotionChanged();
-}
-
 QString GuiController::defaultFontFamily() {
     const QStringList installed = QFontDatabase::families();
     const QStringList preferred = {QStringLiteral("Noto Sans SC"), QStringLiteral("Source Han Sans SC"),
@@ -614,24 +601,10 @@ void GuiController::applyThemeMode(const QString& mode) {
         return;
     }
 
-    // A theme switch retokenizes every component at once, so each bound colour changes within
-    // the same event. Letting the ~180 ms colour Behaviors animate that storm means the whole
-    // window repaints for a dozen-plus frames just to arrive at the same end state; the switch
-    // is applied in one frame instead. The user's animation preference is restored right after
-    // the event loop delivers the new tokens.
-    const bool animations = theme->animationEnabled();
-    theme->setAnimationEnabled(false);
+    // One assignment is the whole switch: the GUI runs with animations disabled (see main.cpp),
+    // so the retokenized colours of every component land in the same frame. There is no colour
+    // Behaviour left to animate that storm, and therefore nothing to suspend and restore here.
     theme->setDarkMode(target);
-    if (animations) {
-        QMetaObject::invokeMethod(
-            theme,
-            [theme, animations]() {
-                if (animations) {
-                    theme->setAnimationEnabled(true);
-                }
-            },
-            Qt::QueuedConnection);
-    }
 }
 
 QVariantList GuiController::availableFonts() const {
@@ -692,12 +665,11 @@ QVariantList GuiController::availableThemes() const {
 }
 
 void GuiController::saveSettings(const QString& staging, const QString& game, const QString& lang,
-                                 const QString& font, const QString& theme, bool reducedMotion) {
+                                 const QString& font, const QString& theme) {
     const QString cleanStaging = staging.trimmed();
     const QString cleanGame = game.trimmed();
     const bool pathsChanged = cleanStaging != stagingDir_ || cleanGame != sekiroDir_;
 
-    setReducedMotion(reducedMotion);
     setStagingDir(cleanStaging);
     setSekiroDir(cleanGame);
     if (!lang.trimmed().isEmpty()) setLanguage(lang.trimmed());

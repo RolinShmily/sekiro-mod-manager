@@ -21,48 +21,11 @@ ColumnLayout {
     default property alias bodyData: bodyColumn.data
     /// 右上角操作区。
     property Component extra: null
-    /// 入场动画的序号：同页内按 45ms 递增形成轻微的错落。
-    property int entranceIndex: 0
-    property bool animateEntrance: true
+    /// 分组内部的项间距。内容密集的页面（如设置页）调大它，比在子项里逐个加 spacer 干净。
+    property int bodySpacing: 12
 
     Layout.fillWidth: true
     spacing: 12
-
-    // 入场：淡入 + 轻微上浮，用 transform 而不是 y，避免触发布局重算
-    opacity: animateEntrance && HusTheme.animationEnabled ? 0 : 1
-    transform: Translate { id: slide; y: 0 }
-
-    SequentialAnimation {
-        id: entrance
-        PauseAnimation { duration: root.entranceIndex * 45 }
-        ParallelAnimation {
-            NumberAnimation {
-                target: root
-                property: "opacity"
-                from: 0
-                to: 1
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
-            NumberAnimation {
-                target: slide
-                property: "y"
-                from: 8
-                to: 0
-                duration: 220
-                easing.type: Easing.OutCubic
-            }
-        }
-    }
-
-    Component.onCompleted: {
-        if (root.animateEntrance && HusTheme.animationEnabled) {
-            entrance.start();
-        } else {
-            root.opacity = 1;
-            slide.y = 0;
-        }
-    }
 
     // ------------------------------- 分组标题 -------------------------------
     RowLayout {
@@ -115,6 +78,6 @@ ColumnLayout {
     ColumnLayout {
         id: bodyColumn
         Layout.fillWidth: true
-        spacing: 12
+        spacing: root.bodySpacing
     }
 }

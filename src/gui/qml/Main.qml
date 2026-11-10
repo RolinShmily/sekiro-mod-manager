@@ -19,10 +19,6 @@ HusWindow {
 
     color: HusTheme.Primary.colorBgBase
 
-    Behavior on color {
-        enabled: HusTheme.animationEnabled
-        ColorAnimation { duration: 180; easing.type: Easing.OutQuad }
-    }
 
     // 页面顺序与导航栏一致；StackLayout 的下标由它推导，避免嵌套三元表达式随页面增加而失控。
     readonly property var navOrder: ["hub", "armoury", "packs", "diagnostics", "settings", "about"]
@@ -127,10 +123,6 @@ HusWindow {
             implicitWidth: 208
             color: HusTheme.Primary.colorFillQuaternary
 
-            Behavior on color {
-                enabled: HusTheme.animationEnabled
-                ColorAnimation { duration: 180; easing.type: Easing.OutQuad }
-            }
 
             Rectangle {
                 anchors.right: parent.right
@@ -342,23 +334,6 @@ HusWindow {
             anchors.fill: parent
             currentIndex: Math.max(0, mainWindow.navOrder.indexOf(mainWindow.currentNav))
 
-            function animatePage() {
-                viewAnim.stop();
-                opacity = 1.0;
-                if (HusTheme.animationEnabled) viewAnim.restart();
-            }
-            onCurrentIndexChanged: animatePage()
-
-            NumberAnimation {
-                id: viewAnim
-                target: stageStack
-                property: "opacity"
-                from: 0.80
-                to: 1.0
-                duration: 180
-                easing.type: Easing.OutQuad
-            }
-
             Loader {
                 sourceComponent: LaunchHubView {
                     onRequestDiagnosis: mainWindow.currentNav = "diagnostics"
@@ -375,7 +350,6 @@ HusWindow {
                 asynchronous: true
                 onLoaded: {
                     visited = true;
-                    if (StackLayout.isCurrentItem) stageStack.animatePage();
                 }
                 sourceComponent: ArmouryView {
                     onRequestOpenDrawer: (modId) => {
@@ -393,7 +367,6 @@ HusWindow {
                 asynchronous: true
                 onLoaded: {
                     visited = true;
-                    if (StackLayout.isCurrentItem) stageStack.animatePage();
                 }
                 sourceComponent: ModPackView {
                     onRequestSavePack: savePackModal.open()
@@ -407,7 +380,6 @@ HusWindow {
                 asynchronous: true
                 onLoaded: {
                     visited = true;
-                    if (StackLayout.isCurrentItem) stageStack.animatePage();
                 }
                 sourceComponent: DiagnosticsView {}
             }
@@ -419,7 +391,6 @@ HusWindow {
                 asynchronous: true
                 onLoaded: {
                     visited = true;
-                    if (StackLayout.isCurrentItem) stageStack.animatePage();
                 }
                 sourceComponent: SettingsView {}
             }
@@ -431,7 +402,6 @@ HusWindow {
                 asynchronous: true
                 onLoaded: {
                     visited = true;
-                    if (StackLayout.isCurrentItem) stageStack.animatePage();
                 }
                 sourceComponent: AboutView {}
             }
@@ -499,13 +469,6 @@ HusWindow {
         z: 99999
         anchors.top: mainWindow.captionBar.bottom
         anchors.topMargin: 12
-        transform: Translate {
-            y: toastBanner.toastVisible || !HusTheme.animationEnabled ? 0 : -16
-            Behavior on y {
-                enabled: HusTheme.animationEnabled
-                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-            }
-        }
         anchors.horizontalCenter: parent.horizontalCenter
         // 长错误信息不再撑出屏幕：限制最大宽度并换行，最多三行。
         implicitHeight: Math.max(36, toastContent.implicitHeight + 18)
@@ -524,11 +487,6 @@ HusWindow {
         property bool toastVisible: false
         property string toastType: "info"
         property string toastMessage: ""
-
-        Behavior on opacity {
-            enabled: HusTheme.animationEnabled
-            NumberAnimation { duration: 160; easing.type: Easing.OutQuad }
-        }
 
         // 错误/警告需要阅读时间：按严重程度决定停留时长。
         readonly property int toastDuration: toastType === "error" ? 7000
@@ -583,16 +541,6 @@ HusWindow {
                 wrapMode: Text.WordWrap
                 maximumLineCount: 3
                 elide: Text.ElideRight
-            }
-        }
-    }
-
-    Connections {
-        target: HusTheme
-        function onAnimationEnabledChanged() {
-            if (!HusTheme.animationEnabled) {
-                viewAnim.stop();
-                stageStack.opacity = 1.0;
             }
         }
     }

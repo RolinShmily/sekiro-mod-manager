@@ -37,10 +37,10 @@ Windows 专属 API 放在 `#ifdef _WIN32` 后面，并给出非 Windows 的降�
 - 每个文件以 `pragma ComponentBehavior: Bound` 开头（`Main.qml` 与全部组件/视图都是），避免隐式上下文注入带来的调试困难。
 - 根对象 `id: root`；属性声明集中在顶部，按"入参 → 内部状态 → 只读派生"排列。
 - 必填属性用 `required property`（`Repeater` 委托里的 `required property var model` 必须有，否则拿不到模型）。
-- 颜色、圆角、时长只用 `HusTheme.Primary.*`；深色/浅色差异用 `HusTheme.isDark` 三元表达式。
+- 颜色、圆角只用 `HusTheme.Primary.*`；深色/浅色差异用 `HusTheme.isDark` 三元表达式。
+- 不写 `Behavior` / `*Animation` / `Transition`：GUI 无动效，状态变化直接换值（见 [../design/motion.md](../design/motion.md)）。
 - 图标只用 `HusIcon.*`，不写 emoji，不写字形私有区字符。
 - 布局：优先 `Layout.*` 附加属性；需要固定命中区时同时设置 `Layout.preferredHeight` 与 `Layout.minimumHeight`（见 `NavItem.qml`）。
-- 动效一律 `enabled: HusTheme.animationEnabled` 守卫；位移动画作用在 `transform` 上，不要动画 `y`/`height`。
 - 事件处理不要写业务逻辑：发信号，交给视图或 `smmBackend`。
 - 不认识的控制器属性不要猜：`smmBackend` 的可用属性以 `GuiController.hpp` 为准，拼错只会在运行时报 `undefined`。
 

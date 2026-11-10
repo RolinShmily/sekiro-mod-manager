@@ -60,7 +60,7 @@ export const zh = {
   "sourceDirect": "GitHub 原生",
   "allReleases": "所有版本与更新日志",
   "cliTitle": "为脚本，留一把刀。",
-  "cliDescription": "独立 smm.exe 与桌面软件共用核心。用 JSON 查看状态、预览部署计划，编排你自己的工作流。",
+  "cliDescription": "独立 smm.exe 与桌面软件共用核心。用 JSON 查看状态、预览部署计划，编排你自己的工作流。需在管理员终端中运行。",
   "cliDownload": "下载独立 CLI",
   "skillTitle": "让智能体，读懂你的装配。",
   "skillDescription": "smm-cli 技能指导智能体检查环境、管理模组与分析冲突。附带命令参考与 NDJSON 调用器，说明每一步的作用范围。",

@@ -37,9 +37,9 @@ What each suite covers, how to add one, and the manual GUI checklist:
 - **Respect the layer boundaries.** `smm_core` never includes Qt, never prints, and never knows
   about the GUI; business rules belong there, not in QML or the GUI backend.
   See [`docs/architecture/layers.md`](docs/architecture/layers.md).
-- **Use design tokens.** QML takes colours, radii and durations from `HusTheme.Primary`, never
-  hardcoded hex; animations are gated on `HusTheme.animationEnabled`.
-  See [`docs/design/tokens.md`](docs/design/tokens.md).
+- **Use design tokens.** QML takes colours and radii from `HusTheme.Primary`, never hardcoded hex,
+  and adds no animations at all — the GUI is motionless by design.
+  See [`docs/design/tokens.md`](docs/design/tokens.md) and [`docs/design/motion.md`](docs/design/motion.md).
 - **Keep contracts stable.** CLI JSON field names, `ErrorCode` strings and on-disk file schemas
   are consumed by the GUI and by scripts: [`docs/reference/errors.md`](docs/reference/errors.md),
   [`docs/reference/file-formats.md`](docs/reference/file-formats.md).

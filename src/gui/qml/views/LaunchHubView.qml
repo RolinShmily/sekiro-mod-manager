@@ -68,11 +68,6 @@ ScrollView {
                     smooth: true
                     // 亮色模式保留更丰富的水墨山城对比度，避免泛白发虚
                     opacity: HusTheme.isDark ? 0.40 : 0.70
-
-                    Behavior on opacity {
-                        enabled: HusTheme.animationEnabled
-                        NumberAnimation { duration: HusTheme.Primary.durationMid }
-                    }
                 }
 
                 // 渐变蒙版：深色模式暗色遮罩保清晰，亮色模式宣纸水墨过渡显层次
@@ -111,11 +106,6 @@ ScrollView {
                     asynchronous: true
                     smooth: true
                     opacity: HusTheme.isDark ? 0.18 : 0.0
-
-                    Behavior on opacity {
-                        enabled: HusTheme.animationEnabled
-                        NumberAnimation { duration: HusTheme.Primary.durationMid }
-                    }
                 }
 
                 Image {
@@ -129,11 +119,6 @@ ScrollView {
                     asynchronous: true
                     smooth: true
                     opacity: HusTheme.isDark ? 0.0 : 0.35
-
-                    Behavior on opacity {
-                        enabled: HusTheme.animationEnabled
-                        NumberAnimation { duration: HusTheme.Primary.durationMid }
-                    }
                 }
             }
 

@@ -77,9 +77,9 @@ color: {
 
 ## 动效时长
 
-HuskarUI 默认 `durationFast = 100`、`durationMid = 200`、`durationSlow = 300`（毫秒），未在项目内覆盖。
-
-现有代码混用了 token 与字面量：`PageHeader` 用 `durationMid`，`NavItem` 的按压用字面量 `80`，页面淡入用 `180`，Toast 用 `160`。新增动效优先用 token；需要更细的节奏时用字面量并在注释里说明原因（见 [motion.md](motion.md)）。
+GUI 不做动效（见 [motion.md](motion.md)），所以时长 token 在当前代码里没有使用者：
+`HusTheme.Primary.durationFast`（100 ms）、`durationMid`（200）、`durationSlow`（300）只在 HuskarUI
+组件内部生效。新增代码不要引入动画；真需要时先读 [motion.md](motion.md) 的四个前提。
 
 ## 层级与阴影
 

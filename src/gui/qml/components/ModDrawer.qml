@@ -72,7 +72,6 @@ HusDrawer {
         cancelText: qsTr("取消")
         confirmButtonDelegate: HusButton {
             id: drawerDeleteConfirmButton
-            animationEnabled: confirmDeleteModal.animationEnabled
             text: confirmDeleteModal.confirmText
             colorBg: drawerDeleteConfirmButton.active
                      ? Qt.darker(HusTheme.Primary.colorError, 1.15)

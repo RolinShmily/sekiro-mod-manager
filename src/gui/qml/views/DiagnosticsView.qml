@@ -105,11 +105,6 @@ ColumnLayout {
                 border.color: rootView.passed ? HusTheme.Primary.colorSuccessBorder
                                               : HusTheme.Primary.colorBorderSecondary
 
-                Behavior on border.color {
-                    enabled: HusTheme.animationEnabled
-                    ColorAnimation { duration: HusTheme.Primary.durationMid }
-                }
-
                 ColumnLayout {
                     id: bannerColumn
                     anchors.fill: parent
@@ -175,7 +170,6 @@ ColumnLayout {
                 iconSource: HusIcon.UnorderedListOutlined
                 title: qsTr("检测项")
                 description: qsTr("每项对应一个可以直接处理的对象；异常项会带出修复建议。")
-                entranceIndex: 1
 
                 HusText {
                     Layout.fillWidth: true
@@ -271,7 +265,6 @@ ColumnLayout {
                 iconSource: HusIcon.ClockCircleOutlined
                 title: qsTr("什么时候检测")
                 description: qsTr("诊断是只读操作，不做轮询：没有打开游戏也没有点击检测时，SMM 不会为了诊断去扫描磁盘或进程。")
-                entranceIndex: 2
 
                 Repeater {
                     model: [

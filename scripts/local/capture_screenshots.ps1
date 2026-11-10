@@ -160,21 +160,31 @@ try {
         [void][SmmShot]::PostMessage($h, 0x0201, [IntPtr]1, $lp)
         Start-Sleep -Milliseconds 90
         [void][SmmShot]::PostMessage($h, 0x0202, [IntPtr]0, $lp)
-        Start-Sleep -Milliseconds 1600
+        # PrintWindow returns the last composited frame: too short a wait after a page switch
+        # captures the previous page, or an empty one when the window was just shown.
+        Start-Sleep -Milliseconds 2200
     }
 
     # Nav rail item centres, in client coordinates, for the 1280x840 layout in Main.qml.
+    # Six items since the diagnostics page was added; the pitch is 46 px and the rail is centred,
+    # so adding a page moves every centre up by half a pitch rather than appending one.
     $pages = [ordered]@{
-        hub = 97
-        armoury = 143
-        packs = 189
-        settings = 235
-        about = 281
+        hub = 104
+        armoury = 150
+        packs = 196
+        diagnostics = 242
+        settings = 288
+        about = 334
     }
 
     Write-Host "capturing $Theme theme into $outPath"
     foreach ($page in $pages.Keys) {
         Open-Page $pages[$page]
+        # Two passes: the first PrintWindow after a page switch can still return the
+        # previous page's composited frame, or an empty one for a freshly shown window.
+        # The second pass is the one that survives in the file.
+        Save-Shot $page
+        Start-Sleep -Milliseconds 500
         Save-Shot $page
     }
 }

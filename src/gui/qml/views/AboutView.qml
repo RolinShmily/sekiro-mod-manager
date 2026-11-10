@@ -50,7 +50,6 @@ ColumnLayout {
             SectionCard {
                 iconSource: HusIcon.StarOutlined
                 title: qsTr("软件信息")
-                entranceIndex: 0
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -118,7 +117,6 @@ ColumnLayout {
                 iconSource: HusIcon.CloudDownloadOutlined
                 title: qsTr("版本更新")
                 description: qsTr("通过 GitHub 发布清单校验最新版本；检查结果会留在本页，不会弹出额外窗口。")
-                entranceIndex: 1
 
                 extra: Component {
                     HusIconButton {
@@ -239,11 +237,6 @@ ColumnLayout {
                         border.width: 1
                         border.color: HusTheme.Primary.colorBorderSecondary
 
-                        Behavior on color {
-                            enabled: HusTheme.animationEnabled
-                            ColorAnimation { duration: HusTheme.Primary.durationMid }
-                        }
-
                         ScrollView {
                             anchors.fill: parent
                             anchors.margins: 10
@@ -309,7 +302,6 @@ ColumnLayout {
             SectionCard {
                 iconSource: HusIcon.UserOutlined
                 title: qsTr("项目与作者")
-                entranceIndex: 2
 
                 RowLayout {
                     Layout.fillWidth: true

@@ -73,4 +73,4 @@
 
 - 没有周期性诊断定时器：体检只在 [data-flows.md](data-flows.md) 列出的三个入口运行。
 - `TaskRunner`（`tasks_` / `scans_`）与 `UpdateService` 是 `GuiController` 的值成员，随控制器一起析构，不额外挂父对象；动态创建的 `QTimer` 以控制器为父对象。两条路径都保证退出时先置取消标志、再等 worker 结束。
-- `QML` 的 `Loader` 懒加载会让视图在首次进入时才创建，`StackLayout.isCurrentItem` 变化时由 `Main.qml` 播放淡入动画——这些都在界面线程，与后台任务无关。
+- `QML` 的 `Loader` 懒加载会让视图在首次进入时才创建；切页没有淡入动画（GUI 无动效），所以 `isCurrentItem` 变化不触发任何额外渲染——这些都在界面线程，与后台任务无关。

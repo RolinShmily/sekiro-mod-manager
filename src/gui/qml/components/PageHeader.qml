@@ -29,11 +29,6 @@ RowLayout {
         border.width: 1
         border.color: HusTheme.Primary.colorBorderSecondary
 
-        Behavior on color {
-            enabled: HusTheme.animationEnabled
-            ColorAnimation { duration: HusTheme.Primary.durationMid }
-        }
-
         HusIconText {
             anchors.centerIn: parent
             iconSource: root.iconSource

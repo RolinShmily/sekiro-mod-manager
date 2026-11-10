@@ -398,24 +398,6 @@ ColumnLayout {
         rightMargin: rootView.scrollBarSpace
         model: smmBackend ? smmBackend.modListModel : null
 
-        // 模型 moveRow() 走 beginMoveRows/endMoveRows，这两个过渡把重排动画补上
-        move: Transition {
-            enabled: HusTheme.animationEnabled
-            NumberAnimation {
-                properties: "x,y"
-                duration: 180
-                easing.type: Easing.OutCubic
-            }
-        }
-        moveDisplaced: Transition {
-            enabled: HusTheme.animationEnabled
-            NumberAnimation {
-                properties: "x,y"
-                duration: 180
-                easing.type: Easing.OutCubic
-            }
-        }
-
         ScrollBar.vertical: HusScrollBar {
             policy: ScrollBar.AsNeeded
         }

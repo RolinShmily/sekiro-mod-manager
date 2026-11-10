@@ -35,17 +35,9 @@ Rectangle {
 
     readonly property bool isDragging: (rootCard.compact ? compactGripArea.drag.active : gripArea.drag.active)
 
-    scale: isDragging && HusTheme.animationEnabled ? 1.025 : 1.0
+    // 拖动时的静态反馈：放大与变淡都是即时状态，不做过渡。
+    scale: isDragging ? 1.025 : 1.0
     opacity: isDragging ? 0.90 : 1.0
-
-    Behavior on scale {
-        enabled: HusTheme.animationEnabled
-        NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
-    }
-    Behavior on opacity {
-        enabled: HusTheme.animationEnabled
-        NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
-    }
 
     function getDomainInfo(url) {
         if (!url) return { label: "", icon: "", color: "" };
@@ -78,11 +70,6 @@ Rectangle {
                   : (cardMouseArea.containsMouse
                      ? HusTheme.Primary.colorPrimaryBorder
                      : HusTheme.Primary.colorBorderSecondary)
-
-    Behavior on border.color {
-        enabled: HusTheme.animationEnabled
-        ColorAnimation { duration: HusTheme.Primary.durationFast }
-    }
 
     // -------------------------------------------------------------------------
     // 批量管理复选框：优先采用 HuskarUI 原生 HusCheckBox 组件
@@ -156,11 +143,6 @@ Rectangle {
             mipmap: true
             smooth: true
             opacity: cardMouseArea.containsMouse ? 0.35 : 0.22
-
-            Behavior on opacity {
-                enabled: HusTheme.animationEnabled
-                NumberAnimation { duration: 180 }
-            }
         }
 
         Rectangle {

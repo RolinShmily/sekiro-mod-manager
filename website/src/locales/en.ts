@@ -34,7 +34,7 @@ export const en: Record<MessageKey, string> = {
   setupTitle: "Installer", setupDescription: "Let the installer manage application files. Built for everyday use.", portableTitle: "Portable ZIP", portableDescription: "Extract and run. Keep the app wherever you prefer.",
   downloadButton: "Download", downloadSource: "Files from GitHub Releases. Only published assets matching the release version are enabled.",
   downloadSourceLabel: "Download source", sourceMirror: "Accelerated · Default", sourceDirect: "GitHub direct", allReleases: "All releases & changelog",
-  cliTitle: "A blade for your scripts.", cliDescription: "Standalone smm.exe shares the desktop app's core. Inspect state in JSON, preview deployment plans, and build your own workflow.",
+  cliTitle: "A blade for your scripts.", cliDescription: "Standalone smm.exe shares the desktop app's core. Inspect state in JSON, preview deployment plans, and build your own workflow. Run it from an elevated terminal.",
   copyCommands: "Copy CLI examples", cliDownload: "Download standalone CLI",
   skillTitle: "Let your agent understand the loadout.",
   skillDescription: "The smm-cli skill guides agents through environment checks, mod management, and conflict analysis. It includes command references and an NDJSON runner with clear operation boundaries.",

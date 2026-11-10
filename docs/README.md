@@ -40,7 +40,7 @@
 - [screenshots.md](design/screenshots.md) — 五个页面的实拍与重新生成方式
 - [tokens.md](design/tokens.md) — 颜色、字体、间距、圆角、动效时长
 - [components.md](design/components.md) — PageHeader / SectionCard / ModCard / NavItem 等复用组件
-- [motion.md](design/motion.md) — 动效预算、缓动、减少动效
+- [motion.md](design/motion.md) — 为什么 GUI 不做动效、状态怎么用静态差异表达
 - [i18n-accessibility.md](design/i18n-accessibility.md) — 中英双语、键盘可达、对比度、焦点
 
 ### development

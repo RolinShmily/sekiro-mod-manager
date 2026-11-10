@@ -25,7 +25,7 @@ core library.
 | **Mod packs** | `.smmpack` presets with bilingual titles, exportable/importable as portable archives. |
 | **Asset-level control** | Inspect a staged mod's files and toggle individual assets, with per-mod backdrop artwork. |
 | **Environment doctor** | A page (not a dialog) with five checks — `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini`, staging, deployment — plus one-click repair. |
-| **Bilingual UI** | Live switching between `zh-CN` and `en-US`, plus a dark/light/system theme and reduced-motion mode. |
+| **Bilingual UI** | Live switching between `zh-CN` and `en-US`, plus a dark/light/system theme. |
 
 ## Interface
 
@@ -52,7 +52,7 @@ screens:
 <td><img src="docs/design/assets/screenshots/settings-light.webp" alt="Settings, light theme" width="400"></td>
 </tr>
 <tr>
-<td><b>Settings</b> — game and staging roots (with the same-volume hard-link hint), theme, language, font and reduced motion. Groups sit directly on the page background: icon, title, hairline, whitespace.</td>
+<td><b>Settings</b> — game and staging roots (with the same-volume hard-link hint), theme, language and font. Each setting is a two-column row: label and explanation on the left, the control aligned in one column on the right.</td>
 <td><b>Settings, light theme</b> — the same tokens, not a second palette; this is where button contrast on artwork gets checked.</td>
 </tr>
 </table>
@@ -108,6 +108,11 @@ smm restore                      # return the game install to pristine
 Full command/option/exit-code reference: [docs/reference/cli.md](docs/reference/cli.md).
 Machine-readable output (`--json`) contract: [docs/reference/json-contract.md](docs/reference/json-contract.md).
 
+`smm.exe` declares `requireAdministrator`, like the desktop app. Windows cannot raise UAC from
+`CreateProcess`, so run it from an elevated terminal — `smm doctor` in a normal terminal fails with
+`ERROR_ELEVATION_REQUIRED` (740) and no prompt. `start smm ...` does elevate from a normal terminal,
+but its output lands in a new window.
+
 ## Documentation
 
 Documentation is written in Chinese; the index lives at [docs/README.md](docs/README.md).
@@ -115,7 +120,7 @@ Documentation is written in Chinese; the index lives at [docs/README.md](docs/RE
 | Section | Covers |
 |---|---|
 | [architecture/](docs/architecture/README.md) | Layer boundaries, GUI backend roles, async/threading model, main data flows, decision log. |
-| [design/](docs/design/README.md) | Design tokens, reusable QML components, motion rules, i18n and accessibility. |
+| [design/](docs/design/README.md) | Design tokens, reusable QML components, the no-motion rule, i18n and accessibility. |
 | [development/](docs/development/README.md) | Environment and presets, coding style, test suites, branch/commit/PR workflow. |
 | [reference/](docs/reference/README.md) | CLI reference, JSON contract, error codes, on-disk formats, `smm_core` header index. |
 

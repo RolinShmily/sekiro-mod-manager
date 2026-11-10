@@ -24,13 +24,13 @@ SectionCard {
     iconSource: HusIcon.SettingOutlined
     title: qsTr("游戏与暂存区")
     description: qsTr("……")
-    entranceIndex: 0        // 同页内按 45ms 递增形成错落
+    bodySpacing: 18         // 组内项间距；默认 12
     ColumnLayout { /* 直接写子项 */ }
 }
 ```
 
 - 默认属性别名是 `bodyData`（内部 `ColumnLayout.data`）。**不能叫 `contentData`**：`Control` 已将其声明为 FINAL，QML 会拒绝覆盖。
-- 自带：行内图标（直接画在页面背景上，没有图块底）、标题/说明、`HusDivider`、入场动画。
+- 自带：行内图标（直接画在页面背景上，没有图块底）、标题/说明、`HusDivider`；不做入场动画（GUI 无动效）。
 - **不画卡片表面**：分组内容直接落在页面背景上。早期版本给分组套了一层 `HusFrame` + 投影，
   在背景上又出现一个矩形，看起来像"页面里另开一块 DOM"，因此已移除。
 - 用于设置页与关于页等"长表单分组"；列表页不要用整块面板包裹每一行。

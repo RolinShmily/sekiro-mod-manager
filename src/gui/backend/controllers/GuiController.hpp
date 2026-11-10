@@ -42,7 +42,6 @@ class GuiController : public QObject {
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString fontFamily READ fontFamily WRITE setFontFamily NOTIFY fontFamilyChanged)
     Q_PROPERTY(QVariantList availableFonts READ availableFonts NOTIFY availableFontsChanged)
-    Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
     Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY themeModeChanged)
     Q_PROPERTY(QVariantList availableThemes READ availableThemes NOTIFY languageChanged)
 
@@ -107,9 +106,6 @@ public:
     QVariantList availableFonts() const;
     QVariantList availableThemes() const;
     static QString defaultFontFamily();
-
-    bool reducedMotion() const { return reducedMotion_; }
-    void setReducedMotion(bool reduced);
 
     static void applyFontFamily(const QString& family);
     static void applyThemeMode(const QString& mode);
@@ -179,7 +175,7 @@ public:
     Q_INVOKABLE QString detectSekiroDir() const;
     Q_INVOKABLE void saveSettings(const QString& staging, const QString& game,
                                  const QString& lang = {}, const QString& font = {},
-                                 const QString& theme = {}, bool reducedMotion = false);
+                                 const QString& theme = {});
     Q_INVOKABLE void openModDetail(const QString& modId);
     Q_INVOKABLE void setModPreview(const QString& modId, const QString& imagePath);
     Q_INVOKABLE void optimizeAllPreviews();
@@ -222,7 +218,6 @@ signals:
     void languageChanged(const QString& code);
     void fontFamilyChanged(const QString& family);
     void availableFontsChanged();
-    void reducedMotionChanged();
     void themeModeChanged(const QString& mode);
     void sekiroDirChanged();
     void stagingDirChanged();
@@ -293,7 +288,6 @@ private:
     QString language_{"zh-CN"};
     QString fontFamily_;
     mutable QVariantList availableFontsCache_;
-    bool reducedMotion_{false};
     QString themeMode_{QStringLiteral("dark")};
     QString sekiroDir_;
     QString stagingDir_;

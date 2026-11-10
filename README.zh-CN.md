@@ -21,7 +21,7 @@ SMM 把模组留在独立的暂存区，只把生效的那部分用 **NTFS 硬�
 | **整合包预设** | `.smmpack` 支持保存、应用、导出、导入，中英双语标题与描述。 |
 | **资产级开关** | 可查看暂存模组里的单个文件并逐项开关，卡片支持背景图。 |
 | **环境诊断** | 校验 `sekiro.exe`、ModEngine `dinput8.dll`、`modengine.ini` 注入参数与 NTFS 卷一致性，支持一键修复。 |
-| **双语与主题** | 中英实时切换，深色 / 浅色 / 跟随系统，以及减少动效模式。 |
+| **双语与主题** | 中英实时切换，深色 / 浅色 / 跟随系统。 |
 
 ## 界面
 
@@ -47,7 +47,7 @@ SMM 把模组留在独立的暂存区，只把生效的那部分用 **NTFS 硬�
 <td><img src="docs/design/assets/screenshots/settings-light.webp" alt="全局配置（浅色）" width="400"></td>
 </tr>
 <tr>
-<td><b>全局配置</b> —— 游戏与暂存目录（同卷时提示零拷贝硬链接）、主题、语言、字体与减少动效。分组直接落在页面背景上：图标、标题、细分隔线与留白。</td>
+<td><b>全局配置</b> —— 游戏与暂存目录（同卷时提示零拷贝硬链接）、主题、语言与字体。每个设置项是两列：标签与说明在左，控件对齐在同一列宽上。</td>
 <td><b>全局配置（浅色）</b> —— 同一套 token 而不是第二套配色；首屏画作上的按钮对比度就是在这里核对的。</td>
 </tr>
 </table>
@@ -96,6 +96,8 @@ smm restore                      # 把游戏目录还原成纯净状态
 
 完整命令、选项与退出码：[docs/reference/cli.md](docs/reference/cli.md)；`--json` 契约：[docs/reference/json-contract.md](docs/reference/json-contract.md)。
 
+`smm.exe` 与桌面端一样声明 `requireAdministrator`。Windows 的 `CreateProcess` 弹不出 UAC，所以请在管理员终端里执行——普通终端里 `smm doctor` 会直接失败为 `ERROR_ELEVATION_REQUIRED`（740）且没有弹窗；`start smm ...` 能从普通终端提权，但输出进新窗口。
+
 ## 文档体系
 
 索引在 [docs/README.md](docs/README.md)。
@@ -103,7 +105,7 @@ smm restore                      # 把游戏目录还原成纯净状态
 | 分册 | 内容 |
 |---|---|
 | [architecture/](docs/architecture/README.md) | 分层边界、GUI 后端角色、异步与线程模型、四条主链路、取舍记录。 |
-| [design/](docs/design/README.md) | 设计 token、复用组件、动效规范、双语与可达性。 |
+| [design/](docs/design/README.md) | 设计 token、复用组件、无动效约定、双语与可达性。 |
 | [development/](docs/development/README.md) | 环境与预设、书写规范、测试分层、分支与提交约定。 |
 | [reference/](docs/reference/README.md) | CLI 参考、JSON 契约、错误码、磁盘格式、`smm_core` 头文件索引。 |
 

@@ -20,17 +20,9 @@ Rectangle {
     Layout.preferredHeight: implicitHeight
     Layout.minimumHeight: implicitHeight
 
-    scale: navHover.pressed && HusTheme.animationEnabled ? 0.985 : 1.0
+    // 按压时的静态反馈：缩小与变淡立即生效，不做过渡。
+    scale: navHover.pressed ? 0.985 : 1.0
     opacity: navHover.pressed ? 0.92 : 1.0
-
-    Behavior on scale {
-        enabled: HusTheme.animationEnabled
-        NumberAnimation { duration: 80; easing.type: Easing.OutQuad }
-    }
-    Behavior on opacity {
-        enabled: HusTheme.animationEnabled
-        NumberAnimation { duration: 80; easing.type: Easing.OutQuad }
-    }
 
     // 采用与主题沉浸融合的半透明层叠底色，彻底移除刺眼的高亮白光闪烁
     color: {
@@ -44,11 +36,6 @@ Rectangle {
             return HusTheme.isDark ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.04);
         }
         return "transparent";
-    }
-
-    Behavior on color {
-        enabled: HusTheme.animationEnabled
-        ColorAnimation { duration: HusTheme.Primary.durationFast }
     }
 
     // 激活态：左侧强调色指示条
