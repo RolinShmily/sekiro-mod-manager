@@ -7,12 +7,18 @@ on:
       - 'website/**'
       - 'skills/smm-cli/**'
       - 'wrangler.toml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/website.yml'
   pull_request:
     paths:
       - 'website/**'
       - 'skills/smm-cli/**'
       - 'wrangler.toml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/website.yml'
   workflow_dispatch:
     inputs:
@@ -33,17 +39,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: website/package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install pinned dependencies
-        working-directory: website
-        run: npm ci --ignore-scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Refresh public release snapshot
         env:
           GH_TOKEN: ${{ github.token }}
@@ -51,13 +60,11 @@ jobs:
           gh api repos/RolinShmily/sekiro-mod-manager/releases/latest > website/public/release.json.new
           mv website/public/release.json.new website/public/release.json
       - name: Test release parsing and type-check
-        working-directory: website
         run: |
-          npm test
-          npm run lint
-      - name: Build static website and skill ZIP
-        working-directory: website
-        run: npm run build
+          pnpm --filter sekiro-mod-manager-website test
+          pnpm --filter sekiro-mod-manager-website lint
+      - name: Build static website, license report, and skill ZIP
+        run: pnpm --filter sekiro-mod-manager-website build
       - uses: actions/upload-artifact@v4
         with:
           name: smm-website
@@ -72,4 +79,4 @@ jobs:
           # Normalize without printing credentials into the job log.
           export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')"
           export CLOUDFLARE_API_TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
-          npm exec --yes --ignore-scripts --package=wrangler@4.147.0 -- wrangler deploy --config wrangler.toml
+          pnpm dlx wrangler@4.147.0 deploy --config wrangler.toml

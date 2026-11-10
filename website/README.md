@@ -4,16 +4,17 @@ Sekiro Mod Manager 产品展示网站：介绍桌面工作台、模组管理能�
 
 官网：<https://sekiro.srprolin.com/>。
 
-技术栈：**Vite 8 / React 19 / TypeScript / Tailwind CSS 4 / Radix UI / Lucide / Motion / Cloudflare Workers**。单页应用（SPA），构建时把首页预渲染成静态 HTML；不需要任何运行服务器。依赖版本固定在 `package.json` 和 `package-lock.json`。
+技术栈：**Vite 8 / React 19 / TypeScript / Tailwind CSS 4 / Radix UI / Lucide / Motion / Cloudflare Workers**。单页应用（SPA），构建时把首页预渲染成静态 HTML；不需要任何运行服务器。依赖版本固定在 `package.json` 与仓库根目录的 `pnpm-lock.yaml`（pnpm workspace）。
 
 ## 本地运行
 
-需要 Node.js 24（测试依赖内置 TypeScript stripping）和 Python 3.9+（仅用于 Skill ZIP 打包，标准库）。
+需要 Node.js 24（测试依赖内置 TypeScript stripping）、pnpm 11（`corepack enable` 即可）和 Python 3.9+（仅用于 Skill ZIP 打包，标准库）。
+
+仓库根目录的 `package.json` 把命令转发给 `website` workspace，因此不必先 `cd`：
 
 ```bash
-cd website
-npm ci --ignore-scripts
-npm run dev
+pnpm install --ignore-scripts
+pnpm dev
 ```
 
 开发地址：`http://127.0.0.1:5173`。开发服务器只提供空壳 `#root`，由 React 在浏览器里渲染；生产构建才带预渲染内容，因此两种模式下客户端分别走 `createRoot` 与 `hydrateRoot`（见 `src/main.tsx`）。
@@ -21,13 +22,13 @@ npm run dev
 生产预览：
 
 ```bash
-npm test
-npm run lint
-npm run build
-npm run preview
+pnpm test
+pnpm lint
+pnpm build
+pnpm preview
 ```
 
-打开 `http://127.0.0.1:4173/`。`build` 自动打包当前 `skills/smm-cli`，生成 `public/downloads/smm-cli.zip` 和大小 / SHA-256 元数据，然后依次执行三次构建步骤：`vite build` 产出 `dist/`（脚本与样式在 `dist/static/`），`vite build --ssr src/entry-server.tsx` 产出 `.ssr/entry-server.js`，`node scripts/prerender.mjs` 用 `react-dom/server` 渲染首页并注入 `dist/index.html` 的 `#root`，最后删除 `.ssr/`。预渲染失败只打印警告，仍然产出可用的纯客户端构建。技能包仅包含技能说明、命令参考、调用脚本和 MIT LICENSE，不包含 CLI、模组或测试数据。
+打开 `http://127.0.0.1:4173/`。`build` 先用 `scripts/collect-licenses.mjs` 把已安装的生产依赖许可证汇总到 `public/third-party-licenses.txt`，再自动打包当前 `skills/smm-cli`，生成 `public/downloads/smm-cli.zip` 和大小 / SHA-256 元数据，然后依次执行三次构建步骤：`vite build` 产出 `dist/`（脚本与样式在 `dist/static/`），`vite build --ssr src/entry-server.tsx` 产出 `.ssr/entry-server.js`，`node scripts/prerender.mjs` 用 `react-dom/server` 渲染首页并注入 `dist/index.html` 的 `#root`，最后删除 `.ssr/`。预渲染失败只打印警告，仍然产出可用的纯客户端构建。技能包仅包含技能说明、命令参考、调用脚本和 MIT LICENSE，不包含 CLI、模组或测试数据。
 
 ## 页面
 
@@ -69,7 +70,7 @@ CI `website.yml` 在网站 / Skill 改动时运行测试、类型检查、构建
 
 ```bash
 # 从仓库根执行；先完成 website 的构建
-npx --yes wrangler@4.147.0 deploy --config wrangler.toml
+pnpm dlx wrangler@4.147.0 deploy --config wrangler.toml
 ```
 
 不在配置中写账号或令牌。Wrangler 不声明 `route` / `routes`，由 Cloudflare 控制台管理现有域名绑定，避免创建 Custom Domain 时与已有 DNS 记录冲突（Cloudflare 错误 `100117`）。`workers_dev = false` 和 `preview_urls = false` 显式关闭 `workers.dev` 地址及版本 / 预览 URL，仅通过正式域名访问。
@@ -82,6 +83,6 @@ npx --yes wrangler@4.147.0 deploy --config wrangler.toml
 
 ## 验证
 
-`npm test` 覆盖下载仓库边界、不同版本资产、预发布、缺失文件、无效 digest、API 快照回退与取消。浏览器验收覆盖中英文记忆、鼠标和键盘切页、手动前后切换、移动端菜单、真实 ZIP 下载、失败状态、重试、减少动态效果和无水合错误。
+`pnpm test` 覆盖下载仓库边界、不同版本资产、预发布、缺失文件、无效 digest、API 快照回退与取消。浏览器验收覆盖中英文记忆、鼠标和键盘切页、手动前后切换、移动端菜单、真实 ZIP 下载、失败状态、重试、减少动态效果和无水合错误。
 
 截图、捕获日志与浏览器验收结果位于仓库忽略目录 `build/verification/website/`。未操作真实游戏目录和用户 GUI 配置。
