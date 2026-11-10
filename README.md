@@ -129,5 +129,5 @@ Contributor quick guide: [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Licensing & Trademarks
 
 - SMM source code is licensed under the [MIT License](LICENSE).
-- Third-party dependencies and notices are detailed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSING.md](LICENSING.md).
+- Third-party dependencies, license texts and notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
 - *Sekiro: Shadows Die Twice* is a registered trademark of FromSoftware, Inc. and Activision. SMM is an independent community project not affiliated with FromSoftware or Activision.

@@ -114,5 +114,5 @@ smm restore                      # 把游戏目录还原成纯净状态
 ## 开源协议与版权声明
 
 - 本项目源码采用 [MIT 许可证](LICENSE) 开源发布。
-- 第三方组件与开源许可信息详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [LICENSING.md](LICENSING.md)。
+- 第三方组件、许可证全文与声明详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [`licenses/`](licenses/)。
 - 《只狼：影逝二度》(Sekiro: Shadows Die Twice) 是 FromSoftware, Inc. 与 Activision 的注册商标。本项目为玩家社区自主开发的开源工具，与 FromSoftware 或 Activision 无任何商业关联。

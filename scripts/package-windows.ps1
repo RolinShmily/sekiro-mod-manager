@@ -64,9 +64,13 @@ try {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
     }
 
-    foreach ($document in @('LICENSE', 'THIRD_PARTY_NOTICES.md', 'README.md', 'README.zh-CN.md')) {
-        Copy-Item $document -Destination $guiDir
-        Copy-Item $document -Destination $cliDir
+    # Notices link to licenses/*.txt, so the verbatim texts ship next to them rather than as a
+    # dead link inside the portable bundle.
+    foreach ($dir in @($guiDir, $cliDir)) {
+        foreach ($document in @('LICENSE', 'THIRD_PARTY_NOTICES.md', 'README.md', 'README.zh-CN.md')) {
+            Copy-Item $document -Destination $dir
+        }
+        Copy-Item -Recurse -Force 'licenses' -Destination $dir
     }
     Copy-Item $guiExe -Destination (Join-Path $guiDir 'SekiroModManager.exe')
     Copy-Item $cliExe -Destination (Join-Path $guiDir 'smm.exe')
@@ -148,6 +152,9 @@ try {
         'platforms/qwindows.dll',
         'qml/QtQuick/Controls/Basic',
         'smm.exe',
+        'LICENSE',
+        'THIRD_PARTY_NOTICES.md',
+        'licenses/Qt-LGPL-3.0.txt',
         'skill/smm-cli.zip',
         'skill/smm-cli/SKILL.md'
     )

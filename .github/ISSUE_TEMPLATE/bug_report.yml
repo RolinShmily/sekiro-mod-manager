@@ -18,7 +18,7 @@ body:
           required: true
         - label: I am running the latest release.
           required: true
-        - label: This is not a ModEngine or third-party mod bug (see LICENSING.md).
+        - label: This is not a ModEngine or third-party mod bug (see THIRD_PARTY_NOTICES.md).
           required: true
 
   - type: input

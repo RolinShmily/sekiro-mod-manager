@@ -3,3 +3,4 @@ dist/
 .ssr/
 *.tsbuildinfo
 public/downloads/
+public/third-party-licenses.txt

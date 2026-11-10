@@ -31,6 +31,6 @@ Configure and build (see `docs/development/build.md`):
 - [ ] New QML files and resources are registered in `src/gui/CMakeLists.txt`.
 - [ ] `README.md` **and** `README.zh-CN.md` were updated together (if user-facing text changed).
 - [ ] Docs updated in the same commit: `docs/reference/cli.md`, `docs/reference/json-contract.md`, `docs/reference/errors.md`, `docs/reference/file-formats.md` (whichever applies).
-- [ ] `LICENSING.md` / `THIRD_PARTY_NOTICES.md` updated (if a redistributed dependency changed).
+- [ ] `THIRD_PARTY_NOTICES.md` / `licenses/` updated (if a redistributed dependency changed).
 - [ ] No ModEngine binaries, game assets, or third-party mod content were added.
 - [ ] No build output was committed (`build/`, `dist/`, `*.tsbuildinfo`, `*.obj`).
