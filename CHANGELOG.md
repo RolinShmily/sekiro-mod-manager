@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [Unreleased]
+
+### Changed
+
+- CI is path-filtered: the Windows MSVC + Qt build only runs when `src/**`, `CMakeLists.txt`,
+  `CMakePresets.json`, `scripts/**`, `.gitmodules` or `ci.yml` change. Docs-, website-, skill- and
+  installer-only commits no longer pay for a full C++ build, and `refactor/*` pushes no longer
+  duplicate the PR run. The website workflow stays independent and still builds, tests and deploys
+  on `website/**` changes.
+- The repository is a pnpm workspace: the root `package.json` delegates `dev`, `build`, `preview`,
+  `test`, `lint` and `licenses:collect` to `website/`, and `pnpm-lock.yaml` replaces
+  `website/package-lock.json`. The website workflow installs with `pnpm --frozen-lockfile`.
+- Licensing is restructured: verbatim upstream texts live in `licenses/`, `THIRD_PARTY_NOTICES.md`
+  carries the MIT scope plus the notices, and `LICENSING.md` is gone. The notices now also cover
+  QWindowKit, StdCoreLib and the QR Code generator built inside HuskarUI, and the website build
+  generates `third-party-licenses.txt` from the installed production dependency graph.
+
+### 中文摘要
+
+- **CI 加路径过滤**：只有 `src/**`、`CMakeLists.txt`、`CMakePresets.json`、`scripts/**`、
+  `.gitmodules` 或 `ci.yml` 变化时才跑 Windows + Qt 全量构建；纯文档、网站、Skill、安装包提交不再
+  为一次无关构建付费，`refactor/*` 推送也不再与 PR 重复跑。网站流水线保持独立。
+- **根目录改为 pnpm workspace**：根 `package.json` 把 `dev`、`build`、`preview`、`test`、`lint`、
+  `licenses:collect` 转发给 `website/`，`pnpm-lock.yaml` 取代 `website/package-lock.json`。
+- **许可文件目录化**：逐字上游文本放进 `licenses/`，MIT 范围与第三方声明合并到
+  `THIRD_PARTY_NOTICES.md`，删除 `LICENSING.md`；声明补齐 HuskarUI 内部构建的 QWindowKit、
+  StdCoreLib 与二维码生成器，网站构建同时生成生产依赖许可证汇总。
+
 ## [0.4.6] - 2026-11-10
 
 ### Changed

@@ -4,10 +4,24 @@ on:
   push:
     branches:
       - main
-      - refactor/*
+    paths:
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'scripts/**'
+      - '.gitmodules'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'scripts/**'
+      - '.gitmodules'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,7 +42,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup Ninja
-        uses: ashutoshvarma/setup-ninja@master
+        uses: ashutoshvarma/setup-ninja@v1.1
         with:
           version: 1.11.1
 

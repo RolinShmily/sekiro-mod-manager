@@ -4,7 +4,7 @@
 
 - 主分支 `main`，始终可构建。
 - 主题分支直接用描述性前缀：`refactor/qt6-qml-migration`、`feat/armoury-grid`、`fix/hardlink-fallback`。
-- CI 在 `push` 到 `main` 与 `refactor/*`、以及所有指向 `main` 的 PR 上运行；`concurrency` 组按 `workflow-ref` 取消进行中的旧构建。
+- CI 在 `push` 到 `main`、以及所有指向 `main` 的 PR 上运行，但只对影响编译产物的路径触发（`src/**`、`CMakeLists.txt`、`CMakePresets.json`、`scripts/**`、`.gitmodules`、CI 自身）。纯文档、`website/`、`skills/` 或 `installer/` 改动不触发 C++ 构建；`concurrency` 组按 `workflow-ref` 取消进行中的旧构建。也支持 `workflow_dispatch` 手动运行。
 
 ## 提交信息
 
@@ -69,6 +69,10 @@ PR 描述里应包含：
 | Build | `cmake --build build --config Release` |
 | Test | `ctest --test-dir build --output-on-failure` |
 | CLI Smoke Test | `smm.exe --help`、`smm.exe doctor --json` |
+
+路径过滤是刻意的：monorepo 里大多数提交只动文档或网站，跑一遍 Windows + Qt 全量构建没有验证价值。`release.yml` 在打 tag 时仍会从零构建并跑 `ctest`，因此核心代码在发布前一定被验证过。
+
+网站与 Skill 的构建、测试、部署在 `.github/workflows/website.yml`，只对 `website/**`、`skills/smm-cli/**`、`wrangler.toml` 与根级 pnpm 文件触发；`main` 推送验证通过后部署到 Cloudflare，PR 只验证。两条流水线互不依赖。
 
 `smm.exe` 的清单是 `requireAdministrator`（见 [decisions.md](../architecture/decisions.md)），而 `CreateProcess` 弹不出 UAC：本地跑 CLI、`scripts/local/seed_demo.ps1`、`capture_screenshots.ps1` 都要先开一个提权终端，否则得到 `ERROR_ELEVATION_REQUIRED`（740）。CI 上 runner 进程本身已提权，无需额外处理。
 

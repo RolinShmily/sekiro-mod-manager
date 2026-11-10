@@ -50,6 +50,7 @@ What each suite covers, how to add one, and the manual GUI checklist:
 
 - Conventional Commits (`feat(gui): …`, `fix(ci): …`, `refactor(core): …`), one concern per
   commit; stage files explicitly rather than sweeping the tree.
-- PRs must keep `ci.yml` green (build + `ctest`) and describe user-visible changes; website-only
-  changes are covered by `website.yml`. Details: [`docs/development/workflow.md`](docs/development/workflow.md).
+- PRs must keep `ci.yml` green (build + `ctest`) when they touch `src/**` or the build files, and
+  describe user-visible changes; docs-, website- and skill-only changes do not trigger the C++
+  workflow, and website changes are covered by `website.yml`. Details: [`docs/development/workflow.md`](docs/development/workflow.md).
 - Contributions are submitted under the project's [MIT License](LICENSE).
