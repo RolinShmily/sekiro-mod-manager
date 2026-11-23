@@ -62,7 +62,11 @@ Name: "{group}\{cm:UninstallProgram,Sekiro Mod Manager}"; Filename: "{uninstalle
 Name: "{autodesktop}\Sekiro Mod Manager"; Filename: "{app}\SekiroModManager.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\SekiroModManager.exe"; Description: "{cm:LaunchProgram,Sekiro Mod Manager}"; Flags: nowait postinstall skipifsilent
+; `shellexec` matters: the default [Run] entry uses CreateProcess, and this setup runs
+; unelevated (PrivilegesRequired=lowest), so launching the requireAdministrator GUI with
+; CreateProcess fails with error 740 and no UAC prompt. ShellExecuteEx lets Windows honour the
+; app manifest and raise the elevation prompt.
+Filename: "{app}\SekiroModManager.exe"; Description: "{cm:LaunchProgram,Sekiro Mod Manager}"; Flags: nowait postinstall skipifsilent shellexec
 
 [Code]
 // The installer may add the install directory to the *user* PATH so `smm` works from a
