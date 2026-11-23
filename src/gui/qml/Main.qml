@@ -259,12 +259,6 @@ HusWindow {
                             elide: Text.ElideRight
                             color: HusTheme.Primary.colorTextSecondary
                         }
-                        HusButton {
-                            Layout.fillWidth: true
-                            text: qsTr("查看检测")
-                            onClicked: mainWindow.currentNav = "diagnostics"
-                        }
-
                         Repeater {
                             model: [
                                 {

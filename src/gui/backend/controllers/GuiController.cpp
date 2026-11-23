@@ -61,6 +61,7 @@ GuiController::GuiController(QObject* parent) : QObject(parent) {
     if (themeMode_.trimmed().isEmpty()) {
         themeMode_ = QStringLiteral("dark");
     }
+    reducedMotion_ = settings.value(QStringLiteral("reducedMotion"), false).toBool();
 
     equippedPackId_ = settings.value(QStringLiteral("equippedPresetId")).toString();
     if (!equippedPackId_.isEmpty()) {
@@ -558,6 +559,16 @@ void GuiController::setThemeMode(const QString& mode) {
     emit themeModeChanged(themeMode_);
 }
 
+void GuiController::setReducedMotion(bool reduced) {
+    if (reducedMotion_ == reduced) {
+        return;
+    }
+    reducedMotion_ = reduced;
+    QSettings settings(kSettingsScope, kSettingsApp);
+    settings.setValue(QStringLiteral("reducedMotion"), reducedMotion_);
+    emit reducedMotionChanged();
+}
+
 QString GuiController::defaultFontFamily() {
     const QStringList installed = QFontDatabase::families();
     const QStringList preferred = {QStringLiteral("Noto Sans SC"), QStringLiteral("Source Han Sans SC"),
@@ -665,7 +676,7 @@ QVariantList GuiController::availableThemes() const {
 }
 
 void GuiController::saveSettings(const QString& staging, const QString& game, const QString& lang,
-                                 const QString& font, const QString& theme) {
+                                 const QString& font, const QString& theme, bool reducedMotion) {
     const QString cleanStaging = staging.trimmed();
     const QString cleanGame = game.trimmed();
     const bool pathsChanged = cleanStaging != stagingDir_ || cleanGame != sekiroDir_;
@@ -675,6 +686,7 @@ void GuiController::saveSettings(const QString& staging, const QString& game, co
     if (!lang.trimmed().isEmpty()) setLanguage(lang.trimmed());
     if (!font.trimmed().isEmpty()) setFontFamily(font.trimmed());
     if (!theme.trimmed().isEmpty()) setThemeMode(theme.trimmed());
+    setReducedMotion(reducedMotion);
 
     if (pathsChanged) {
         CoreService::ensureStagingDir(cleanStaging);

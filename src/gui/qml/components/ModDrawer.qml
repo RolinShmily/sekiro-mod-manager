@@ -12,6 +12,14 @@ HusDrawer {
     implicitWidth: 500
     title: smmBackend ? smmBackend.currentModName : ""
 
+    /// 预览图的 URL 带 revision，换图后强制重新解码。
+    readonly property string previewSource: {
+        if (!smmBackend || smmBackend.currentModPreview === "") return "";
+        return "image://modpreview/" + smmBackend.currentModId + "?rev=" + smmBackend.previewRevision;
+    }
+    /// 与卡片一致：用户关闭界面动效后立即显示，不做交叉淡入。
+    readonly property int fadeDuration: (smmBackend && smmBackend.reducedMotion) ? 0 : 260
+
     function getDomainInfo(url) {
         if (!url) return { label: "", icon: "", color: "" };
         const u = url.toLowerCase();
@@ -125,17 +133,42 @@ HusDrawer {
                 border.width: 1
                 border.color: HusTheme.Primary.colorBorderSecondary
 
+                // 模糊占位与清晰图交叉淡入，避免抽屉打开时预览区先空着再突然出现。
                 Image {
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                    smooth: true
+                    sourceSize.width: 64
+                    sourceSize.height: 36
+                    source: rootDrawer.previewSource
+                    opacity: (rootDrawer.previewSource !== "" && previewImage.status !== Image.Ready) ? 1.0 : 0.0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: rootDrawer.fadeDuration
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+
+                Image {
+                    id: previewImage
                     anchors.fill: parent
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: true
                     sourceSize.width: 960
                     sourceSize.height: 540
-                    source: {
-                        if (!smmBackend || !smmBackend.currentModPreview) return "";
-                        const rev = smmBackend.previewRevision;
-                        return "image://modpreview/" + smmBackend.currentModId + "?rev=" + rev;
+                    source: rootDrawer.previewSource
+                    opacity: (rootDrawer.previewSource !== "" && previewImage.status === Image.Ready) ? 1.0 : 0.0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: rootDrawer.fadeDuration
+                            easing.type: Easing.OutCubic
+                        }
                     }
                 }
 

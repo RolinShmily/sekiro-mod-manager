@@ -18,7 +18,6 @@ ColumnLayout {
     spacing: 14
 
     readonly property var updater: smmBackend ? smmBackend.updater : null
-    readonly property int contentWidth: 900
 
     // ---------------------------------- 页头 ----------------------------------
     PageHeader {
@@ -31,10 +30,7 @@ ColumnLayout {
         id: aboutScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
-        Layout.maximumWidth: rootView.contentWidth
-        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-        contentWidth: width
-        contentHeight: aboutColumn.implicitHeight
+        contentWidth: availableWidth
         clip: true
 
         ScrollBar.vertical: HusScrollBar {
@@ -43,7 +39,7 @@ ColumnLayout {
 
         ColumnLayout {
             id: aboutColumn
-            width: parent.width - (aboutScrollView.ScrollBar.vertical.visible ? 12 : 4)
+            width: aboutScrollView.availableWidth
             spacing: 24
 
             // ------------------------------ 品牌 ------------------------------

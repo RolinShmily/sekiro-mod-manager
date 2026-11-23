@@ -116,6 +116,7 @@ qt_add_qml_module(smm_gui
         qml/views/DiagnosticsView.qml
         qml/components/PageHeader.qml
         qml/components/SectionCard.qml
+        qml/components/SettingRow.qml
         qml/components/ModCard.qml
         qml/components/ModDrawer.qml
         qml/components/SavePackModal.qml

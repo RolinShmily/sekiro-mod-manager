@@ -11,8 +11,9 @@ import "../components"
 
 /// 全局配置页。
 ///
-/// 每个设置项都是"标签在左、控件在右"的两列：说明文字拿到整行宽度可以自然换行，控件
-/// 固定在同一列宽上，视线只需沿一条竖线扫下去，不必在每张卡片里重新找输入框的位置。
+/// 每个设置项都是"标签在左、控件在右"的两列（SettingRow）：标签列封顶、控件列吃掉剩余
+/// 宽度，因此窗口变宽时路径输入框跟着变长，而不是把两列越拉越远；控件统一从同一条竖线
+/// 开始，视线只需上下移动。
 ///
 /// 竖向节奏分三层：页内分组间距 30 > 组内项间距 18 > 标签与说明 4。上一版把标签、说明、
 /// 输入框、三个图标按钮全塞进一行，密度由"能塞下多少"决定；现在由这三层间距决定。
@@ -27,6 +28,7 @@ ColumnLayout {
     property string pendingLanguage: "zh-CN"
     property string pendingFontFamily: ""
     property string pendingTheme: "dark"
+    property bool pendingReducedMotion: false
     property string fontSearchText: ""
 
     readonly property var installedFonts: smmBackend ? smmBackend.availableFonts : []
@@ -45,13 +47,11 @@ ColumnLayout {
         || pendingGameDir !== smmBackend.sekiroDir
         || pendingLanguage !== smmBackend.language
         || pendingFontFamily !== smmBackend.fontFamily
-        || pendingTheme !== smmBackend.themeMode)
+        || pendingTheme !== smmBackend.themeMode
+        || pendingReducedMotion !== smmBackend.reducedMotion)
 
-    readonly property int contentWidth: 900
-    /// 右列控件宽度。所有设置项共用同一个值，右侧才会形成一条对齐的竖线。
-    readonly property int controlWidth: 340
-    /// 标签列与控件列之间的最小间距；标签说明越长，这里越不该被挤窄。
-    readonly property int columnGap: 32
+    /// 分段选择器不需要铺满整行：给一个舒服的上限，剩余宽度留给说明。
+    readonly property int choiceMaxWidth: 460
 
     function loadFromBackend() {
         if (!smmBackend) return;
@@ -60,6 +60,7 @@ ColumnLayout {
         pendingLanguage = smmBackend.language;
         pendingFontFamily = smmBackend.fontFamily;
         pendingTheme = smmBackend.themeMode;
+        pendingReducedMotion = smmBackend.reducedMotion;
         fontSearchText = "";
     }
 
@@ -70,7 +71,8 @@ ColumnLayout {
             smmBackend.localPath(rootView.pendingGameDir),
             rootView.pendingLanguage,
             rootView.pendingFontFamily,
-            rootView.pendingTheme
+            rootView.pendingTheme,
+            rootView.pendingReducedMotion
         );
     }
 
@@ -129,10 +131,7 @@ ColumnLayout {
         id: settingsScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
-        Layout.maximumWidth: rootView.contentWidth
-        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-        contentWidth: width
-        contentHeight: bodyColumn.implicitHeight
+        contentWidth: availableWidth
         clip: true
 
         ScrollBar.vertical: HusScrollBar {
@@ -141,7 +140,7 @@ ColumnLayout {
 
         ColumnLayout {
             id: bodyColumn
-            width: parent.width - (settingsScrollView.ScrollBar.vertical.visible ? 12 : 4)
+            width: settingsScrollView.availableWidth
             spacing: 30
 
             FolderDialog {
@@ -172,156 +171,104 @@ ColumnLayout {
                 bodySpacing: 18
 
                 // 游戏目录
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: rootView.columnGap
+                SettingRow {
+                    title: qsTr("只狼游戏安装根目录")
+                    description: qsTr("目录中应包含 sekiro.exe 与 dinput8.dll 注入钩子。")
 
-                    ColumnLayout {
+                    HusInput {
+                        id: gameDirInput
                         Layout.fillWidth: true
-                        spacing: 4
-
-                        HusText {
-                            text: qsTr("只狼游戏安装根目录")
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: HusTheme.Primary.colorTextPrimary
-                        }
-
-                        HusText {
-                            Layout.fillWidth: true
-                            text: qsTr("目录中应包含 sekiro.exe 与 dinput8.dll 注入钩子。")
-                            font.pixelSize: 12
-                            color: HusTheme.Primary.colorTextTertiary
-                            wrapMode: Text.WordWrap
+                        implicitHeight: 36
+                        Accessible.name: qsTr("只狼游戏安装根目录")
+                        text: rootView.pendingGameDir
+                        onTextChanged: {
+                            if (text !== rootView.pendingGameDir) {
+                                rootView.pendingGameDir = text;
+                            }
                         }
                     }
 
-                    ColumnLayout {
-                        Layout.preferredWidth: rootView.controlWidth
-                        Layout.alignment: Qt.AlignTop
-                        spacing: 8
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
 
-                        HusInput {
-                            id: gameDirInput
-                            Layout.fillWidth: true
-                            implicitHeight: 36
-                            Accessible.name: qsTr("只狼游戏安装根目录")
-                            text: rootView.pendingGameDir
-                            onTextChanged: {
-                                if (text !== rootView.pendingGameDir) {
-                                    rootView.pendingGameDir = text;
-                                }
+                        HusIconButton {
+                            text: qsTr("浏览")
+                            iconSource: HusIcon.FolderOpenOutlined
+                            iconSize: 14
+                            onClicked: gameDirDialog.open()
+                        }
+
+                        HusIconButton {
+                            text: qsTr("打开")
+                            iconSource: HusIcon.ExportOutlined
+                            iconSize: 14
+                            enabled: rootView.pendingGameDir.trim() !== ""
+                            onClicked: {
+                                if (smmBackend) smmBackend.openFolder(rootView.pendingGameDir);
                             }
                         }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 6
-
-                            HusIconButton {
-                                text: qsTr("浏览")
-                                iconSource: HusIcon.FolderOpenOutlined
-                                iconSize: 14
-                                onClicked: gameDirDialog.open()
-                            }
-
-                            HusIconButton {
-                                text: qsTr("打开")
-                                iconSource: HusIcon.ExportOutlined
-                                iconSize: 14
-                                enabled: rootView.pendingGameDir.trim() !== ""
-                                onClicked: {
-                                    if (smmBackend) smmBackend.openFolder(rootView.pendingGameDir);
-                                }
-                            }
-
-                            HusIconButton {
-                                text: qsTr("自动探测")
-                                iconSource: HusIcon.ExperimentOutlined
-                                iconSize: 14
-                                onClicked: {
-                                    if (smmBackend) {
-                                        const detected = smmBackend.detectSekiroDir();
-                                        if (detected && detected !== "") {
-                                            rootView.pendingGameDir = detected;
-                                        } else {
-                                            smmBackend.autoDetectGameDir();
-                                        }
+                        HusIconButton {
+                            text: qsTr("自动探测")
+                            iconSource: HusIcon.ExperimentOutlined
+                            iconSize: 14
+                            onClicked: {
+                                if (smmBackend) {
+                                    const detected = smmBackend.detectSekiroDir();
+                                    if (detected && detected !== "") {
+                                        rootView.pendingGameDir = detected;
+                                    } else {
+                                        smmBackend.autoDetectGameDir();
                                     }
                                 }
                             }
-
-                            Item { Layout.fillWidth: true }
                         }
+
+                        Item { Layout.fillWidth: true }
                     }
                 }
 
                 // 暂存区
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: rootView.columnGap
+                SettingRow {
+                    title: qsTr("模组暂存区目录")
+                    description: qsTr("解压与归一化后的模组资产保存在此；与游戏目录同卷时才能硬链接。")
 
-                    ColumnLayout {
+                    HusInput {
+                        id: stagingDirInput
                         Layout.fillWidth: true
-                        spacing: 4
-
-                        HusText {
-                            text: qsTr("模组暂存区目录")
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: HusTheme.Primary.colorTextPrimary
-                        }
-
-                        HusText {
-                            Layout.fillWidth: true
-                            text: qsTr("解压与归一化后的模组资产保存在此；与游戏目录同卷时才能硬链接。")
-                            font.pixelSize: 12
-                            color: HusTheme.Primary.colorTextTertiary
-                            wrapMode: Text.WordWrap
+                        implicitHeight: 36
+                        Accessible.name: qsTr("模组暂存区目录")
+                        text: rootView.pendingStagingDir
+                        onTextChanged: {
+                            if (text !== rootView.pendingStagingDir) {
+                                rootView.pendingStagingDir = text;
+                            }
                         }
                     }
 
-                    ColumnLayout {
-                        Layout.preferredWidth: rootView.controlWidth
-                        Layout.alignment: Qt.AlignTop
-                        spacing: 8
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
 
-                        HusInput {
-                            id: stagingDirInput
-                            Layout.fillWidth: true
-                            implicitHeight: 36
-                            Accessible.name: qsTr("模组暂存区目录")
-                            text: rootView.pendingStagingDir
-                            onTextChanged: {
-                                if (text !== rootView.pendingStagingDir) {
-                                    rootView.pendingStagingDir = text;
-                                }
+                        HusIconButton {
+                            text: qsTr("浏览")
+                            iconSource: HusIcon.FolderOpenOutlined
+                            iconSize: 14
+                            onClicked: stagingDirDialog.open()
+                        }
+
+                        HusIconButton {
+                            text: qsTr("打开")
+                            iconSource: HusIcon.ExportOutlined
+                            iconSize: 14
+                            enabled: rootView.pendingStagingDir.trim() !== ""
+                            onClicked: {
+                                if (smmBackend) smmBackend.openFolder(rootView.pendingStagingDir);
                             }
                         }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 6
-
-                            HusIconButton {
-                                text: qsTr("浏览")
-                                iconSource: HusIcon.FolderOpenOutlined
-                                iconSize: 14
-                                onClicked: stagingDirDialog.open()
-                            }
-
-                            HusIconButton {
-                                text: qsTr("打开")
-                                iconSource: HusIcon.ExportOutlined
-                                iconSize: 14
-                                enabled: rootView.pendingStagingDir.trim() !== ""
-                                onClicked: {
-                                    if (smmBackend) smmBackend.openFolder(rootView.pendingStagingDir);
-                                }
-                            }
-
-                            Item { Layout.fillWidth: true }
-                        }
+                        Item { Layout.fillWidth: true }
                     }
                 }
 
@@ -372,33 +319,14 @@ ColumnLayout {
                 bodySpacing: 18
 
                 // 界面主题
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: rootView.columnGap
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-
-                        HusText {
-                            text: qsTr("界面主题")
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: HusTheme.Primary.colorTextPrimary
-                        }
-
-                        HusText {
-                            Layout.fillWidth: true
-                            text: qsTr("跟随系统会随 Windows 的深色 / 浅色设置切换。")
-                            font.pixelSize: 12
-                            color: HusTheme.Primary.colorTextTertiary
-                            wrapMode: Text.WordWrap
-                        }
-                    }
+                SettingRow {
+                    title: qsTr("界面主题")
+                    description: qsTr("跟随系统会随 Windows 的深色 / 浅色设置切换。")
 
                     HusSegmented {
                         id: themeSegmented
-                        Layout.preferredWidth: rootView.controlWidth
+                        Layout.fillWidth: true
+                        Layout.maximumWidth: rootView.choiceMaxWidth
                         Layout.alignment: Qt.AlignTop
                         block: true
                         // 就地更新文案，避免翻译重入把当前选中项重置掉。
@@ -431,33 +359,14 @@ ColumnLayout {
                 }
 
                 // 界面语言
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: rootView.columnGap
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-
-                        HusText {
-                            text: qsTr("界面语言")
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: HusTheme.Primary.colorTextPrimary
-                        }
-
-                        HusText {
-                            Layout.fillWidth: true
-                            text: qsTr("语言名称保留原生写法，切换后菜单与提示立即跟随。")
-                            font.pixelSize: 12
-                            color: HusTheme.Primary.colorTextTertiary
-                            wrapMode: Text.WordWrap
-                        }
-                    }
+                SettingRow {
+                    title: qsTr("界面语言")
+                    description: qsTr("语言名称保留原生写法，切换后菜单与提示立即跟随。")
 
                     HusSegmented {
                         id: languageSegmented
-                        Layout.preferredWidth: rootView.controlWidth
+                        Layout.fillWidth: true
+                        Layout.maximumWidth: rootView.choiceMaxWidth
                         Layout.alignment: Qt.AlignTop
                         block: true
                         // 语言名称必须写原生字面量（不可加 qsTr），否则翻译会互相叠印。
@@ -471,6 +380,38 @@ ColumnLayout {
                         }
                     }
                 }
+
+                // 界面动效
+                SettingRow {
+                    title: qsTr("界面动效")
+                    description: qsTr("开启后模组预览会先在模糊占位图上淡入清晰图；关闭后变化立即完成。")
+
+                    HusSegmented {
+                        id: motionSegmented
+                        Layout.fillWidth: true
+                        Layout.maximumWidth: rootView.choiceMaxWidth
+                        Layout.alignment: Qt.AlignTop
+                        block: true
+                        // 就地更新文案，避免翻译重入把当前选中项重置掉。
+                        options: [
+                            { label: "", value: "on" },
+                            { label: "", value: "off" }
+                        ]
+                        function updateLabels() {
+                            setProperty(0, "label", qsTr("开启"));
+                            setProperty(1, "label", qsTr("关闭"));
+                        }
+                        Component.onCompleted: updateLabels()
+                        Connections {
+                            target: smmBackend
+                            function onLanguageChanged() { Qt.callLater(motionSegmented.updateLabels); }
+                        }
+                        currentIndex: rootView.pendingReducedMotion ? 1 : 0
+                        onCurrentIndexChanged: {
+                            rootView.pendingReducedMotion = (currentIndex === 1);
+                        }
+                    }
+                }
             }
 
             // ------------------------------ 界面字体 ------------------------------
@@ -480,102 +421,73 @@ ColumnLayout {
                 description: qsTr("推荐 Noto Sans SC（思源黑体系列），适合中英文界面；未安装时使用系统字体回退。")
                 bodySpacing: 18
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: rootView.columnGap
+                SettingRow {
+                    title: qsTr("字体族")
+                    description: qsTr("只影响界面文字，不改变游戏内字体。先搜索再选择，列表会随输入过滤。")
 
-                    ColumnLayout {
+                    HusInput {
+                        id: fontSearchInput
+                        objectName: "fontSearchInput"
                         Layout.fillWidth: true
-                        spacing: 4
-
-                        HusText {
-                            text: qsTr("字体族")
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: HusTheme.Primary.colorTextPrimary
-                        }
-
-                        HusText {
-                            Layout.fillWidth: true
-                            text: qsTr("只影响界面文字，不改变游戏内字体。先搜索再选择，列表会随输入过滤。")
-                            font.pixelSize: 12
-                            color: HusTheme.Primary.colorTextTertiary
-                            wrapMode: Text.WordWrap
-                        }
+                        implicitHeight: 36
+                        placeholderText: qsTr("搜索字体名称，例如 Noto、思源、微软雅黑…")
+                        text: rootView.fontSearchText
+                        onTextChanged: rootView.fontSearchText = text
+                        Accessible.name: qsTr("搜索已安装字体")
+                        iconSource: HusIcon.SearchOutlined
+                        iconSize: 14
+                        iconPosition: HusInput.Position_Left
+                        clearEnabled: "active"
                     }
 
-                    ColumnLayout {
-                        Layout.preferredWidth: rootView.controlWidth
-                        // HusSelect sizes itself to its longest model entry (here: a long font
-                        // name), which would push this column ~50 px wider than every other row.
-                        Layout.maximumWidth: rootView.controlWidth
-                        Layout.alignment: Qt.AlignTop
+                    HusSelect {
+                        id: fontSelect
+                        objectName: "fontSelect"
+                        Layout.fillWidth: true
+                        implicitHeight: 36
+                        clearEnabled: false
+                        Component.onCompleted: {
+                            popup.colorShadow = Qt.binding(() => Qt.rgba(0, 0, 0, HusTheme.isDark ? 0.62 : 0.20));
+                        }
+                        enabled: rootView.filteredFonts.length > 0
+                        textRole: "label"
+                        valueRole: "value"
+                        model: rootView.filteredFonts
+                        displayText: rootView.pendingFontFamily
+                        currentIndex: rootView.filteredFonts.findIndex(option => option.value === rootView.pendingFontFamily)
+                        onActivated: (index) => {
+                            const option = rootView.filteredFonts[index];
+                            if (option) rootView.pendingFontFamily = option.value;
+                        }
+                        contentDescription: qsTr("选择界面字体")
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
                         spacing: 8
 
-                        HusInput {
-                            id: fontSearchInput
-                            objectName: "fontSearchInput"
-                            Layout.fillWidth: true
-                            implicitHeight: 36
-                            placeholderText: qsTr("搜索字体名称，例如 Noto、思源、微软雅黑…")
-                            text: rootView.fontSearchText
-                            onTextChanged: rootView.fontSearchText = text
-                            Accessible.name: qsTr("搜索已安装字体")
-                            iconSource: HusIcon.SearchOutlined
+                        HusIconButton {
+                            text: qsTr("使用推荐字体")
+                            iconSource: HusIcon.StarOutlined
                             iconSize: 14
-                            iconPosition: HusInput.Position_Left
-                            clearEnabled: "active"
+                            enabled: rootView.notoSansInstalled
+                            onClicked: {
+                                rootView.pendingFontFamily = "Noto Sans SC";
+                                rootView.fontSearchText = "";
+                            }
                         }
 
-                        HusSelect {
-                            id: fontSelect
-                            objectName: "fontSelect"
+                        HusText {
                             Layout.fillWidth: true
-                            implicitHeight: 36
-                            clearEnabled: false
-                            Component.onCompleted: {
-                                popup.colorShadow = Qt.binding(() => Qt.rgba(0, 0, 0, HusTheme.isDark ? 0.62 : 0.20));
-                            }
-                            enabled: rootView.filteredFonts.length > 0
-                            textRole: "label"
-                            valueRole: "value"
-                            model: rootView.filteredFonts
-                            displayText: rootView.pendingFontFamily
-                            currentIndex: rootView.filteredFonts.findIndex(option => option.value === rootView.pendingFontFamily)
-                            onActivated: (index) => {
-                                const option = rootView.filteredFonts[index];
-                                if (option) rootView.pendingFontFamily = option.value;
-                            }
-                            contentDescription: qsTr("选择界面字体")
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
-
-                            HusIconButton {
-                                text: qsTr("使用推荐字体")
-                                iconSource: HusIcon.StarOutlined
-                                iconSize: 14
-                                enabled: rootView.notoSansInstalled
-                                onClicked: {
-                                    rootView.pendingFontFamily = "Noto Sans SC";
-                                    rootView.fontSearchText = "";
-                                }
-                            }
-
-                            HusText {
-                                Layout.fillWidth: true
-                                text: rootView.filteredFonts.length === 0
-                                      ? qsTr("没有匹配的字体")
-                                      : qsTr("匹配 %1 / %2").arg(rootView.filteredFonts.length).arg(rootView.installedFonts.length)
-                                font.pixelSize: 12
-                                color: rootView.filteredFonts.length === 0
-                                       ? HusTheme.Primary.colorWarning
-                                       : HusTheme.Primary.colorTextTertiary
-                                horizontalAlignment: Text.AlignRight
-                                elide: Text.ElideRight
-                            }
+                            text: rootView.filteredFonts.length === 0
+                                  ? qsTr("没有匹配的字体")
+                                  : qsTr("匹配 %1 / %2").arg(rootView.filteredFonts.length).arg(rootView.installedFonts.length)
+                            font.pixelSize: 12
+                            color: rootView.filteredFonts.length === 0
+                                   ? HusTheme.Primary.colorWarning
+                                   : HusTheme.Primary.colorTextTertiary
+                            horizontalAlignment: Text.AlignRight
+                            elide: Text.ElideRight
                         }
                     }
                 }

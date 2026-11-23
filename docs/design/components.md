@@ -30,10 +30,25 @@ SectionCard {
 ```
 
 - 默认属性别名是 `bodyData`（内部 `ColumnLayout.data`）。**不能叫 `contentData`**：`Control` 已将其声明为 FINAL，QML 会拒绝覆盖。
-- 自带：行内图标（直接画在页面背景上，没有图块底）、标题/说明、`HusDivider`；不做入场动画（GUI 无动效）。
+- 自带：行内图标（直接画在页面背景上，没有图块底）、标题/说明、`HusDivider`；不做入场动画。
 - **不画卡片表面**：分组内容直接落在页面背景上。早期版本给分组套了一层 `HusFrame` + 投影，
   在背景上又出现一个矩形，看起来像"页面里另开一块 DOM"，因此已移除。
 - 用于设置页与关于页等"长表单分组"；列表页不要用整块面板包裹每一行。
+
+## SettingRow — 自适应设置项
+
+```qml
+SettingRow {
+    title: qsTr("界面主题")
+    description: qsTr("……")
+    HusSegmented { /* 直接写控件 */ }
+}
+```
+
+- 标签列封顶 320 px（最小 200），控件列吃掉剩余宽度（最小 300、最大 900）：宽窗口下输入框
+  变长、两列不会被越拉越远，窄窗口下优先压标签列；超过 900 的宽度留在行尾。
+- 标签列设置 `Layout.preferredWidth = labelMaxWidth`，所有设置项因此从同一条竖线开始。
+- 常用于 `SettingsView`；控件列的内容直接作为子项传入（默认属性别名 `bodyData`）。
 
 ## ModCard — 模组卡片
 
@@ -48,6 +63,8 @@ ModCard {
 信号：`toggleActive(bool)`、`requestDetails()`、`prioritySelected(int)`、`dragEnded(real, real)`、`toggleSelected()`。
 
 - 两种形态：默认卡片（可带模糊背景图，`showBackdrop`）与 `compact` 列表行；`batchMode` 下显示复选框。
+- 预览图先显示 40×23 的低分辨率模糊占位，清晰图 `Image.Ready` 后交叉淡入（260 ms）；时长由
+  `smmBackend.reducedMotion` 控制，关闭动效时为 0。`ModDrawer` 使用同一套占位/淡入逻辑。
 - 优先级以"顺位"呈现：`modRank` 由控制器算好，卡片不自己排序。
 - 无障碍：`Accessible.role: Accessible.Grouping`，`Accessible.name` 为模组名，`Accessible.description` 说明启用状态与顺位。
 - 卡片不写盘：启停、改顺位、拖拽都只是发信号，最终由 `ArmouryView` 转给 `smmBackend`。

@@ -28,8 +28,8 @@ HusWindow (Main.qml)
 
 - [screenshots.md](screenshots.md) — 五个页面的实拍，以及每屏在证明什么
 - [tokens.md](tokens.md) — 颜色、字号、圆角、间距、动效时长的取值与语义
-- [components.md](components.md) — PageHeader / SectionCard / ModCard / ModDrawer / NavItem 等复用组件
-- [motion.md](motion.md) — 为什么 GUI 不做动效、状态怎么用静态差异表达
+- [components.md](components.md) — PageHeader / SectionCard / SettingRow / ModCard / ModDrawer / NavItem 等复用组件
+- [motion.md](motion.md) — 唯一的预览交叉淡入、动效开关，其余状态怎么用静态差异表达
 - [i18n-accessibility.md](i18n-accessibility.md) — 中英双语、键盘可达、对比度、焦点
 
 ## 判断一条 UI 改动是否合格
@@ -37,5 +37,5 @@ HusWindow (Main.qml)
 1. 只用 `HusTheme.Primary.*` 与 `HusIcon.*`，没有裸色值与 emoji 图标。
 2. 可点击区域不小于 32×32，键盘能到达并看见焦点环。
 3. 文案走 `qsTr()`，中英文都能放下（英文通常更长）。
-4. 不写 `Behavior` / `*Animation` / `Transition`（GUI 无动效，见 [motion.md](motion.md)）。
+4. 动效只用于预览交叉淡入，并尊重 `reducedMotion` 开关（见 [motion.md](motion.md)）。
 5. 空态、加载态、错误态都有对应文案（参考 `ArmouryView` 的 `isFiltering` / `firstScanPending` 区分）。

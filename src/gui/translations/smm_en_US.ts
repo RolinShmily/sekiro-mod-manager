@@ -1213,6 +1213,22 @@
             <source>当前字体未安装，显示时将回退到系统字体。</source>
             <translation>The selected font is not installed. A system font will be used as fallback.</translation>
         </message>
+        <message>
+            <source>界面动效</source>
+            <translation>Motion</translation>
+        </message>
+        <message>
+            <source>开启后模组预览会先在模糊占位图上淡入清晰图；关闭后变化立即完成。</source>
+            <translation>When on, mod previews fade in from a blurred placeholder; when off, changes appear instantly.</translation>
+        </message>
+        <message>
+            <source>开启</source>
+            <translation>On</translation>
+        </message>
+        <message>
+            <source>关闭</source>
+            <translation>Off</translation>
+        </message>
     </context>
     <context>
         <name>smm::gui::GuiController</name>

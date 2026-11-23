@@ -18,7 +18,6 @@ ColumnLayout {
     objectName: "diagnosticsView"
     spacing: 14
 
-    readonly property int contentWidth: 900
     readonly property string overall: smmBackend ? smmBackend.healthOverall : ""
     readonly property bool passed: overall === "healthy" && smmBackend.healthErrorCount === 0
                                    && smmBackend.healthWarnCount === 0
@@ -80,10 +79,7 @@ ColumnLayout {
         id: doctorScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
-        Layout.maximumWidth: rootView.contentWidth
-        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-        contentWidth: width
-        contentHeight: bodyColumn.implicitHeight
+        contentWidth: availableWidth
         clip: true
 
         ScrollBar.vertical: HusScrollBar {
@@ -92,7 +88,7 @@ ColumnLayout {
 
         ColumnLayout {
             id: bodyColumn
-            width: parent.width - (doctorScrollView.ScrollBar.vertical.visible ? 12 : 4)
+            width: doctorScrollView.availableWidth
             spacing: 24
 
             // 综合评级

@@ -27,6 +27,9 @@ Rectangle {
 
     readonly property bool hasBackdrop: !rootCard.compact && rootCard.showBackdrop && rootCard.previewImagePath !== ""
 
+    /// 预览图交叉淡入的时长。用户关闭界面动效后归零，状态变化立即完成。
+    readonly property int fadeDuration: (smmBackend && smmBackend.reducedMotion) ? 0 : 260
+
     signal toggleActive(bool active)
     signal requestDetails()
     signal prioritySelected(int targetRank)
@@ -130,19 +133,61 @@ Rectangle {
         visible: rootCard.hasBackdrop
         z: 0
 
-        Image {
-            id: backdropImage
+        // 模糊占位：同一张图按 40×23 解码后再平滑放大。它比清晰图先返回，卡片不会先空一个
+        // 矩形再"弹"出画面；清晰图就绪后两层交叉淡入，观感是先有色调与结构，再逐渐清晰。
+        // 占位层与清晰层使用同一明暗，交叉淡入只改变清晰度，不会先亮后暗。
+        Item {
+            id: backdropPlaceholderLayer
             anchors.fill: parent
-            source: rootCard.hasBackdrop ? rootCard.previewImagePath : ""
-            sourceSize.width: 480
-            sourceSize.height: 270
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            cache: true
-            autoTransform: true
-            mipmap: true
-            smooth: true
-            opacity: cardMouseArea.containsMouse ? 0.35 : 0.22
+            opacity: (rootCard.hasBackdrop && backdropImage.status !== Image.Ready) ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: rootCard.fadeDuration
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Image {
+                anchors.fill: parent
+                source: rootCard.hasBackdrop ? rootCard.previewImagePath : ""
+                sourceSize.width: 40
+                sourceSize.height: 23
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                smooth: true
+                opacity: cardMouseArea.containsMouse ? 0.35 : 0.22
+            }
+        }
+
+        // 清晰图层：只有"解码就绪"参与淡入；悬停明暗仍在内部即时切换，不做过渡。
+        Item {
+            id: backdropSharp
+            anchors.fill: parent
+            opacity: (rootCard.hasBackdrop && backdropImage.status === Image.Ready) ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: rootCard.fadeDuration
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Image {
+                id: backdropImage
+                anchors.fill: parent
+                source: rootCard.hasBackdrop ? rootCard.previewImagePath : ""
+                sourceSize.width: 480
+                sourceSize.height: 270
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                autoTransform: true
+                mipmap: true
+                smooth: true
+                opacity: cardMouseArea.containsMouse ? 0.35 : 0.22
+            }
         }
 
         Rectangle {
@@ -406,6 +451,7 @@ Rectangle {
                 border.color: HusTheme.Primary.colorBorderSecondary
 
                 Image {
+                    id: thumbImage
                     anchors.fill: parent
                     source: !rootCard.compact ? rootCard.previewImagePath : ""
                     sourceSize.width: 128
@@ -416,6 +462,14 @@ Rectangle {
                     autoTransform: true
                     mipmap: true
                     smooth: true
+                    opacity: thumbImage.status === Image.Ready ? 1.0 : 0.0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: rootCard.fadeDuration
+                            easing.type: Easing.OutCubic
+                        }
+                    }
                 }
             }
 

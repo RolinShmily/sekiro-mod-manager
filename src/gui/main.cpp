@@ -98,11 +98,11 @@ int main(int argc, char* argv[]) {
 
     HusTheme::instance()->setTextRenderType(HusTheme::TextRenderType::QtRendering);
     HusTheme::instance()->setDarkMode(themeMode);
-    // The GUI is deliberately motionless: no page fades, no card entrances, no hover colour
-    // transitions. Every HuskarUI widget defaults its own `animationEnabled` to this flag, so one
-    // assignment here makes the whole scene static - including the widgets' internal popups and
-    // ripples that no QML of ours touches. A theme switch then also lands in a single frame
-    // instead of repainting the window for a dozen frames to arrive at the same end state.
+    // HuskarUI's own animations stay off: every widget defaults `animationEnabled` to this flag,
+    // so one assignment keeps popups/ripples static and a theme switch lands in a single frame
+    // instead of repainting the window for a dozen frames. Our own QML motion is deliberately
+    // narrow - the mod-preview cross-fade - and is gated by the persisted `reducedMotion`
+    // preference (Settings -> Motion), so it can be switched off independently.
     HusTheme::instance()->setAnimationEnabled(false);
     HusTheme::instance()->installThemePrimaryColorBase(QColor(QStringLiteral("#c29f5d")));
     smm::gui::GuiController::applyFontFamily(initialFont);

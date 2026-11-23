@@ -43,6 +43,7 @@ class GuiController : public QObject {
     Q_PROPERTY(QString fontFamily READ fontFamily WRITE setFontFamily NOTIFY fontFamilyChanged)
     Q_PROPERTY(QVariantList availableFonts READ availableFonts NOTIFY availableFontsChanged)
     Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY themeModeChanged)
+    Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion NOTIFY reducedMotionChanged)
     Q_PROPERTY(QVariantList availableThemes READ availableThemes NOTIFY languageChanged)
 
     Q_PROPERTY(QString sekiroDir READ sekiroDir WRITE setSekiroDir NOTIFY sekiroDirChanged)
@@ -102,6 +103,9 @@ public:
 
     QString themeMode() const { return themeMode_; }
     void setThemeMode(const QString& mode);
+
+    bool reducedMotion() const { return reducedMotion_; }
+    void setReducedMotion(bool reduced);
 
     QVariantList availableFonts() const;
     QVariantList availableThemes() const;
@@ -175,7 +179,7 @@ public:
     Q_INVOKABLE QString detectSekiroDir() const;
     Q_INVOKABLE void saveSettings(const QString& staging, const QString& game,
                                  const QString& lang = {}, const QString& font = {},
-                                 const QString& theme = {});
+                                 const QString& theme = {}, bool reducedMotion = false);
     Q_INVOKABLE void openModDetail(const QString& modId);
     Q_INVOKABLE void setModPreview(const QString& modId, const QString& imagePath);
     Q_INVOKABLE void optimizeAllPreviews();
@@ -219,6 +223,7 @@ signals:
     void fontFamilyChanged(const QString& family);
     void availableFontsChanged();
     void themeModeChanged(const QString& mode);
+    void reducedMotionChanged();
     void sekiroDirChanged();
     void stagingDirChanged();
     void ntfsMatchedChanged();
@@ -289,6 +294,7 @@ private:
     QString fontFamily_;
     mutable QVariantList availableFontsCache_;
     QString themeMode_{QStringLiteral("dark")};
+    bool reducedMotion_{false};
     QString sekiroDir_;
     QString stagingDir_;
     mutable QMutex previewStagingMutex_;

@@ -38,7 +38,7 @@ Windows 专属 API 放在 `#ifdef _WIN32` 后面，并给出非 Windows 的降�
 - 根对象 `id: root`；属性声明集中在顶部，按"入参 → 内部状态 → 只读派生"排列。
 - 必填属性用 `required property`（`Repeater` 委托里的 `required property var model` 必须有，否则拿不到模型）。
 - 颜色、圆角只用 `HusTheme.Primary.*`；深色/浅色差异用 `HusTheme.isDark` 三元表达式。
-- 不写 `Behavior` / `*Animation` / `Transition`：GUI 无动效，状态变化直接换值（见 [../design/motion.md](../design/motion.md)）。
+- 动效仅限 `ModCard` / `ModDrawer` 的预览交叉淡入（`Behavior on opacity`，时长受 `reducedMotion` 控制）；其余状态变化直接换值（见 [../design/motion.md](../design/motion.md)）。
 - 图标只用 `HusIcon.*`，不写 emoji，不写字形私有区字符。
 - 布局：优先 `Layout.*` 附加属性；需要固定命中区时同时设置 `Layout.preferredHeight` 与 `Layout.minimumHeight`（见 `NavItem.qml`）。
 - 事件处理不要写业务逻辑：发信号，交给视图或 `smmBackend`。

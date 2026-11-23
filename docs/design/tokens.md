@@ -77,9 +77,10 @@ color: {
 
 ## 动效时长
 
-GUI 不做动效（见 [motion.md](motion.md)），所以时长 token 在当前代码里没有使用者：
-`HusTheme.Primary.durationFast`（100 ms）、`durationMid`（200）、`durationSlow`（300）只在 HuskarUI
-组件内部生效。新增代码不要引入动画；真需要时先读 [motion.md](motion.md) 的四个前提。
+GUI 只有一处动效：模组预览的模糊占位 → 清晰图交叉淡入，固定 260 ms（`Easing.OutCubic`，
+见 [motion.md](motion.md)）。`HusTheme.Primary.durationFast`（100 ms）、`durationMid`（200）、
+`durationSlow`（300）仍只在 HuskarUI 组件内部生效，我们的 QML 不直接使用。新增动效前先读
+[motion.md](motion.md) 的准入条件。
 
 ## 层级与阴影
 
