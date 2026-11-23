@@ -6,10 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
-## [Unreleased]
+## [0.4.7] - 2026-11-23
+
+### Added
+
+- **`SettingRow` carries every settings item.** The label/description column is capped at 320 px
+  (minimum 200) and the control column takes the remaining width (minimum 300, maximum 900), so all
+  controls still begin on one vertical line, a wide window lengthens the path fields instead of
+  separating the two columns, and a narrow window squeezes the label column first. Segmented choices
+  are capped at 460 px so a short three-way switch does not stretch across the whole row.
+- **The motion switch is back, with one job.** `GuiController::reducedMotion` (persisted to
+  `QSettings` as `reducedMotion`) is exposed as Settings → Appearance & Language → **Motion**.
+  Turning it off sets the preview fade to 0; every state remains readable without it.
 
 ### Changed
 
+- **The diagnostics, settings and about pages are adaptive.** They no longer pin their `ScrollView`
+  to a 900 px column and leave the rest of the window blank: `contentWidth: availableWidth` plus an
+  inner `ColumnLayout` that follows `availableWidth` make them fill the window the same way the
+  armoury does. The settings page drops its fixed `controlWidth` entirely and is rebuilt on
+  `SettingRow`.
+- **Mod previews cross-fade instead of popping in.** `ModCard` and `ModDrawer` now render a 40×23
+  (64×36 in the drawer) decode of the same image first and stretch it, then fade in the sharp image
+  once `Image.Ready`, over 260 ms with `Easing.OutCubic`. Both layers share the same opacity, so the
+  cross-fade changes sharpness, not brightness; only `opacity` animates, so there is no relayout or
+  full-window repaint. With `reducedMotion` on, the duration is 0 and everything appears at once.
+  This supersedes the 0.4.6 note that the GUI does not animate at all: the single exception is
+  preview loading, it has a user switch, and HuskarUI's internal animations (theme switching,
+  popups, ripples) remain disabled.
 - CI is path-filtered: the Windows MSVC + Qt build only runs when `src/**`, `CMakeLists.txt`,
   `CMakePresets.json`, `scripts/**`, `.gitmodules` or `ci.yml` change. Docs-, website-, skill- and
   installer-only commits no longer pay for a full C++ build, and `refactor/*` pushes no longer
@@ -23,8 +47,27 @@ summary; `git log` remains the authoritative record.
   QWindowKit, StdCoreLib and the QR Code generator built inside HuskarUI, and the website build
   generates `third-party-licenses.txt` from the installed production dependency graph.
 
+### Removed
+
+- The "view diagnostics" button inside the sidebar status card. The whole card was already the
+  clickable diagnostics entry and the "检测 ↗" hint already said so; the button only repeated it and
+  pushed the status lines down.
+
 ### 中文摘要
 
+- **长页面改为自适应**：环境检测、全局配置、关于不再把 `ScrollView` 钉在 900 px 宽、让右侧留白，
+  改为 `contentWidth: availableWidth` + 跟随 `availableWidth` 的内层 `ColumnLayout`，与模组管理页
+  一致铺满窗口；全局配置页去掉固定的 `controlWidth`。
+- **设置页改用 `SettingRow`**：标签列封顶 320 px（最小 200），控件列吃掉剩余宽度（最小 300、最大
+  900），所有控件仍从同一条竖线开始；宽窗口下路径输入框变长而不是两列被拉开，窄窗口下优先压标签
+  列。分段选择器封顶 460 px，短开关不再横贯整行。
+- **模组预览改为模糊占位 → 清晰图交叉淡入**（260 ms，`Easing.OutCubic`）：`ModCard` 与 `ModDrawer`
+  先用 40×23（抽屉 64×36）解码同一张图并拉伸，清晰图 `Image.Ready` 后淡入；两层明暗一致，只改变
+  清晰度，且只动 `opacity`，不重排、不整窗重绘。这推翻了 0.4.6「GUI 完全不做动效」的说法：唯一
+  例外是预览加载，有独立开关，HuskarUI 内部动画（换肤、下拉、涟漪）继续关闭。
+- **「界面动效」开关恢复**：`GuiController::reducedMotion`（写入 QSettings 的 `reducedMotion`）对应
+  设置 → 外观与语言 → 界面动效；关闭后淡入时长为 0，状态依旧完全可读。
+- **侧栏状态卡删除「查看检测」按钮**：整张卡本来就是诊断入口，右上角的「检测 ↗」已经说明了这一点。
 - **CI 加路径过滤**：只有 `src/**`、`CMakeLists.txt`、`CMakePresets.json`、`scripts/**`、
   `.gitmodules` 或 `ci.yml` 变化时才跑 Windows + Qt 全量构建；纯文档、网站、Skill、安装包提交不再
   为一次无关构建付费，`refactor/*` 推送也不再与 PR 重复跑。网站流水线保持独立。
@@ -435,7 +478,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.7...HEAD
+[0.4.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.3...v0.4.4
