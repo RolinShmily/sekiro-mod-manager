@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.4.8] - 2026-11-23
+
+### Fixed
+
+- **The installer's "launch now" checkbox no longer fails with error 740.** The setup installs
+  per-user (`PrivilegesRequired=lowest`), so its `[Run]` entry ran `CreateProcess` from an
+  unelevated process. The GUI requires administrator rights since 0.4.5, and Windows cannot raise
+  UAC from `CreateProcess`, so finishing the wizard produced `CreateProcess failed; code 740` and no
+  prompt. The entry now uses the `shellexec` flag (`ShellExecuteEx`), which honours the executable's
+  manifest and shows the normal UAC prompt. Shortcuts were unaffected — Explorer already launches
+  them through ShellExecute.
+
+### 中文摘要
+
+- **安装完成页的“启动 SMM”不再报 740。** 安装包按用户安装（`PrivilegesRequired=lowest`），`[Run]`
+  默认用 `CreateProcess`；GUI 自 0.4.5 起要求管理员权限，而 `CreateProcess` 弹不出 UAC，于是点
+  “完成”时出现 `CreateProcess 失败；错误代码 740` 且没有提权弹窗。改为 `shellexec`
+  （`ShellExecuteEx`）后，Windows 会读取 exe 清单并正常弹出 UAC。开始菜单与桌面快捷方式不受影响，
+  它们本来就经资源管理器用 ShellExecute 启动。
+
 ## [0.4.7] - 2026-11-23
 
 ### Added
@@ -478,7 +498,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.7...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.8...HEAD
+[0.4.8]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.4...v0.4.5
