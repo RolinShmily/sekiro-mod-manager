@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This file is a human-readable
 summary; `git log` remains the authoritative record.
 
+## [0.5.0] - 2026-11-25
+
+### Added
+
+- **Cloudflare Worker self-hosted release proxy (`worker/index.ts`)**: Serves `/releases/latest.json` (120 s edge cache) and allowlisted streaming downloads under `/releases/download/<tag>/sekiro-mod-manager-<tag>-windows-x64-(setup.exe|gui.zip)` directly against GitHub Releases, removing the third-party `gh-proxy.org` dependency.
+- **Desktop update mirror with GitHub fallback**: `UpdateService` and `UpdateFeed` now check `https://sekiro.srprolin.com/releases/latest.json` first and fall back automatically to GitHub Releases if the mirror is unreachable.
+- **Community `.smmpack` starter showcase on the website**: Integrates three optional starter packs (`宫本武藏`, `绣丸双刀`, `永真艾玛`) hosted externally on Cloudflare R2 with dual-route switching (Optimized CDN `cdn-r2-sekiro.srprolin.com` / R2 Origin `r2-sekiro.srprolin.com`), SHA-256 checksums, collapsible upstream Nexus Mods attribution links, and a notice-and-takedown disclaimer.
+- **Reusable Windows artifact build workflow (`.github/workflows/build.yml`)** and unified top-level `tests/` directory (`tests/core`, `tests/gui`, `tests/website`, `tests/worker`).
+
+### Changed
+
+- **Repository structure & cross-platform core**: Flattened `src/core/` (eliminating `include/smm/` and `src/` nesting), fixed POSIX `is_same_volume` and `manager.cpp` guards so `smm_core` builds and passes tests cleanly on both Ubuntu and Windows.
+- **Modern product website redesign**: Replaced heavy artwork backgrounds with a clean, restrained dark product showcase, interactive desktop screenshot tabs, two-package Download Center (Setup `.exe` + Portable `.zip`), and FAQ.
+- **Documentation & licensing consolidation**: Collapsed `docs/` into four flat single-file guides (`architecture.md`, `design.md`, `reference.md`, `development.md`), moved screenshots to `assets/`, consolidated `licenses/` + `THIRD_PARTY_NOTICES.md` into root `THIRD_PARTY_NOTICES`, streamlined GitHub Issue templates, and renamed workflows to `test.yml`, `build.yml`, `release.yml`, and `deploy.yml`.
+
+### Removed
+
+- Standalone CLI (`src/cli`), agent skill (`skills/smm-cli`), `website/scripts/package_skill.py`, CLI `PATH` installer task, `licenses/` directory, Dependabot config, PR template, `CODE_OF_CONDUCT.md`, and `SECURITY.md`.
+
+### 中文摘要
+
+- **新增 Cloudflare Worker 自建反代（`worker/index.ts`）**：移除第三方 `gh-proxy.org`，由官网 Worker 托管 `/releases/latest.json` 及 `setup.exe` / `gui.zip` 白名单流式反代与边缘缓存。
+- **桌面端更新检查接入本站镜像**：`UpdateService` 优先通过 `https://sekiro.srprolin.com/releases/latest.json` 检查并下载更新，异常时自动回退至 GitHub 直连。
+- **官网重塑为现代产品展示页并接入 R2 尝鲜整合包**：去除冗余重底图，改版为清爽的暗色标准产品展示页与下载中心，新增 3 套 Cloudflare R2 独立托管的社区 `.smmpack` 尝鲜包（支持优选 CDN / R2 源站双线路切换、SHA-256 校验、每包内含模组的 Nexus Mods 原址清单及第三方版权免责声明）。
+- **仓库与工作流结构标准化**：砍掉 CLI 与 Skill，平铺 `src/core/` 并修复 Linux 编译兼容，统一顶层 `tests/` 目录，规范化 `test.yml` / `build.yml` / `release.yml` / `deploy.yml` 工作流；将 `docs/` 重构为 4 份单文件文档、截图迁至 `assets/`，合并 `licenses/` 为根目录 `THIRD_PARTY_NOTICES`，重写中英双语 README。
+
 ## [0.4.8] - 2026-11-23
 
 ### Fixed
@@ -498,7 +524,8 @@ summary; `git log` remains the authoritative record.
 - GitHub Actions workflows for CI and tag-triggered releases.
 - MIT license, `.gitignore`, and bilingual documentation.
 
-[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.8...HEAD
+[Unreleased]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.8...v0.5.0
 [0.4.8]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/RolinShmily/sekiro-mod-manager/compare/v0.4.5...v0.4.6
