@@ -4,13 +4,14 @@
 #include <cctype>
 #include <vector>
 
-#include "smm/types.hpp"
+#include "core/types.hpp"
 
 namespace smm::gui {
 
 namespace {
 
 constexpr const char* kReleasesBase = "https://github.com/RolinShmily/sekiro-mod-manager/releases";
+constexpr const char* kMirrorDownloadBase = "https://sekiro.srprolin.com/releases/download";
 
 std::string strippedTag(const std::string& version) {
     std::string tag = version;
@@ -48,13 +49,23 @@ std::vector<int> versionParts(const std::string& version) {
     return parts;
 }
 
-/// Reads a string field, tolerating a missing key or a non-string value.
 std::optional<std::string> stringField(const smm::json& object, const char* key) {
     const auto it = object.find(key);
     if (it == object.end() || !it->is_string()) {
         return std::nullopt;
     }
     return it->get<std::string>();
+}
+
+bool isTrustedDownloadUrl(const std::string& url, const std::string& tag, const std::string& filename) {
+    if (tag.empty() || url.find('?') != std::string::npos || url.find('#') != std::string::npos) {
+        return false;
+    }
+    const std::string expectedGithub =
+        std::string(kReleasesBase) + "/download/" + tag + "/" + filename;
+    const std::string expectedMirror =
+        std::string(kMirrorDownloadBase) + "/" + tag + "/" + filename;
+    return url == expectedGithub || url == expectedMirror;
 }
 
 } // namespace
@@ -67,9 +78,16 @@ std::optional<UpdateManifest> UpdateFeed::parse(const std::string& body, std::st
         return std::nullopt;
     };
 
+    std::string cleaned = body;
+    if (cleaned.size() >= 3 && static_cast<unsigned char>(cleaned[0]) == 0xEF &&
+        static_cast<unsigned char>(cleaned[1]) == 0xBB &&
+        static_cast<unsigned char>(cleaned[2]) == 0xBF) {
+        cleaned.erase(0, 3);
+    }
+
     smm::json document;
     try {
-        document = smm::json::parse(body);
+        document = smm::json::parse(cleaned);
     } catch (const smm::json::exception& exception) {
         return fail_with(std::string("Malformed update manifest: ") + exception.what());
     }
@@ -79,10 +97,25 @@ std::optional<UpdateManifest> UpdateFeed::parse(const std::string& body, std::st
 
     UpdateManifest manifest;
     const auto version = stringField(document, "version");
-    if (!version.has_value() || strippedTag(*version).empty()) {
+    const std::string bare = version.has_value() ? strippedTag(*version) : std::string{};
+    if (bare.empty()) {
         return fail_with("The update manifest carries no usable version");
     }
     manifest.version = *version;
+
+    const std::string tag = "v" + bare;
+    const std::string setupFile = "sekiro-mod-manager-" + tag + "-windows-x64-setup.exe";
+    const std::string guiFile = "sekiro-mod-manager-" + tag + "-windows-x64-gui.zip";
+
+    if (const auto setupUrl = stringField(document, "setup_exe_url");
+        setupUrl.has_value() && isTrustedDownloadUrl(*setupUrl, tag, setupFile)) {
+        manifest.setupExeUrl = *setupUrl;
+    }
+    if (const auto guiUrl = stringField(document, "gui_zip_url");
+        guiUrl.has_value() && isTrustedDownloadUrl(*guiUrl, tag, guiFile)) {
+        manifest.guiZipUrl = *guiUrl;
+    }
+
     manifest.notesZh = stringField(document, "notes_zh");
     manifest.notesEn = stringField(document, "notes_en");
     manifest.notes = stringField(document, "notes");
@@ -103,7 +136,7 @@ bool UpdateFeed::isNewer(const std::string& remote, const std::string& current) 
     return false;
 }
 
-UpdateLinks UpdateFeed::linksFor(const std::string& version) {
+UpdateLinks UpdateFeed::linksFor(const std::string& version, bool preferMirror) {
     const std::string bare = strippedTag(version);
     const std::string tag = bare.empty() ? std::string{} : "v" + bare;
     UpdateLinks links;
@@ -111,9 +144,19 @@ UpdateLinks UpdateFeed::linksFor(const std::string& version) {
         links.releasePage = kReleasesBase;
         return links;
     }
+    const std::string filename = "sekiro-mod-manager-" + tag + "-windows-x64-setup.exe";
     links.releasePage = std::string(kReleasesBase) + "/tag/" + tag;
-    links.setupDownload = std::string(kReleasesBase) + "/download/" + tag +
-                          "/sekiro-mod-manager-" + tag + "-windows-x64-setup.exe";
+    links.setupDownload = preferMirror
+                              ? std::string(kMirrorDownloadBase) + "/" + tag + "/" + filename
+                              : std::string(kReleasesBase) + "/download/" + tag + "/" + filename;
+    return links;
+}
+
+UpdateLinks UpdateFeed::linksFor(const UpdateManifest& manifest, bool preferMirror) {
+    auto links = linksFor(manifest.version, preferMirror);
+    if (manifest.setupExeUrl.has_value() && !manifest.setupExeUrl->empty()) {
+        links.setupDownload = *manifest.setupExeUrl;
+    }
     return links;
 }
 

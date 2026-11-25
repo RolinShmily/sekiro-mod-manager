@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 
 # ---------------------------------------------------------------------------
-# Both the GUI native client and the CLI link smm_core. Business logic stays in
+# The desktop GUI links smm_core directly in-process. Business logic stays in
 # the core library; the GUI adapts its results into Qt models without subprocess IPC.
-#
-#   core  <-  cli
-#         <-  gui
 # ---------------------------------------------------------------------------
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick QuickControls2 Network LinguistTools)
@@ -215,9 +212,11 @@ add_executable(smm-gui ALIAS smm_gui)
 # GUI-layer unit tests that need no QML engine and no window: the pure update feed and the
 # CoreService adapter. Both are headless, so neither needs HuskarUI nor a display.
 # ---------------------------------------------------------------------------
-if(SMM_BUILD_TESTS)
+if(SMM_BUILD_TESTS OR BUILD_TESTING)
+    set(SMM_GUI_TESTS_DIR "${CMAKE_SOURCE_DIR}/tests/gui")
+
     add_executable(smm_update_feed_tests
-        tests/update_feed_tests.cpp
+        "${SMM_GUI_TESTS_DIR}/update_feed_tests.cpp"
         backend/services/UpdateFeed.cpp
     )
     target_include_directories(smm_update_feed_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -226,7 +225,7 @@ if(SMM_BUILD_TESTS)
 
     # Headless adapter test: CoreService + CoreMapping, Qt Core only. No window, no HuskarUI.
     add_executable(smm_core_service_tests
-        tests/core_service_tests.cpp
+        "${SMM_GUI_TESTS_DIR}/core_service_tests.cpp"
         backend/adapters/CoreMapping.cpp
         backend/services/CoreService.cpp
     )

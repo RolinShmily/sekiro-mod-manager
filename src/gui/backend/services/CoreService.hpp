@@ -7,8 +7,8 @@
 #include "backend/GuiTypes.hpp"
 #include "backend/services/TaskTypes.hpp"
 
-#include "smm/doctor.hpp"
-#include "smm/loader.hpp"
+#include "core/doctor.hpp"
+#include "core/loader.hpp"
 
 /// Synchronous application service in front of `smm_core`.
 ///

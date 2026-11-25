@@ -1,26 +1,28 @@
 add_subdirectory(third_party)
 
 add_library(smm_core STATIC
-    src/error.cpp
-    src/types.cpp
-    src/normalizer.cpp
-    src/loader.cpp
-    src/manager.cpp
-    src/conflict.cpp
-    src/deploy.cpp
-    src/executor.cpp
-    src/extractor.cpp
-    src/importer.cpp
-    src/exporter.cpp
-    src/doctor.cpp
-    src/preset.cpp
+    error.cpp
+    types.cpp
+    normalizer.cpp
+    loader.cpp
+    manager.cpp
+    conflict.cpp
+    deploy.cpp
+    executor.cpp
+    extractor.cpp
+    importer.cpp
+    exporter.cpp
+    doctor.cpp
+    preset.cpp
 )
 
+# Consumers include headers as "core/<header>.hpp"; internal sources include "<header>.hpp".
 target_include_directories(smm_core
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# smm_json is PUBLIC because smm/types.hpp exposes nlohmann::json in its declarations;
+# smm_json is PUBLIC because core/types.hpp exposes nlohmann::json in its declarations;
 # smm_miniz stays PRIVATE since no public header mentions zip.
 target_link_libraries(smm_core
     PUBLIC smm_json

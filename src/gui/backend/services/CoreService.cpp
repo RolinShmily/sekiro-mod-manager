@@ -9,15 +9,15 @@
 
 #include "backend/adapters/CoreMapping.hpp"
 
-#include "smm/conflict.hpp"
-#include "smm/deploy.hpp"
-#include "smm/error.hpp"
-#include "smm/executor.hpp"
-#include "smm/exporter.hpp"
-#include "smm/extractor.hpp"
-#include "smm/importer.hpp"
-#include "smm/manager.hpp"
-#include "smm/preset.hpp"
+#include "core/conflict.hpp"
+#include "core/deploy.hpp"
+#include "core/error.hpp"
+#include "core/executor.hpp"
+#include "core/exporter.hpp"
+#include "core/extractor.hpp"
+#include "core/importer.hpp"
+#include "core/manager.hpp"
+#include "core/preset.hpp"
 
 namespace smm::gui {
 

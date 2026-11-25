@@ -8,13 +8,6 @@
 
 namespace smm::gui {
 
-namespace {
-
-const QString kManifestUrl = QStringLiteral(
-    "https://github.com/RolinShmily/sekiro-mod-manager/releases/latest/download/latest.json");
-
-} // namespace
-
 UpdateService::UpdateService(QObject* parent)
     : QObject(parent), network_(new QNetworkAccessManager(this)) {}
 
@@ -38,21 +31,13 @@ void UpdateService::fail(const QString& message, bool notify) {
     }
 }
 
-void UpdateService::checkForUpdates(bool silent) {
-    if (isChecking_) {
-        return;
-    }
-
-    silentCheck_ = silent;
-    isChecking_ = true;
-    emit checkingChanged();
-    setStatus(tr("Checking for updates..."));
-
+void UpdateService::fetchManifest(const QString& url) {
     QNetworkRequest request;
-    request.setUrl(QUrl(kManifestUrl));
+    request.setUrl(QUrl(url));
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
     request.setRawHeader("User-Agent", "SekiroModManager/" SMM_VERSION_STRING);
+    request.setTransferTimeout(10000);
 
     if (reply_ != nullptr) {
         reply_->deleteLater();
@@ -63,34 +48,56 @@ void UpdateService::checkForUpdates(bool silent) {
     connect(reply_, &QNetworkReply::finished, this, &UpdateService::onManifestFinished);
 }
 
+void UpdateService::checkForUpdates(bool silent) {
+    if (isChecking_) {
+        return;
+    }
+
+    silentCheck_ = silent;
+    usingFallback_ = false;
+    isChecking_ = true;
+    emit checkingChanged();
+    setStatus(tr("Checking for updates..."));
+
+    fetchManifest(QString::fromLatin1(UpdateFeed::kMirrorManifestUrl));
+}
+
 void UpdateService::onManifestFinished() {
     if (reply_ == nullptr) {
+        return;
+    }
+
+    const QNetworkReply::NetworkError netErr = reply_->error();
+    const QString netErrStr = reply_->errorString();
+    const QByteArray body = netErr == QNetworkReply::NoError ? reply_->readAll() : QByteArray{};
+    reply_->deleteLater();
+    reply_ = nullptr;
+
+    std::string parseError;
+    const auto manifest =
+        netErr == QNetworkReply::NoError ? UpdateFeed::parse(body.toStdString(), &parseError) : std::nullopt;
+
+    if (!manifest.has_value()) {
+        if (!usingFallback_) {
+            usingFallback_ = true;
+            fetchManifest(QString::fromLatin1(UpdateFeed::kGithubManifestUrl));
+            return;
+        }
+
+        isChecking_ = false;
+        emit checkingChanged();
+        if (netErr != QNetworkReply::NoError) {
+            fail(tr("Update check failed: %1").arg(netErrStr), !silentCheck_);
+        } else {
+            fail(tr("Failed to parse update manifest."), !silentCheck_);
+        }
         return;
     }
 
     isChecking_ = false;
     emit checkingChanged();
 
-    if (reply_->error() != QNetworkReply::NoError) {
-        const QString error = reply_->errorString();
-        reply_->deleteLater();
-        reply_ = nullptr;
-        fail(tr("Update check failed: %1").arg(error), !silentCheck_);
-        return;
-    }
-
-    const QByteArray body = reply_->readAll();
-    reply_->deleteLater();
-    reply_ = nullptr;
-
-    std::string parseError;
-    const auto manifest = UpdateFeed::parse(body.toStdString(), &parseError);
-    if (!manifest.has_value()) {
-        fail(tr("Failed to parse update manifest."), !silentCheck_);
-        return;
-    }
-
-    const auto links = UpdateFeed::linksFor(manifest->version);
+    const auto links = UpdateFeed::linksFor(*manifest, !usingFallback_);
     latestVersion_ = QString::fromStdString(manifest->version);
     releasePageUrl_ = QString::fromStdString(links.releasePage);
     setupDownloadUrl_ = QString::fromStdString(links.setupDownload);

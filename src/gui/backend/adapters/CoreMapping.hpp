@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "backend/GuiTypes.hpp"
-#include "smm/doctor.hpp"
-#include "smm/types.hpp"
+#include "core/doctor.hpp"
+#include "core/types.hpp"
 
 /// Conversion between `smm_core` value types and the Qt projections the GUI uses.
 ///

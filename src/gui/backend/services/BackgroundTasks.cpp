@@ -5,7 +5,7 @@
 #include <exception>
 #include <utility>
 
-#include "smm/error.hpp"
+#include "core/error.hpp"
 
 namespace smm::gui {
 

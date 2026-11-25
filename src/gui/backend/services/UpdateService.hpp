@@ -51,6 +51,7 @@ signals:
     void updateNotification(const QString& type, const QString& message);
 
 private:
+    void fetchManifest(const QString& url);
     void onManifestFinished();
     void fail(const QString& message, bool notify);
     void setStatus(const QString& message);
@@ -61,6 +62,7 @@ private:
     bool isChecking_{false};
     bool updateAvailable_{false};
     bool silentCheck_{false};
+    bool usingFallback_{false};
 
     QString latestVersion_;
     QString releaseNotes_;

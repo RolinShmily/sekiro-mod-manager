@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
   "configurePresets": [
     {
       "name": "windows-base",
@@ -11,17 +11,16 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_PREFIX_PATH": "C:/Qt/6.11.2/msvc2022_64",
-        "BUILD_CLI": true,
         "BUILD_GUI": true,
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       },
-      "description": "Environment macros are $env{VAR} and $penv{VAR}: a single $ with no surrounding braces. Writing ${penv{PATH}} makes CMake look for a macro named \"penv{PATH}\", which invalidates the file and disables every preset.",
+      "description": "Base preset for Windows Ninja + MSVC builds.",
       "environment": { "PATH": "C:/Qt/6.11.2/msvc2022_64/bin;$penv{PATH}" }
     },
     {
       "name": "msvc-x64-debug",
       "displayName": "MSVC 2022 x64 (Debug)",
-      "description": "Ninja + MSVC 2022, Qt 6.11.2 for the GUI",
+      "description": "Ninja + MSVC 2022, Qt 6 for the desktop GUI",
       "inherits": "windows-base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
     },
@@ -33,20 +32,19 @@
     },
     {
       "name": "core-only",
-      "displayName": "Core + CLI only (no Qt needed)",
+      "displayName": "Core library + tests only (no Qt needed)",
       "inherits": "windows-base",
-      "cacheVariables": { "BUILD_GUI": false, "BUILD_CLI": true }
+      "cacheVariables": { "BUILD_GUI": false, "SMM_BUILD_TESTS": true }
     },
     {
       "name": "vs2022-x64",
       "displayName": "Visual Studio 2022 x64 (no developer prompt needed)",
-      "description": "MSBuild generator: it locates the MSVC toolchain itself, so `cmake --preset` works from a plain shell. Ninja presets need a vcvarsall environment because cl.exe must already be on PATH. Slower to build; useful when you are not driving from an IDE.",
+      "description": "MSBuild generator: locates the MSVC toolchain automatically from a plain shell.",
       "generator": "Visual Studio 17 2022",
       "architecture": { "value": "x64" },
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_PREFIX_PATH": "C:/Qt/6.11.2/msvc2022_64",
-        "BUILD_CLI": true,
         "BUILD_GUI": true,
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       },

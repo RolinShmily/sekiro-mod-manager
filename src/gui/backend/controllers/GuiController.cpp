@@ -18,9 +18,9 @@
 #include "backend/adapters/CoreMapping.hpp"
 #include "backend/providers/ModPreviewImageProvider.hpp"
 
-#include "smm/doctor.hpp"
-#include "smm/error.hpp"
-#include "smm/executor.hpp"
+#include "core/doctor.hpp"
+#include "core/error.hpp"
+#include "core/executor.hpp"
 
 #include <theme/hustheme.h>
 

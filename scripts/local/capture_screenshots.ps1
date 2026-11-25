@@ -13,7 +13,7 @@
 
 param(
     [string]$Root = 'C:\Users\Public\SMM-Demo',
-    [string]$OutDir = (Join-Path $PSScriptRoot '../../docs/design/assets/screenshots'),
+    [string]$OutDir = (Join-Path $PSScriptRoot '../../assets/screenshots'),
     [string]$Exe = '',
     [ValidateSet('dark', 'light', 'system')][string]$Theme = 'dark',
     [switch]$Reseed,
@@ -62,13 +62,7 @@ function Find-Exe {
 if (-not $Exe) { $Exe = Find-Exe }
 if (-not (Test-Path $Exe)) { throw "smm_gui.exe not found at $Exe" }
 if ($Reseed -or -not (Test-Path (Join-Path $game 'mods\.smm_manifest.json'))) {
-    # The manifest only exists after a deploy, which is what makes the launchpad card meaningful.
     & (Join-Path $PSScriptRoot 'seed_demo.ps1') -Root $Root
-    $smm = Get-ChildItem (Join-Path $repoRoot 'build') -Recurse -Filter smm.exe -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if (-not $smm) { throw 'smm.exe not found; build the CLI first.' }
-    & $smm.FullName --quiet --staging $staging deploy --game-dir $game
-    if ($LASTEXITCODE -ne 0) { throw 'deploy into the demo library failed' }
 }
 
 # The GUI takes the two roots from the command line for this run only; the user's saved settings
