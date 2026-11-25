@@ -1,0 +1,147 @@
+name: Build Windows Artifacts
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Optional SemVer version override (e.g. 0.4.8)
+        required: false
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional SemVer version override (e.g. 0.4.8)
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build GUI Portable ZIP & Setup Installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@v1.1
+        with:
+          version: 1.11.1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+
+      - name: Patch Submodules
+        run: python scripts/patch_huskarui.py
+
+      - name: Configure CMake
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $versionArgs = @()
+          if ($env:INPUT_VERSION -match '^v?([0-9]+\.[0-9]+\.[0-9]+)$') {
+              $versionArgs += "-DSMM_APP_VERSION=$($Matches[1])"
+          }
+          cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release @versionArgs -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" -DSMM_BUILD_TESTS=ON
+
+      - name: Build & Run Regression Tests
+        shell: pwsh
+        run: |
+          cmake --build build --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw 'Release build failed' }
+          ctest --test-dir build --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw 'Regression tests failed' }
+
+      - name: Package Setup Installer, Portable ZIP & Release Manifest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $versionLine = (Select-String -Path 'build/CMakeCache.txt' -Pattern '^SMM_APP_VERSION:STRING=(.+)$').Matches
+          if (-not $versionLine) { throw 'SMM_APP_VERSION missing from CMakeCache.txt' }
+          $version = $versionLine[0].Groups[1].Value
+          $tag = "v$version"
+
+          # Verify embedded Windows executable version matches CMake project version.
+          $guiVersion = (Get-Item ./build/src/gui/smm_gui.exe).VersionInfo
+          if ($guiVersion.FileVersion -ne "$version.0" -or $guiVersion.ProductVersion -ne "$version.0") {
+              throw "GUI file version ($($guiVersion.FileVersion)) does not match $version.0"
+          }
+
+          New-Item -ItemType Directory -Path 'dist/release' -Force | Out-Null
+          ./scripts/package-windows.ps1 -BuildDir build -OutDir dist/staging -Version $tag
+
+          $guiZipName = "sekiro-mod-manager-$tag-windows-x64-gui.zip"
+          $setupExeName = "sekiro-mod-manager-$tag-windows-x64-setup.exe"
+          $guiZip = "dist/staging/$guiZipName"
+          $setupExe = "dist/staging/$setupExeName"
+          if (-not (Test-Path $guiZip)) { throw "Missing portable ZIP: $guiZip" }
+          if (-not (Test-Path $setupExe)) { throw "Missing Setup installer: $setupExe" }
+
+          Copy-Item $guiZip -Destination "dist/release/$guiZipName" -Force
+          Copy-Item $setupExe -Destination "dist/release/$setupExeName" -Force
+
+          $guiSha = (Get-FileHash -Path $guiZip -Algorithm SHA256).Hash.ToLower()
+          $guiSize = (Get-Item $guiZip).Length
+          $setupSha = (Get-FileHash -Path $setupExe -Algorithm SHA256).Hash.ToLower()
+          $setupSize = (Get-Item $setupExe).Length
+
+          $baseDownload = "https://github.com/${{ github.repository }}/releases/download/$tag"
+          $latest = [ordered]@{
+              version        = $version
+              tag            = $tag
+              published_at   = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+              url            = "$baseDownload/$guiZipName"
+              sha256         = $guiSha
+              gui_zip_url    = "$baseDownload/$guiZipName"
+              gui_zip_sha256 = $guiSha
+              gui_zip_size   = $guiSize
+              setup_exe_url    = "$baseDownload/$setupExeName"
+              setup_exe_sha256 = $setupSha
+              setup_exe_size   = $setupSize
+              notes_zh       = "Sekiro Mod Manager $tag 发布"
+              notes_en       = "Sekiro Mod Manager $tag Release"
+          } | ConvertTo-Json -Depth 4
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::WriteAllText((Join-Path (Resolve-Path 'dist/release').Path 'latest.json'), "$latest`n", $utf8NoBom)
+
+          $changelog = Get-Content CHANGELOG.md -Raw -Encoding utf8
+          $pattern = "(?ms)^## \[$([regex]::Escape($version))\][^\r\n]*\r?\n(.*?)(?=^## \[|\z)"
+          $notes = [regex]::Match($changelog, $pattern)
+          $body = if ($notes.Success) { $notes.Groups[1].Value.Trim() } else { "Sekiro Mod Manager $tag" }
+          [System.IO.File]::WriteAllText((Join-Path (Resolve-Path 'dist').Path 'release-notes.md'), "$body`n", $utf8NoBom)
+
+      - name: Upload release bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          path: |
+            dist/release/*
+            dist/release-notes.md
+          retention-days: 14

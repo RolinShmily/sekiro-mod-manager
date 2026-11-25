@@ -1,0 +1,119 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'worker/**'
+      - 'website/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'wrangler.toml'
+      - '.gitmodules'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'worker/**'
+      - 'website/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'wrangler.toml'
+      - '.gitmodules'
+      - '.github/workflows/test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: C++ Core (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Core
+        run: cmake -S . -B build-core -DBUILD_GUI=OFF -DSMM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+      - name: Build Core & Tests
+        run: cmake --build build-core --config Release --parallel 2
+      - name: Run CTest
+        run: ctest --test-dir build-core -C Release --output-on-failure
+
+  gui:
+    name: Desktop GUI & Headless Tests (Windows Qt 6)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@v1.1
+        with:
+          version: 1.11.1
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+
+      - name: Patch Submodules
+        run: python scripts/patch_huskarui.py
+
+      - name: Configure CMake
+        run: cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" -DSMM_BUILD_TESTS=ON
+
+      - name: Build Desktop GUI & Tests
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Run CTest
+        run: ctest --test-dir build --output-on-failure
+
+  worker-and-website:
+    name: Worker & Website
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Test Worker release proxy
+        run: node --experimental-strip-types --test tests/worker/*.test.mjs
+      - name: Test website download parsers
+        run: node --experimental-strip-types --test tests/website/*.test.mjs
+      - name: Typecheck website
+        run: pnpm --filter sekiro-mod-manager-website lint

@@ -4,134 +4,74 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    name: Build & Publish Release
-    runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
+  validate:
+    name: Validate Tag & Changelog
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
     steps:
-      - name: Validate SemVer tag format
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate SemVer tag, CMake version & CHANGELOG
+        id: tag
         shell: bash
         run: |
           TAG="${GITHUB_REF_NAME}"
-          echo "Triggered tag: ${TAG}"
-          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Tag '${TAG}' does not match required semver format v0.0.1 (regex: ^v[0-9]+\.[0-9]+\.[0-9]+$)"
+          if [[ "${TAG}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            VER="${BASH_REMATCH[1]}"
+            echo "version=${VER}" >> "$GITHUB_OUTPUT"
+
+            CMAKE_VER=$(grep -oP 'set\(SMM_APP_VERSION "\K[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt || true)
+            if [[ "${CMAKE_VER}" != "${VER}" ]]; then
+              echo "::error::Tag v${VER} does not match SMM_APP_VERSION (${CMAKE_VER}) in CMakeLists.txt"
+              exit 1
+            fi
+
+            if ! grep -qE "^## \[${VER}\]" CHANGELOG.md; then
+              echo "::error::Missing CHANGELOG.md entry for [${VER}]"
+              exit 1
+            fi
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Tag '${TAG}' does not match required semver format vMAJOR.MINOR.PATCH"
             exit 1
           fi
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  build:
+    name: Build Windows Artifacts
+    needs: validate
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.validate.outputs.version }}
+
+  publish:
+    name: Publish GitHub Release
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
         with:
-          submodules: recursive
-
-      - name: Verify tag matches project version
-        shell: pwsh
-        run: |
-          $cmake = Get-Content CMakeLists.txt -Raw
-          $match = [regex]::Match($cmake, 'project\(sekiro_mod_manager VERSION ([0-9]+\.[0-9]+\.[0-9]+)')
-          if (-not $match.Success -or "v$($match.Groups[1].Value)" -ne $env:GITHUB_REF_NAME) {
-            throw "Release tag does not match the CMake project version."
-          }
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Setup Ninja
-        uses: ashutoshvarma/setup-ninja@master
-        with:
-          version: 1.11.1
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Setup Inno Setup
-        shell: pwsh
-        run: |
-          choco install innosetup --no-progress -y
-          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      - name: Install Qt 6
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.0'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_msvc2022_64'
-
-      - name: Patch Submodules
-        run: |
-          python scripts/patch_huskarui.py
-
-      - name: Configure CMake
-        run: |
-          cmake -B build -S . -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" -DSMM_BUILD_TESTS=ON
-
-      - name: Build Release Targets
-        run: |
-          cmake --build build --config Release
-
-      - name: Run core regression tests
-        run: ctest --test-dir build --output-on-failure
-
-      - name: Verify built binary versions
-        shell: pwsh
-        run: |
-          $version = $env:GITHUB_REF_NAME.TrimStart('v')
-          $cliVersion = & ./build/src/cli/smm.exe --version
-          if ($LASTEXITCODE -ne 0 -or $cliVersion.Trim() -ne "smm (Sekiro Mod Manager) $version") {
-            throw "CLI version does not match the release tag."
-          }
-          $guiVersion = (Get-Item ./build/src/gui/smm_gui.exe).VersionInfo
-          if ($guiVersion.FileVersion -ne "$version.0" -or $guiVersion.ProductVersion -ne "$version.0") {
-            throw "GUI file version does not match the release tag."
-          }
-          $numeric = "$($guiVersion.FileMajorPart).$($guiVersion.FileMinorPart).$($guiVersion.FileBuildPart).$($guiVersion.FilePrivatePart)"
-          if ($numeric -ne "$version.0") { throw "GUI numeric file version does not match." }
-
-      - name: Package CLI, GUI, and Setup Installer
-        shell: pwsh
-        run: |
-          # Deployment and pruning live in scripts/package-windows.ps1 so a local dry run
-          # measures exactly what a tagged release publishes.
-          ./scripts/package-windows.ps1 -BuildDir build -OutDir dist -Version "${{ github.ref_name }}"
-
-          $guiZip = "dist/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-gui.zip"
-
-          # 4. Calculate SHA-256 for GUI Zip and generate latest.json update manifest
-          $sha256 = (Get-FileHash -Path $guiZip -Algorithm SHA256).Hash.ToLower()
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          $latest = @{
-              version = $version
-              published_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-              url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/sekiro-mod-manager-${{ github.ref_name }}-windows-x64-gui.zip"
-              sha256 = $sha256
-              notes_zh = "Sekiro Mod Manager ${{ github.ref_name }} 发布"
-              notes_en = "Sekiro Mod Manager ${{ github.ref_name }} Release"
-          } | ConvertTo-Json -Depth 4
-          $latest | Set-Content -Path "dist/latest.json" -Encoding utf8
-
-          # Publish the release-specific bilingual changelog, not a commit title dump.
-          $changelog = Get-Content CHANGELOG.md -Raw -Encoding utf8
-          $pattern = "(?ms)^## \[$([regex]::Escape($version))\][^\r\n]*\r?\n(.*?)(?=^## \[|\z)"
-          $notes = [regex]::Match($changelog, $pattern)
-          if (-not $notes.Success) { throw "Missing release changelog for $version." }
-          $notes.Groups[1].Value.Trim() | Set-Content "dist/release-notes.md" -Encoding utf8
+          name: release-bundle
+          path: dist
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: dist/release-notes.md
+          fail_on_unmatched_files: true
           files: |
-            dist/*.zip
-            dist/*.exe
-            dist/latest.json
+            dist/release/*
           draft: false
           prerelease: false
-          body_path: dist/release-notes.md
           generate_release_notes: false

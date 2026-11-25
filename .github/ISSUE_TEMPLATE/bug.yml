@@ -1,0 +1,34 @@
+name: Bug
+description: Report broken behaviour or a regression
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove personal file paths, Steam account details, or unrelated local data before pasting logs.
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Desktop UI action, mod import/deploy sequence, or website steps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Expected vs actual behaviour
+      description: Include verbatim error output, conflict details, or diagnostic results if available.
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, release tag / app version, Sekiro install location (same volume or cross-volume), and affected area (Desktop / Core / Website).
+      render: shell
+    validations:
+      required: true

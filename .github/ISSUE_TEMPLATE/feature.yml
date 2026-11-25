@@ -1,0 +1,25 @@
+name: Feature
+description: Propose a new capability, workflow improvement, or UI refinement
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sekiro Mod Manager is MIT licensed and manages mods locally via staging and NTFS hard links without modifying game binaries or redistributing ModEngine (`dinput8.dll`).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem & proposal
+      description: What problem or modding scenario are you solving, and how should it work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / compatibility notes (optional)
+      description: Affected component (Desktop / Core / Website), `.smmpack` compatibility, or external references.
+    validations:
+      required: false

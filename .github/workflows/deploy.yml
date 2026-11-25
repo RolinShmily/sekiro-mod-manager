@@ -1,0 +1,67 @@
+name: Deploy Website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'worker/**'
+      - 'wrangler.toml'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy Cloudflare Worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install pinned dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Test Worker & Website
+        run: |
+          node --experimental-strip-types --test tests/worker/*.test.mjs
+          node --experimental-strip-types --test tests/website/*.test.mjs
+          pnpm --filter sekiro-mod-manager-website lint
+
+      - name: Build static website & license report
+        run: pnpm --filter sekiro-mod-manager-website build
+
+      - name: Deploy Cloudflare Worker (Site + /releases/* Proxy)
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')"
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
+          pnpm dlx wrangler@4.147.0 deploy --config wrangler.toml
