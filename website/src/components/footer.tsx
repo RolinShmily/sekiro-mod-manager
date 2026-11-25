@@ -1,90 +1,129 @@
 "use client";
 
-import { ArrowUp, ArrowUpRight, BookOpen, GitFork, PackageOpen, Rss, Scale } from "lucide-react";
+import { ArrowUpRight, Scale } from "lucide-react";
 import { useI18n } from "@/components/i18n";
-import { REPOSITORY } from "@/lib/paths";
+import { assetPath, REPOSITORY } from "@/lib/paths";
 import { RELEASES_URL } from "@/lib/downloads";
-import { BrandLogo } from "./icons";
 
 export function Footer() {
-  const { locale, t } = useI18n();
-
-  const links = [
-    {
-      label: locale === "zh" ? "项目源码" : "Repository",
-      url: REPOSITORY,
-      icon: GitFork,
-      highlight: true,
-    },
-    {
-      label: locale === "zh" ? "使用说明" : "Documentation",
-      url: `${REPOSITORY}#readme`,
-      icon: BookOpen,
-      highlight: false,
-    },
-    {
-      label: locale === "zh" ? "发布记录" : "Releases",
-      url: RELEASES_URL,
-      icon: PackageOpen,
-      highlight: false,
-    },
-    {
-      label: locale === "zh" ? "作者博客" : "Blog",
-      url: "https://blog.srprolin.com",
-      icon: Rss,
-      highlight: false,
-    },
-  ];
+  const { t } = useI18n();
 
   return (
-    <footer className="site-footer">
-      <div className="container">
-        <div className="footer-main">
-          <div className="footer-identity">
-            <a href="#top" className="footer-brand">
-              <BrandLogo className="w-10 h-10 rounded-lg shrink-0" />
+    <footer className="border-t border-line bg-surface/60">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-start">
+          <div className="max-w-sm space-y-2.5">
+            <a
+              href="#top"
+              className="inline-flex items-center gap-2.5 text-sm font-semibold text-ink"
+            >
+              <img
+                src={assetPath("/assets/icon-128.png")}
+                alt=""
+                width="24"
+                height="24"
+                className="rounded-md"
+              />
               <span>
-                Sekiro-SMM<span className="brand-dot-accent">.</span>
+                Sekiro Mod Manager<span className="text-accent">.</span>
               </span>
             </a>
-            <p>
-              {locale === "zh"
-                ? "为《只狼》玩家打造的模组工作台。配置清晰，顺位自由。"
-                : "A native modding workspace for Sekiro: Shadows Die Twice. Clear priorities, total freedom."}
-            </p>
+            <p className="text-xs leading-relaxed text-dim">{t.footer.description}</p>
           </div>
-          <nav className="footer-links" aria-label={locale === "zh" ? "项目链接" : "Project links"}>
-            {links.map(({ label, url, icon: Icon, highlight }) => (
-              <a
-                href={url}
-                key={url}
-                target="_blank"
-                rel="noreferrer"
-                className={highlight ? "footer-link-highlight" : ""}
-              >
-                <Icon size={18} aria-hidden="true" />
-                <span>{label}</span>
-                <ArrowUpRight size={14} aria-hidden="true" />
-              </a>
-            ))}
-          </nav>
+
+          <div className="flex flex-wrap gap-x-10 gap-y-6 text-xs">
+            <div className="space-y-2">
+              <div className="font-semibold uppercase tracking-wider text-muted">
+                {t.footer.siteHeading}
+              </div>
+              <ul className="space-y-1.5 text-dim">
+                <li><a href="#showcase" className="transition hover:text-ink">{t.nav.showcase}</a></li>
+                <li><a href="#features" className="transition hover:text-ink">{t.nav.features}</a></li>
+                <li><a href="#download" className="transition hover:text-ink">{t.nav.download}</a></li>
+                <li><a href="#packs" className="transition hover:text-ink">{t.nav.packs}</a></li>
+                <li><a href="#faq" className="transition hover:text-ink">{t.nav.faq}</a></li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <div className="font-semibold uppercase tracking-wider text-muted">
+                {t.footer.projectHeading}
+              </div>
+              <ul className="space-y-1.5 text-dim">
+                <li>
+                  <a
+                    href={REPOSITORY}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-ink"
+                  >
+                    {t.footer.project} <ArrowUpRight size={12} />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={RELEASES_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-ink"
+                  >
+                    {t.footer.releases} <ArrowUpRight size={12} />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`${REPOSITORY}/tree/main/docs`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-ink"
+                  >
+                    {t.footer.docs} <ArrowUpRight size={12} />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://blog.srprolin.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-ink"
+                  >
+                    {t.footer.blog} <ArrowUpRight size={12} />
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
-        <div className="footer-bottom">
-          <span>© 2024–2026 RoL1n_SrP</span>
-          <a
-            className="footer-license"
-            href={`${REPOSITORY}/blob/main/LICENSE`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Scale size={16} aria-hidden="true" />
-            <span>MIT License</span>
-            <ArrowUpRight size={13} aria-hidden="true" />
-          </a>
-          <a href="#top" className="footer-top">
-            <span>{t("backTop")}</span>
-            <ArrowUp size={16} aria-hidden="true" />
-          </a>
+
+        <div className="mt-8 flex flex-col items-start justify-between gap-3 border-t border-line pt-6 text-xs text-muted sm:flex-row sm:items-center">
+          <span>© 2025–2026 RoL1n_SrP · {t.footer.disclaimer}</span>
+          <div className="flex flex-wrap items-center gap-4">
+            <a
+              href={`${REPOSITORY}/blob/main/LICENSE`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-dim transition hover:text-ink"
+            >
+              <Scale size={13} aria-hidden="true" />
+              {t.footer.license}
+            </a>
+            <a
+              href={`${REPOSITORY}/blob/main/THIRD_PARTY_NOTICES`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-dim transition hover:text-ink"
+            >
+              {t.footer.notices}
+            </a>
+            <a
+              href={assetPath("/third-party-licenses.txt")}
+              target="_blank"
+              rel="noreferrer"
+              className="text-dim transition hover:text-ink"
+            >
+              {t.footer.webLicenses}
+            </a>
+          </div>
         </div>
       </div>
     </footer>

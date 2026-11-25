@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#181a18" />
-    <title>Sekiro Mod Manager · 重返苇名，由你执掌</title>
+    <meta name="theme-color" content="#0a0b0d" />
+    <title>Sekiro Mod Manager — 只狼原生零拷贝桌面模组管理器</title>
     <meta
       name="description"
-      content="为《只狼：影逝二度》打造的开源模组工作台。暂存模组、查看覆盖、保存组合，以 NTFS 硬链接部署你的苇名。"
+      content="专为《只狼：影逝二度》打造的原生 C++17 / Qt 6 桌面模组管理器。NTFS 硬链接零拷贝部署、三级语义冲突仲裁、.smmpack 一键切换与环境诊断。"
     />
     <link rel="canonical" href="%SITE_URL%%ASSET_BASE%/" />
     <link rel="icon" href="%ASSET_BASE%/favicon.ico" sizes="any" />
@@ -19,17 +19,17 @@
     <meta property="og:title" content="Sekiro Mod Manager" />
     <meta
       property="og:description"
-      content="你的模组，你的顺位，你的苇名。Windows 原生模组管理器，支持 CLI 与智能体 Skill。"
+      content="专为《只狼：影逝二度》打造的原生零拷贝桌面模组管理器，支持 NTFS 硬链接部署、三级冲突仲裁与 .smmpack 整合包。"
     />
   </head>
-  <body>
+  <body class="bg-canvas text-ink antialiased">
     <div id="root"></div>
     <noscript>
-      <p class="noscript-note">
+      <p style="padding: 1.5rem; text-align: center; color: #9ca3af;">
         软件下载 / Software downloads:
-        <a href="https://github.com/RolinShmily/sekiro-mod-manager/releases"
-          >GitHub Releases</a
-        >
+        <a href="https://github.com/RolinShmily/sekiro-mod-manager/releases" style="color: #d4a853;">
+          GitHub Releases
+        </a>
       </p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

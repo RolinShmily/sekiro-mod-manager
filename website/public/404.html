@@ -7,55 +7,60 @@
     <title>404 · Sekiro Mod Manager</title>
     <style>
       :root {
-        color-scheme: light dark;
+        color-scheme: dark;
       }
       body {
         margin: 0;
         min-height: 100svh;
         display: grid;
         place-content: center;
-        gap: 18px;
+        gap: 14px;
         padding: 32px;
-        background: #171b18;
-        color: #e9e4d8;
-        font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+        background: #0a0b0d;
+        color: #f4f5f7;
+        font-family: "Inter", "Segoe UI", "Microsoft YaHei UI", system-ui, -apple-system, sans-serif;
         text-align: center;
       }
       p.eyebrow {
         margin: 0;
-        font-family: "Cascadia Code", Consolas, monospace;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
         font-size: 12px;
-        letter-spacing: 0.2em;
-        color: #c9b68a;
+        letter-spacing: 0.14em;
+        color: #d4a853;
       }
       h1 {
         margin: 0;
-        font-size: clamp(2rem, 6vw, 3rem);
-        font-weight: 500;
-        letter-spacing: 0.06em;
+        font-size: clamp(1.5rem, 4vw, 2.25rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      p.desc {
+        margin: 0;
+        font-size: 14px;
+        color: #9ca3af;
       }
       a {
-        color: #e9e4d8;
-        border-bottom: 1px solid #9d3429;
-        padding-bottom: 3px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 8px;
+        padding: 10px 18px;
+        border-radius: 10px;
+        background: #d4a853;
+        color: #0a0b0d;
+        font-size: 14px;
+        font-weight: 600;
         text-decoration: none;
       }
       a:hover {
-        color: #fff;
-      }
-      span.rule {
-        display: block;
-        width: 48px;
-        height: 1px;
-        margin: 0 auto;
-        background: #9d3429;
+        background: #e5be6d;
       }
     </style>
   </head>
   <body>
-    <p class="eyebrow">404 / LOST IN ASHINA</p>
-    <span class="rule"></span>
-    <h1>此路不通 · This path leads nowhere.</h1>
-    <p><a href="/">返回首页 · Back to the workspace</a></p>
+    <p class="eyebrow">404 · NOT FOUND</p>
+    <h1>页面不存在 / Page Not Found</h1>
+    <p class="desc">你访问的路径无效或已移动。</p>
+    <div><a href="/">返回首页 · Back to Home</a></div>
   </body>
 </html>

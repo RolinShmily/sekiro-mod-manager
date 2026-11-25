@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "cdn_base_url": "https://cdn-r2-sekiro.srprolin.com",
+  "origin_base_url": "https://r2-sekiro.srprolin.com",
+  "packs": [
+    {
+      "id": "miyamoto-musashi",
+      "file": "宫本武藏.smmpack",
+      "object_key": "packs/miyamoto-musashi.smmpack",
+      "size_bytes": 208348972,
+      "sha256": "d11671a5f026e69305ec481af809ee39a0ae94cde2778709b87b745294b03cb1",
+      "updated_at": "2026-10-06",
+      "title_zh": "宫本武藏",
+      "title_en": "Miyamoto Musashi",
+      "summary_zh": "更换 NPC、Boss、狼、武器与 UI 外观的社区尝鲜组合包，保留原版战斗数值，导入后即可一键启用。",
+      "summary_en": "Community visual starter pack replacing Wolf, NPCs, bosses, weapons, and UI textures while keeping vanilla combat balance.",
+      "tags_zh": ["外观组合", "9 个模组"],
+      "tags_en": ["Visual Pack", "9 Mods"],
+      "mods": [
+        { "name": "Miyamoto Musashi", "source_url": "https://www.nexusmods.com/sekiro/mods/1264" },
+        { "name": "Long Hair Ookami", "source_url": "https://www.nexusmods.com/sekiro/mods/850" },
+        { "name": "MoonlightKatana GoldBlade", "source_url": "https://www.nexusmods.com/sekiro/mods/76" },
+        { "name": "Blade Of The Archfiend", "source_url": "https://www.nexusmods.com/sekiro/mods/65" },
+        { "name": "Emma Evening Dress", "source_url": "https://www.nexusmods.com/sekiro/mods/1266" },
+        { "name": "Divine Dragon With Moonlight Greatsword", "source_url": "https://www.nexusmods.com/sekiro/mods/422" },
+        { "name": "Shura Themed Skin For Isshin", "source_url": "https://www.nexusmods.com/sekiro/mods/2204" },
+        { "name": "Black Dragon Wooden Theme (Darker)", "source_url": "https://www.nexusmods.com/sekiro/mods/2339" },
+        { "name": "Sekiro Mod Engine (v0.1.16)", "source_url": "https://www.nexusmods.com/sekiro/mods/6" }
+      ]
+    },
+    {
+      "id": "sabimaru-dual-blade",
+      "file": "绣丸双刀.smmpack",
+      "object_key": "packs/sabimaru-dual-blade.smmpack",
+      "size_bytes": 306371314,
+      "sha256": "61690222c56debc4ca8f33b4b73e1f62d1c1362a2e8d3ad1dec7c912fd0f596f",
+      "updated_at": "2026-10-06",
+      "title_zh": "绣丸双刀",
+      "title_en": "Sabimaru Dual Blades",
+      "summary_zh": "在宫本武藏外观套件的基础上加入绣丸双刀流红特效攻击模组（已预置顺位，可按需勾选启用），适合体验动作模组与多包切换。",
+      "summary_en": "Extends the Miyamoto Musashi visual pack with the Double Knife Flow red-effects moveset and pre-configured priority ordering.",
+      "tags_zh": ["双刀动作", "9 个模组"],
+      "tags_en": ["Moveset + Visuals", "9 Mods"],
+      "mods": [
+        { "name": "SekiroDouble Knife Flow RED Effects", "source_url": "https://www.nexusmods.com/sekiro/mods/1637" },
+        { "name": "Miyamoto Musashi", "source_url": "https://www.nexusmods.com/sekiro/mods/1264" },
+        { "name": "Long Hair Ookami", "source_url": "https://www.nexusmods.com/sekiro/mods/850" },
+        { "name": "Blade Of The Archfiend", "source_url": "https://www.nexusmods.com/sekiro/mods/65" },
+        { "name": "Yassified Emma", "source_url": "https://www.nexusmods.com/sekiro/mods/1548" },
+        { "name": "Divine Dragon With Moonlight Greatsword", "source_url": "https://www.nexusmods.com/sekiro/mods/422" },
+        { "name": "Shura Themed Skin For Isshin", "source_url": "https://www.nexusmods.com/sekiro/mods/2204" },
+        { "name": "Black Dragon Wooden Theme (Darker)", "source_url": "https://www.nexusmods.com/sekiro/mods/2339" },
+        { "name": "Sekiro Mod Engine (v0.1.16)", "source_url": "https://www.nexusmods.com/sekiro/mods/6" }
+      ]
+    },
+    {
+      "id": "emma",
+      "file": "永真艾玛.smmpack",
+      "object_key": "packs/emma.smmpack",
+      "size_bytes": 207538792,
+      "sha256": "1bc79ac5da5ae5f51440586b39ba4863615cff0dd6eddd5abe27c0149ab91b63",
+      "updated_at": "2026-10-06",
+      "title_zh": "永真艾玛",
+      "title_en": "Emma",
+      "summary_zh": "将狼替换为永真（艾玛）外观与配刀，并附带可选蓝色特效及多套 Boss/UI 皮肤，适合快速体验 .smmpack 整套切换。",
+      "summary_en": "Replaces Wolf with Emma's character outfit and blade, paired with optional blue VFX and boss/UI visual mods.",
+      "tags_zh": ["角色替换", "8 个模组"],
+      "tags_en": ["Character Pack", "8 Mods"],
+      "mods": [
+        { "name": "Emma Costume Pack Full", "source_url": "https://www.nexusmods.com/sekiro/mods/93" },
+        { "name": "Emma's Blade", "source_url": "https://www.nexusmods.com/sekiro/mods/214" },
+        { "name": "Blue Effect", "source_url": "https://www.nexusmods.com/sekiro/mods/2243" },
+        { "name": "Blade Of The Archfiend", "source_url": "https://www.nexusmods.com/sekiro/mods/65" },
+        { "name": "Divine Dragon With Moonlight Greatsword", "source_url": "https://www.nexusmods.com/sekiro/mods/422" },
+        { "name": "Shura Themed Skin For Isshin", "source_url": "https://www.nexusmods.com/sekiro/mods/2204" },
+        { "name": "Black Dragon Wooden Theme (Darker)", "source_url": "https://www.nexusmods.com/sekiro/mods/2339" },
+        { "name": "Sekiro Mod Engine (v0.1.16)", "source_url": "https://www.nexusmods.com/sekiro/mods/6" }
+      ]
+    }
+  ]
+}

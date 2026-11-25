@@ -1,354 +1,357 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import {
-  ArrowRight,
+  Archive,
+  ArrowDownToLine,
   ArrowUpRight,
-  Copy,
-  Download,
-  Terminal,
   Check,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Bot,
-  BookOpen,
-  HelpCircle,
-  Shield,
-  FileCode,
+  Copy,
+  Info,
+  LoaderCircle,
+  Monitor,
+  RefreshCw,
 } from "lucide-react";
-import { useI18n } from "./i18n";
-import { assetPath, REPOSITORY } from "@/lib/paths";
+import { useEffect, useState } from "react";
+import { useI18n } from "@/components/i18n";
+import { assetPath } from "@/lib/paths";
 import {
-  fetchRelease,
+  fetchJson,
   formatSize,
+  parseAppRelease,
+  RELEASE_API,
+  RELEASE_MANIFEST_PATH,
   RELEASES_URL,
   softwareUrl,
-  type ReleaseLookup,
-  type AssetKind,
+  type AppRelease,
+  type DownloadAsset,
   type DownloadSource,
 } from "@/lib/downloads";
-import { WindowsIcon, ExeBadgeIcon, ZipBadgeIcon } from "./icons";
+
+function ChecksumRow({ hash }: { hash?: string }) {
+  const { t } = useI18n();
+  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
+
+  useEffect(() => {
+    if (status === "idle") return;
+    const timer = setTimeout(() => setStatus("idle"), 2600);
+    return () => clearTimeout(timer);
+  }, [status]);
+
+  if (!hash) return null;
+
+  async function copy() {
+    if (!hash) return;
+    try {
+      await navigator.clipboard.writeText(hash);
+      setStatus("copied");
+    } catch {
+      setStatus("failed");
+    }
+  }
+
+  return (
+    <details className="mt-3 rounded-lg border border-line bg-canvas/70 px-3 py-2 text-xs">
+      <summary className="cursor-pointer select-none font-mono text-[11px] text-dim transition hover:text-ink">
+        SHA-256
+      </summary>
+      <div className="mt-2 space-y-2">
+        <code className="block break-all font-mono text-[11px] text-dim">{hash}</code>
+        <button
+          type="button"
+          onClick={copy}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-[11px] font-medium text-ink transition hover:border-line-strong"
+        >
+          {status === "copied" ? <Check size={12} className="text-emerald" /> : <Copy size={12} />}
+          <span>
+            {status === "copied"
+              ? t.download.hashCopied
+              : status === "failed"
+                ? t.download.hashFailed
+                : t.download.hashCopy}
+          </span>
+        </button>
+      </div>
+    </details>
+  );
+}
+
+function ActionButton({
+  asset,
+  source,
+  label,
+  primary,
+}: {
+  asset?: DownloadAsset;
+  source: DownloadSource;
+  label: string;
+  primary: boolean;
+}) {
+  if (!asset) {
+    return (
+      <span className="inline-flex h-10 cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-line bg-canvas/50 px-4 text-xs font-medium text-muted">
+        <ArrowDownToLine size={15} aria-hidden="true" />
+        {label}
+      </span>
+    );
+  }
+  return (
+    <a
+      href={softwareUrl(asset.url, source)}
+      rel="noreferrer"
+      className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+        primary
+          ? "bg-accent text-black shadow-lg shadow-amber-500/10 hover:bg-accent-hover"
+          : "border border-line-strong bg-canvas text-ink hover:border-accent/50 hover:text-accent"
+      }`}
+    >
+      <ArrowDownToLine size={15} aria-hidden="true" />
+      {label}
+    </a>
+  );
+}
 
 export function Downloads() {
-  const { locale, t } = useI18n();
-  const [release, setRelease] = useState<ReleaseLookup | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const { t } = useI18n();
   const [source, setSource] = useState<DownloadSource>("mirror");
-  const [refresh, setRefresh] = useState(0);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
-  const [copiedSha, setCopiedSha] = useState<string | null>(null);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const shaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [release, setRelease] = useState<AppRelease>();
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [attempt, setAttempt] = useState(0);
+  const [restored, setRestored] = useState(false);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem("smm_download_source");
       if (saved === "github" || saved === "mirror") setSource(saved);
-    } catch (error) {
-      if (!(error instanceof DOMException)) console.warn(error);
+    } catch {
+      // Ignore storage access restrictions.
     }
+    setRestored(true);
   }, []);
 
-  function chooseSource(value: DownloadSource) {
-    setSource(value);
-    try {
-      localStorage.setItem("smm_download_source", value);
-    } catch (error) {
-      if (!(error instanceof DOMException)) console.warn(error);
-    }
-  }
-
   useEffect(() => {
-    const abort = new AbortController();
-    setStatus("loading");
-    setRelease(null);
-    fetchRelease(abort.signal, assetPath("/release.json"))
-      .then((data) => {
-        setRelease(data);
-        setStatus("ready");
-      })
-      .catch((error) => {
-        if (!abort.signal.aborted) {
-          setStatus("error");
-          console.warn("Could not load release metadata", error);
+    if (!restored) return;
+    const controller = new AbortController();
+    setState("loading");
+    setRelease(undefined);
+
+    (async () => {
+      let found: AppRelease | undefined;
+      if (source === "mirror") {
+        try {
+          found = parseAppRelease(
+            await fetchJson(assetPath(RELEASE_MANIFEST_PATH), controller.signal),
+          );
+        } catch {
+          if (controller.signal.aborted) return;
         }
-      });
-    return () => abort.abort();
-  }, [refresh]);
+      }
+      if (found) {
+        setRelease(found);
+        setState("ready");
+        return;
+      }
+      try {
+        found = parseAppRelease(await fetchJson(RELEASE_API, controller.signal));
+        if (controller.signal.aborted) return;
+        setRelease(found);
+        setState(found ? "ready" : "error");
+      } catch {
+        if (!controller.signal.aborted) setState("error");
+      }
+    })();
 
-  useEffect(() => {
-    return () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-      if (shaTimer.current) clearTimeout(shaTimer.current);
-    };
-  }, []);
+    return () => controller.abort();
+  }, [source, attempt, restored]);
 
-  async function copy() {
+  function chooseSource(next: DownloadSource) {
+    setSource(next);
     try {
-      await navigator.clipboard.writeText("smm --json list\nsmm --json plan");
-      setCopyState("copied");
-    } catch (error) {
-      setCopyState("error");
-      console.warn("Clipboard unavailable", error);
-    }
-    if (copyTimer.current) clearTimeout(copyTimer.current);
-    copyTimer.current = setTimeout(() => setCopyState("idle"), 4000);
-  }
-
-  async function copySha(digest: string) {
-    try {
-      await navigator.clipboard.writeText(digest);
-      setCopiedSha(digest);
-      if (shaTimer.current) clearTimeout(shaTimer.current);
-      shaTimer.current = setTimeout(() => setCopiedSha(null), 3000);
-    } catch (error) {
-      console.warn("Could not copy SHA", error);
+      localStorage.setItem("smm_download_source", next);
+    } catch {
+      // Ignore storage errors.
     }
   }
-
-  const complete =
-    release && ["setup", "portable", "cli"].every((kind) => release.assets[kind as AssetKind]);
-  const releaseLabel =
-    status === "loading"
-      ? t("releaseLoading")
-      : status === "error"
-      ? t("releaseError")
-      : `${t(release?.source === "snapshot" ? "releaseSnapshot" : "releaseReady")} · ${release?.tag}${
-          complete ? "" : ` · ${t("releasePartial")}`
-        }`;
 
   return (
-    <section
-      className="download section-pad"
-      style={{ backgroundImage: `url(${assetPath("/assets/ink.webp")})` }}
-      id="download"
-      aria-labelledby="download-title"
-    >
-      <div className="container">
-        <div className="section-heading reveal">
-          <p className="eyebrow">04 / READY WHEN YOU ARE</p>
-          <div className="heading-row">
-            <h2 id="download-title">{t("downloadTitle")}</h2>
-            <p>{t("downloadDescription")}</p>
-          </div>
-        </div>
-        <div className="download-app reveal">
-          <div className="download-app-head">
-            <div>
-              <span className="mini-label flex items-center gap-1.5">
-                <WindowsIcon className="w-3.5 h-3.5 text-gold inline" />
-                DESKTOP APPLICATION
-              </span>
-              <h3>Sekiro Mod Manager</h3>
-              <p className="flex items-center gap-2 mt-1 text-on-night-muted">
-                <span>{t("downloadPlatform")}</span>
-              </p>
-            </div>
-            <div className="source-control">
-              <span id="source-label">{t("downloadSourceLabel")}</span>
-              <div className="source-control-group" role="group" aria-labelledby="source-label">
-                <button
-                  type="button"
-                  className="source-control-btn"
-                  aria-pressed={source === "mirror"}
-                  onClick={() => chooseSource("mirror")}
-                >
-                  {t("sourceMirror")}
-                </button>
-                <button
-                  type="button"
-                  className="source-control-btn"
-                  aria-pressed={source === "github"}
-                  onClick={() => chooseSource("github")}
-                >
-                  {t("sourceDirect")}
-                </button>
-              </div>
-            </div>
-            <div className="release-state">
-              {status === "loading" ? (
-                <Clock size={14} className="text-gold animate-spin" />
-              ) : status === "ready" ? (
-                <CheckCircle2 size={14} className="text-[#68d391]" />
-              ) : (
-                <AlertCircle size={14} className="text-[#f56565]" />
-              )}
-              <span id="release-status" role="status" aria-live="polite">
-                {releaseLabel}
-              </span>
-              <button
-                id="release-retry"
-                className="text-button"
-                disabled={status === "loading"}
-                onClick={() => setRefresh((value) => value + 1)}
-              >
-                {t("retry")}
-              </button>
-            </div>
-          </div>
-          <div className="download-options">
-            {(["setup", "portable"] as const).map((kind) => {
-              const asset = release?.assets[kind];
-              return (
-                <article className="download-option" key={kind}>
-                  <div className="download-type-box">
-                    {kind === "setup" ? (
-                      <ExeBadgeIcon className="w-6 h-6 text-gold" />
-                    ) : (
-                      <ZipBadgeIcon className="w-6 h-6 text-gold" />
-                    )}
-                    <span className="download-type-name">{kind === "setup" ? "SETUP" : "ZIP"}</span>
-                  </div>
-                  <div>
-                    <h4>{t(kind === "setup" ? "setupTitle" : "portableTitle")}</h4>
-                    <p>{t(kind === "setup" ? "setupDescription" : "portableDescription")}</p>
-                    <span className="asset-meta flex items-center gap-1.5">
-                      <WindowsIcon className="w-3 h-3 text-gold opacity-75" />
-                      {formatSize(asset?.size ?? null)}
-                    </span>
-                    {asset?.digest && (
-                      <div className="asset-digest-row">
-                        <span className="asset-digest" title={asset.digest}>
-                          SHA-256: {asset.digest}
-                        </span>
-                        <button
-                          className="digest-copy-btn"
-                          onClick={() => copySha(asset.digest!)}
-                          aria-label="Copy SHA-256"
-                          title="Copy SHA-256"
-                        >
-                          {copiedSha === asset.digest ? <Check size={12} /> : <Copy size={12} />}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <a
-                    className={`button ${
-                      kind === "setup" ? "button-primary" : "button-outline"
-                    } asset-download`}
-                    id={`${kind}-download`}
-                    href={asset ? softwareUrl(asset.url, source) : undefined}
-                    aria-disabled={!asset}
-                    tabIndex={asset ? 0 : -1}
-                  >
-                    <Download className="icon" />
-                    <span>{t("downloadButton")}</span>
-                  </a>
-                </article>
-              );
-            })}
-          </div>
-          <div className="download-app-footer">
-            <span className="flex items-center gap-1.5">
-              <Shield size={13} className="text-gold" />
-              {t("downloadSource")}
-            </span>
-            <a href={release?.page || RELEASES_URL} target="_blank" rel="noopener noreferrer">
-              <span>{t("allReleases")}</span>
-              <ArrowUpRight className="icon" />
-            </a>
-          </div>
-        </div>
-        <div className="developer-downloads reveal">
-          <article className="developer-card">
-            <Terminal className="icon" />
-            <p className="mini-label">COMMAND LINE</p>
-            <h3>{t("cliTitle")}</h3>
-            <p>{t("cliDescription")}</p>
-            <div className="terminal">
-              <code>
-                <span>smm</span> --json list
-                <br />
-                <span>smm</span> --json plan
-              </code>
-              <button
-                id="copy-cli"
-                className="icon-button"
-                onClick={copy}
-                aria-label={t("copyCommands")}
-                title={t("copyCommands")}
-              >
-                {copyState === "copied" ? <Check className="icon" /> : <Copy className="icon" />}
-              </button>
-            </div>
-            <a
-              className="text-link asset-download"
-              id="cli-download"
-              href={release?.assets.cli ? softwareUrl(release.assets.cli.url, source) : undefined}
-              aria-disabled={!release?.assets.cli}
-              tabIndex={release?.assets.cli ? 0 : -1}
-            >
-              <FileCode className="icon" />
-              <span>{t("cliDownload")}</span>
-              <ArrowRight className="icon ml-1" />
-            </a>
-          </article>
-          <article className="developer-card" id="skill">
-            <Bot className="icon" />
-            <p className="mini-label">AGENT SKILL</p>
-            <h3>{t("skillTitle")}</h3>
-            <p>{t("skillDescription")}</p>
-            <ol className="skill-install">
-              <li>
-                <span className="skill-step-num">1</span>
-                <span>{t("skillStep1")}</span>
-              </li>
-              <li>
-                <span className="skill-step-num">2</span>
-                <span>{t("skillStep2")}</span>
-              </li>
-              <li>
-                <span className="skill-step-num">3</span>
-                <span>{t("skillStep3")}</span>
-              </li>
-            </ol>
-            <div className="skill-links">
-              <a
-                className="text-link"
-                id="skill-download"
-                href={assetPath("/downloads/smm-cli.zip")}
-                download
-              >
-                <Download className="icon" />
-                <span>{t("skillDownload")}</span>
-                <ArrowRight className="icon ml-1" />
-              </a>
-              <a
-                className="text-link secondary-link"
-                href={`${REPOSITORY}/tree/main/skills/smm-cli`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <BookOpen size={14} className="mr-1" />
-                {t("skillDocs")}
-              </a>
-            </div>
-            <p className="skill-note">{t("skillNote")}</p>
-          </article>
-        </div>
-        <p className="download-help">
-          <HelpCircle size={15} className="text-gold" />
-          <span>{t("firstTime")}</span>
-          <a
-            id="readme-link"
-            href={`${REPOSITORY}/blob/main/${locale === "zh" ? "README.zh-CN.md" : "README.md"}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span>{t("readGuide")}</span>
-            <ArrowUpRight className="icon" />
-          </a>
-          <span id="copy-status" role="status" aria-live="polite">
-            {copyState === "copied"
-              ? t("copied")
-              : copyState === "error"
-              ? t("copyError")
-              : copiedSha
-              ? (locale === "zh" ? "SHA-256 已复制到剪贴板。" : "SHA-256 copied to clipboard.")
-              : ""}
-          </span>
+    <section id="download" className="scroll-mt-20 pt-20" aria-labelledby="download-title">
+      <div className="max-w-2xl">
+        <p className="font-mono text-xs font-semibold tracking-wider text-accent">
+          {t.download.eyebrow}
         </p>
+        <h2 id="download-title" className="mt-2 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          {t.download.title}
+        </h2>
+        <p className="mt-2.5 text-sm leading-relaxed text-dim sm:text-base">
+          {t.download.subtitle}
+        </p>
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-line bg-surface p-6 sm:p-8">
+        <div className="flex flex-col justify-between gap-4 border-b border-line pb-6 md:flex-row md:items-center">
+          <div>
+            <h3 className="text-lg font-bold text-ink">{t.download.appTitle}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-dim">{t.download.appDesc}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted">{t.download.sourceLabel}</span>
+            <div className="inline-flex rounded-xl border border-line bg-canvas p-1">
+              <button
+                type="button"
+                aria-pressed={source === "mirror"}
+                onClick={() => chooseSource("mirror")}
+                className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  source === "mirror"
+                    ? "bg-accent/15 text-accent"
+                    : "text-dim hover:text-ink"
+                }`}
+              >
+                {t.download.sourceMirror}
+              </button>
+              <button
+                type="button"
+                aria-pressed={source === "github"}
+                onClick={() => chooseSource("github")}
+                className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  source === "github"
+                    ? "bg-white/10 text-ink"
+                    : "text-dim hover:text-ink"
+                }`}
+              >
+                {t.download.sourceGithub}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Bar */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2" role="status" aria-live="polite">
+            {state === "loading" ? (
+              <>
+                <LoaderCircle size={14} className="animate-spin text-accent" />
+                <span className="text-dim">{t.download.loading}</span>
+              </>
+            ) : state === "ready" && release ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-emerald" />
+                <span className="font-medium text-ink">
+                  {t.download.latest} · <span className="font-mono text-emerald">{release.tag}</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-amber-300">{t.download.unavailable}</span>
+                <button
+                  type="button"
+                  onClick={() => setAttempt((v) => v + 1)}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-line bg-card px-2 py-1 text-ink transition hover:border-line-strong"
+                >
+                  <RefreshCw size={12} />
+                  {t.download.retry}
+                </button>
+              </>
+            )}
+          </div>
+
+          <a
+            href={release?.page ?? RELEASES_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-dim transition hover:text-ink"
+          >
+            {t.download.allReleases}
+            <ArrowUpRight size={13} />
+          </a>
+        </div>
+
+        <p className="mt-2 text-xs text-muted">{t.download.sourceNote}</p>
+
+        {/* Two Client Package Cards */}
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <article className="flex flex-col justify-between rounded-xl border border-line bg-card p-5">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-canvas text-accent">
+                    <Monitor size={19} aria-hidden="true" />
+                  </div>
+                  <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
+                    {t.download.setupBadge}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-xs text-muted">
+                  <span>{release ? release.tag : "Windows x64"}</span>
+                  {release?.setup?.size && <span>· {formatSize(release.setup.size)}</span>}
+                </div>
+              </div>
+              <h4 className="mt-4 text-base font-semibold text-ink">{t.download.setupTitle}</h4>
+              <p className="mt-1.5 text-sm leading-relaxed text-dim">{t.download.setupDesc}</p>
+            </div>
+
+            <div className="mt-5">
+              <div className="flex flex-col">
+                <ActionButton
+                  asset={release?.setup}
+                  source={source}
+                  label={`${t.download.downloadBtn} (.exe)`}
+                  primary
+                />
+              </div>
+              <ChecksumRow hash={release?.setup?.sha256} />
+            </div>
+          </article>
+
+          <article className="flex flex-col justify-between rounded-xl border border-line bg-card p-5">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-canvas text-sky">
+                    <Archive size={19} aria-hidden="true" />
+                  </div>
+                  <span className="rounded-md border border-line bg-canvas px-2 py-0.5 text-[11px] font-medium text-dim">
+                    {t.download.portableBadge}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-xs text-muted">
+                  <span>{release ? release.tag : "Windows x64"}</span>
+                  {release?.portable?.size && <span>· {formatSize(release.portable.size)}</span>}
+                </div>
+              </div>
+              <h4 className="mt-4 text-base font-semibold text-ink">{t.download.portableTitle}</h4>
+              <p className="mt-1.5 text-sm leading-relaxed text-dim">{t.download.portableDesc}</p>
+            </div>
+
+            <div className="mt-5">
+              <div className="flex flex-col">
+                <ActionButton
+                  asset={release?.portable}
+                  source={source}
+                  label={`${t.download.downloadBtn} (.zip)`}
+                  primary={false}
+                />
+              </div>
+              <ChecksumRow hash={release?.portable?.sha256} />
+            </div>
+          </article>
+        </div>
+
+        {/* ModEngine compliance hint */}
+        <div className="mt-6 flex flex-col items-start justify-between gap-3 rounded-xl border border-line bg-canvas/60 px-4 py-3.5 text-xs text-dim sm:flex-row sm:items-center">
+          <div className="flex items-start gap-2.5">
+            <Info size={15} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
+            <span className="leading-relaxed">{t.download.modEngineNote}</span>
+          </div>
+          <a
+            href="https://www.nexusmods.com/sekiro/mods/6"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 font-medium text-accent transition hover:text-accent-hover"
+          >
+            {t.download.modEngineLink}
+            <ArrowUpRight size={13} />
+          </a>
+        </div>
       </div>
     </section>
   );
