@@ -1,56 +1,47 @@
-# Contributing to Sekiro Mod Manager (SMM)
+# Contributing to Sekiro Mod Manager
 
-Thanks for helping. This page is the short version; the detailed rules live in [`docs/`](docs/README.md).
+Thanks for helping improve Sekiro Mod Manager. For full build, testing, and release details, see [`docs/development.md`](docs/development.md).
 
-By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues
-privately per [SECURITY.md](SECURITY.md), never in a public issue.
+## 1. Local Setup
 
----
-
-## 1. Get it building
-
-Requirements: Windows 10/11 x64, Visual Studio 2022 (MSVC v143), CMake 3.25+, Qt 6.11.2 and
-Python 3.9+ (skill packaging + the HuskarUI patch script run at configure time).
+Prerequisites: Windows 10/11 x64, Visual Studio 2022 (MSVC v143), CMake 3.21+, Ninja, Qt 6.8+ (or 6.11), and Python 3.9+ (for `scripts/patch_huskarui.py`). Website and Worker work requires Node.js 22+ and `pnpm`.
 
 ```bash
 git clone --recurse-submodules https://github.com/RolinShmily/sekiro-mod-manager.git
 cd sekiro-mod-manager
-cmake --preset msvc-x64-debug && cmake --build --preset build-debug
+cmake --preset msvc-x64-debug -DSMM_BUILD_TESTS=ON
+cmake --build --preset build-debug
 ```
 
-`msvc-x64-release` for the optimised build, `core-only` when no Qt is installed.
-Presets, submodule recovery and troubleshooting: [`docs/development/build.md`](docs/development/build.md).
-
-## 2. Before you open a PR
+Without Qt (core library & unit tests only):
 
 ```bash
-# headless regression suites (core rules, CoreService adapter, update feed)
-cmake --preset msvc-x64-release -DSMM_BUILD_TESTS=ON && cmake --build --preset build-release
-ctest --test-dir build/msvc-x64-release --output-on-failure
+cmake --preset core-only
+cmake --build --preset build-core
 ```
 
-What each suite covers, how to add one, and the manual GUI checklist:
-[`docs/development/testing.md`](docs/development/testing.md).
+## 2. Verification Before Opening a PR
 
-## 3. Rules that are easy to get wrong
+```bash
+# C++ core + headless GUI regression suites
+ctest --test-dir build/msvc-x64-debug --output-on-failure
 
-- **Respect the layer boundaries.** `smm_core` never includes Qt, never prints, and never knows
-  about the GUI; business rules belong there, not in QML or the GUI backend.
-  See [`docs/architecture/layers.md`](docs/architecture/layers.md).
-- **Use design tokens.** QML takes colours and radii from `HusTheme.Primary`, never hardcoded hex,
-  and adds no animations at all — the GUI is motionless by design.
-  See [`docs/design/tokens.md`](docs/design/tokens.md) and [`docs/design/motion.md`](docs/design/motion.md).
-- **Keep contracts stable.** CLI JSON field names, `ErrorCode` strings and on-disk file schemas
-  are consumed by the GUI and by scripts: [`docs/reference/errors.md`](docs/reference/errors.md),
-  [`docs/reference/file-formats.md`](docs/reference/file-formats.md).
-- **Update docs in the same commit** as the behaviour you changed.
-- Coding style (C++/QML/CMake): [`docs/development/code-style.md`](docs/development/code-style.md).
+# Worker release proxy + website download parser tests & typecheck
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm test
+pnpm lint
+```
 
-## 4. Commits and pull requests
+## 3. Architectural Guardrails
 
-- Conventional Commits (`feat(gui): …`, `fix(ci): …`, `refactor(core): …`), one concern per
-  commit; stage files explicitly rather than sweeping the tree.
-- PRs must keep `ci.yml` green (build + `ctest`) when they touch `src/**` or the build files, and
-  describe user-visible changes; docs-, website- and skill-only changes do not trigger the C++
-  workflow, and website changes are covered by `website.yml`. Details: [`docs/development/workflow.md`](docs/development/workflow.md).
-- Contributions are submitted under the project's [MIT License](LICENSE).
+- **Respect layer boundaries**: `src/core/` is pure C++17 (flat headers/sources, no Qt, no stdout/stderr). Business rules live in `src/core/`, not QML or GUI controllers. See [`docs/architecture.md`](docs/architecture.md).
+- **Use theme tokens**: QML reads colors and radii from `HusTheme.Primary.*` instead of hardcoded hex values, and keeps UI transitions disabled except the optional preview cross-fade. See [`docs/design.md`](docs/design.md).
+- **Keep on-disk & error contracts stable**: Do not rename `ErrorCode` strings or break `.smm_mod.json` / `.smmpack` / `.smm_manifest.json` backward compatibility. See [`docs/reference.md`](docs/reference.md).
+- **Never redistribute third-party mods or ModEngine**: Do not commit `dinput8.dll` or third-party mod assets into this repository.
+
+## 4. Commits & Pull Requests
+
+- Use Conventional Commits (`feat(gui): ...`, `fix(core): ...`, `docs: ...`, `ci: ...`), keeping one logical concern per commit.
+- Stage modified files explicitly (`git add <file>`).
+- Keep `.github/workflows/test.yml` green and update relevant docs in the same PR.
+- All contributions are licensed under the project's [MIT License](LICENSE).

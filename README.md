@@ -1,133 +1,70 @@
-# Sekiro Mod Manager (SMM)
+<h1 align="center">Sekiro Mod Manager</h1>
 
-High-performance mod staging, semantic conflict arbitration, and zero-copy NTFS deployment for *Sekiro: Shadows Die Twice*.
+<p align="center">
+  <b>English</b> | <a href="README.zh-CN.md">简体中文</a>
+</p>
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [Website](https://sekiro.srprolin.com/) | [Documentation](docs/README.md)
+<p align="center">
+  <a href="https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/test.yml"><img alt="Test" src="https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/test.yml/badge.svg"></a>
+  <a href="https://github.com/RolinShmily/sekiro-mod-manager/releases"><img alt="Release" src="https://img.shields.io/github/v/release/RolinShmily/sekiro-mod-manager?color=orange"></a>
+  <a href="https://github.com/RolinShmily/sekiro-mod-manager/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/RolinShmily/sekiro-mod-manager/total?label=Downloads&color=blue"></a>
+  <a href="https://sekiro.srprolin.com"><img alt="Website" src="https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/deploy.yml/badge.svg"></a>
+  <img alt="Windows x64" src="https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20x64-brightgreen">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
 
----
-
-## Overview
-
-Sekiro Mod Manager keeps mods in an isolated staging area and projects the active ones into
-the game's `mods/` directory with **NTFS hard links**, so deploying tens of gigabytes is
-instant, costs no extra disk space, and can be rolled back to a pristine install. It is a
-native C++17 / Qt 6 QML desktop app, a standalone CLI, and an agent skill built on the same
-core library.
-
-## Key Features
-
-| | |
-|---|---|
-| **Zero-copy deployment** | `CreateHardLinkW` on the same volume; automatic copy fallback across volumes with diagnostics. |
-| **Pristine rollback** | Every deployment is tracked in `.smm_manifest.json`; restore removes only what SMM created. |
-| **Normalisation** | Arbitrary Nexus/community folder layouts, archives nested up to 6 levels, loose signature files routed to `parts/`, `chr/`, `menu/font/`…, unpacking scaffolding removed. |
-| **Conflict arbitration** | Three severities — critical (balance tables), warning (exclusive player/weapon slots), info (general overrides) — resolved by user-assigned priority. |
-| **Mod packs** | `.smmpack` presets with bilingual titles, exportable/importable as portable archives. |
-| **Asset-level control** | Inspect a staged mod's files and toggle individual assets, with per-mod backdrop artwork. |
-| **Environment doctor** | A page (not a dialog) with five checks — `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini`, staging, deployment — plus one-click repair. |
-| **Bilingual UI** | Live switching between `zh-CN` and `en-US`, plus a dark/light/system theme. |
-
-## Interface
-
-<img src="docs/design/assets/screenshots/armoury.webp" alt="Mod library: priority order, per-mod toggles, category filters and conflict badges" width="880">
-
-The mod library is the working screen: priority order (lower number wins a shared file), per-mod
-toggles, category filters, and the conflict badge that opens the detail drawer. The other four
-screens:
+<p align="center">
+  <img src="assets/preview.webp" alt="Sekiro Mod Manager desktop workspace preview" width="1200">
+</p>
 
 <details>
-<summary>Launch hub · Mod packs · Settings (dark and light) · About</summary>
+<summary>More screenshots · Launch Hub, Mod Packs, Settings (Dark & Light), About</summary>
 
-<table>
-<tr>
-<td><img src="docs/design/assets/screenshots/hub.webp" alt="Launch hub" width="400"></td>
-<td><img src="docs/design/assets/screenshots/packs.webp" alt="Mod packs" width="400"></td>
-</tr>
-<tr>
-<td><b>Launch hub</b> — one verdict (deployed files, conflicts) plus the evidence behind it. Pressing <i>Launch</i> runs the five environment checks first and only starts the game when they pass.</td>
-<td><b>Mod packs</b> — snapshots of "enabled set + priorities", switchable in one click and portable as <code>.smmpack</code> archives.</td>
-</tr>
-<tr>
-<td><img src="docs/design/assets/screenshots/settings.webp" alt="Settings, dark theme" width="400"></td>
-<td><img src="docs/design/assets/screenshots/settings-light.webp" alt="Settings, light theme" width="400"></td>
-</tr>
-<tr>
-<td><b>Settings</b> — game and staging roots (with the same-volume hard-link hint), theme, language and font. Each setting is a two-column row: label and explanation on the left, the control aligned in one column on the right.</td>
-<td><b>Settings, light theme</b> — the same tokens, not a second palette; this is where button contrast on artwork gets checked.</td>
-</tr>
-</table>
-
-<img src="docs/design/assets/screenshots/about.webp" alt="About page" width="880">
+- **Launch Hub**: ![Launch Hub](assets/screenshots/hub.webp)
+- **Mod Packs (`.smmpack`)**: ![Mod Packs](assets/screenshots/packs.webp)
+- **Settings (Dark / Light)**: ![Settings Dark](assets/screenshots/settings.webp) ![Settings Light](assets/screenshots/settings-light.webp)
+- **About**: ![About](assets/screenshots/about.webp)
 
 </details>
 
-Every screenshot is taken against the fictional demo library from `scripts/local/seed_demo.ps1`,
-not a real install, and can be regenerated with `scripts/local/capture_screenshots.ps1` — see
-[docs/design/screenshots.md](docs/design/screenshots.md).
+**Sekiro Mod Manager (SMM)** is a native C++17 / Qt 6 Windows desktop mod manager for *Sekiro: Shadows Die Twice* that stages mods cleanly and deploys them into `mods/` via **NTFS hard links**—zero extra disk space, instant switching, and pristine rollback.
 
-## Architecture
+- **Zero-Copy NTFS Hard Links & Pristine Rollback**: Projects active assets into `<Sekiro>/mods/` with `CreateHardLinkW` (automatic copy fallback across volumes) and tracks every file in `.smm_manifest.json` so restore leaves the game untouched.
+- **Smart Normalization & 3-Tier Conflict Arbitration**: Imports `.zip` / `.7z` / `.rar` / folders (nested up to 6 levels), routes loose Sekiro files (`parts/`, `chr/`, `param/`, `menu/font/`…), and resolves Critical / Warning / Info overlaps by priority.
+- **Portable `.smmpack` Mod Packs**: Snapshot enabled mods and priority order into one-click presets or shareable `.smmpack` archives; browse optional community starter packs on [sekiro.srprolin.com](https://sekiro.srprolin.com/) for quick onboarding.
+- **Built-in Environment Doctor**: Verifies `sekiro.exe`, ModEngine `dinput8.dll`, `modengine.ini`, staging volume, and deployment consistency with one-click repair. Never bundles or modifies game binaries.
 
-```
-                    smm_core   (C++17, no Qt, no printing)
-                        ▲
-          ┌─────────────┴─────────────┐
-       smm.exe                     smm_gui.exe
-       CLI + JSON API              Qt 6 / QML + HuskarUI
-                                   controller → service → core
-```
+## Usage
 
-Both entry points are independent processes that link the same static library. The GUI adds a
-Qt-only adaptation layer (`src/gui/backend/`); the CLI owns argument parsing, table/JSON
-output and exit codes. Details: [docs/architecture/layers.md](docs/architecture/layers.md).
+### 1. Download & Launch
 
-## Quick start
+Download the installer (`setup.exe`) or portable bundle (`gui.zip`) from [sekiro.srprolin.com](https://sekiro.srprolin.com/) (CDN mirror + GitHub direct) or [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases). Launch **Sekiro Mod Manager** (UAC elevation is requested once at startup so ModEngine's local `dinput8.dll` is honoured by Steam).
 
-Prerequisites: Windows 10/11 x64, Visual Studio 2022 (MSVC v143), CMake 3.25+, Qt 6.11.2,
-Python 3.9+ (skill packaging and the HuskarUI patch).
+### 2. Import, Order & Resolve
 
-```bash
-git clone --recurse-submodules https://github.com/RolinShmily/sekiro-mod-manager.git
-cd sekiro-mod-manager
-cmake --preset msvc-x64-release && cmake --build --preset build-release
-```
+1. **Settings / Diagnostics**: Confirm your Sekiro directory and staging directory (keep them on the same NTFS drive for zero-copy hard links) and run the 5-item environment check.
+2. **Mod Library**: Drag-and-drop mod archives, folders, or `.smmpack` bundles. Toggle mods or individual assets, drag/adjust priority (lower number wins shared files), and inspect conflict badges.
+3. **Mod Packs**: Save your active loadout as a preset or import a `.smmpack` bundle in one click.
 
-Outputs: `build/msvc-x64-release/src/cli/smm.exe` and `.../src/gui/smm_gui.exe`.
-Presets, incremental builds, `core-only` (no Qt) builds and troubleshooting:
-[docs/development/build.md](docs/development/build.md).
+### 3. Deploy & Launch
 
-## CLI at a glance
+Click **Deploy** (or **Deploy & Launch**) from the Launch Hub. SMM verifies the environment, updates `mods/` atomically against `.smm_manifest.json`, and launches Sekiro. Click **Restore** anytime to return to a vanilla install.
 
-```bash
-smm doctor                       # environment + ModEngine health
-smm list                         # staged mods, priority, conflicts
-smm import ~/Downloads/mod.zip   # stage an archive or folder
-smm plan && smm deploy           # preview, then hard-link into mods/
-smm restore                      # return the game install to pristine
-```
-
-Full command/option/exit-code reference: [docs/reference/cli.md](docs/reference/cli.md).
-Machine-readable output (`--json`) contract: [docs/reference/json-contract.md](docs/reference/json-contract.md).
-
-`smm.exe` declares `requireAdministrator`, like the desktop app. Windows cannot raise UAC from
-`CreateProcess`, so run it from an elevated terminal — `smm doctor` in a normal terminal fails with
-`ERROR_ELEVATION_REQUIRED` (740) and no prompt. `start smm ...` does elevate from a normal terminal,
-but its output lands in a new window.
+> **ModEngine notice**: SMM detects and configures `modengine.ini`, but **never distributes `dinput8.dll`**. Obtain an unmodified copy of ModEngine directly from [Nexus Mods #6](https://www.nexusmods.com/sekiro/mods/6).
 
 ## Documentation
 
-Documentation is written in Chinese; the index lives at [docs/README.md](docs/README.md).
+| Document | Scope |
+| :--- | :--- |
+| [`docs/architecture.md`](docs/architecture.md) | Layer boundaries, flat `src/core`, GUI backend threading, Worker release proxy & R2 modpack flow |
+| [`docs/design.md`](docs/design.md) | Desktop UI structure, HuskarUI tokens, preview cross-fade, bilingual i18n & screenshots |
+| [`docs/reference.md`](docs/reference.md) | On-disk schemas (`.smm_mod.json`, `.smmpack`, `.smm_manifest.json`), `ErrorCode` table & `smm_core` API |
+| [`docs/development.md`](docs/development.md) | Local CMake/Qt build, `tests/` suites, packaging, CI/CD (`test`/`build`/`release`/`deploy`) & website dev |
 
-| Section | Covers |
-|---|---|
-| [architecture/](docs/architecture/README.md) | Layer boundaries, GUI backend roles, async/threading model, main data flows, decision log. |
-| [design/](docs/design/README.md) | Design tokens, reusable QML components, the no-motion rule, i18n and accessibility. |
-| [development/](docs/development/README.md) | Environment and presets, coding style, test suites, branch/commit/PR workflow. |
-| [reference/](docs/reference/README.md) | CLI reference, JSON contract, error codes, on-disk formats, `smm_core` header index. |
+Also see [`CONTRIBUTING.md`](CONTRIBUTING.md), [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES), and [`CHANGELOG.md`](CHANGELOG.md).
 
-Contributor quick guide: [CONTRIBUTING.md](CONTRIBUTING.md).
+## License & Disclaimer
 
-## Licensing & Trademarks
+MIT — Copyright (c) 2025–2026 **RoL1n_SrP**. See [`LICENSE`](LICENSE) and [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES).
 
-- SMM source code is licensed under the [MIT License](LICENSE).
-- Third-party dependencies, license texts and notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
-- *Sekiro: Shadows Die Twice* is a registered trademark of FromSoftware, Inc. and Activision. SMM is an independent community project not affiliated with FromSoftware or Activision.
+*Sekiro: Shadows Die Twice is a registered trademark of FromSoftware, Inc. and Activision. SMM is an independent open-source tool not affiliated with or endorsed by FromSoftware or Activision. Third-party community mods and any optional community `.smmpack` showcase bundles remain the property of their respective authors under their original terms.*

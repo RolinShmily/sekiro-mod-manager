@@ -1,118 +1,70 @@
-# 只狼模组管理器 (Sekiro Mod Manager · SMM)
+<h1 align="center">Sekiro Mod Manager · 只狼模组管理器</h1>
 
-专为《只狼：影逝二度》打造的模组暂存、语义冲突仲裁与 NTFS 零拷贝硬链接部署工具。
+<p align="center">
+  <a href="README.md">English</a> | <b>简体中文</b>
+</p>
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [官网](https://sekiro.srprolin.com/) | [文档](docs/README.md)
+<p align="center">
+  <a href="https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/test.yml"><img alt="Test" src="https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/test.yml/badge.svg"></a>
+  <a href="https://github.com/RolinShmily/sekiro-mod-manager/releases"><img alt="Release" src="https://img.shields.io/github/v/release/RolinShmily/sekiro-mod-manager?color=orange"></a>
+  <a href="https://github.com/RolinShmily/sekiro-mod-manager/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/RolinShmily/sekiro-mod-manager/total?label=Downloads&color=blue"></a>
+  <a href="https://sekiro.srprolin.com"><img alt="Website" src="https://github.com/RolinShmily/sekiro-mod-manager/actions/workflows/deploy.yml/badge.svg"></a>
+  <img alt="Windows x64" src="https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20x64-brightgreen">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
 
----
-
-## 项目简介
-
-SMM 把模组留在独立的暂存区，只把生效的那部分用 **NTFS 硬链接**投射到游戏 `mods/` 目录：数十 GB 的高清贴图也是瞬间部署、不占额外磁盘，并且能一键还原成干净的游戏安装。同一个核心库支撑三个入口——原生 C++17 / Qt 6 QML 桌面端、独立 CLI、以及给智能体用的 Skill。
-
-## 核心特性
-
-| | |
-|---|---|
-| **零拷贝部署** | 同卷走 `CreateHardLinkW`；跨卷自动回退为复制并给出诊断提示。 |
-| **纯净回滚** | 每次部署记录在 `.smm_manifest.json`，还原只删除 SMM 自己创建的文件与目录。 |
-| **目录归一化** | 兼容 Nexus / 社区包的任意层级，最多递归解包 6 层，散落签名文件归入 `parts/`、`chr/`、`menu/font/`，并清理 `_yabber` / `_witchy` 等临时目录。 |
-| **三级冲突仲裁** | 严重（平衡表）/ 警告（玩家与武器独占槽位）/ 提示（一般覆盖），按用户指定的裁决顺位自动决定胜出者。 |
-| **整合包预设** | `.smmpack` 支持保存、应用、导出、导入，中英双语标题与描述。 |
-| **资产级开关** | 可查看暂存模组里的单个文件并逐项开关，卡片支持背景图。 |
-| **环境诊断** | 校验 `sekiro.exe`、ModEngine `dinput8.dll`、`modengine.ini` 注入参数与 NTFS 卷一致性，支持一键修复。 |
-| **双语与主题** | 中英实时切换，深色 / 浅色 / 跟随系统。 |
-
-## 界面
-
-<img src="docs/design/assets/screenshots/armoury.webp" alt="模组管理：顺位、逐模组开关、分类胶囊与冲突徽标" width="880">
-
-模组管理是日常停留最久的一屏：顺位（数字小的赢得共享文件）、逐模组开关、分类胶囊，以及点开详情抽屉的
-冲突徽标。其余四屏：
+<p align="center">
+  <img src="assets/preview.webp" alt="Sekiro Mod Manager 桌面端主界面预览" width="1200">
+</p>
 
 <details>
-<summary>启动与工作台 · 整合包预设 · 全局配置（深浅两套） · 关于</summary>
+<summary>更多截图 · 启动与工作台、整合包预设、全局配置（深浅主题）、关于</summary>
 
-<table>
-<tr>
-<td><img src="docs/design/assets/screenshots/hub.webp" alt="启动与工作台" width="400"></td>
-<td><img src="docs/design/assets/screenshots/packs.webp" alt="整合包预设" width="400"></td>
-</tr>
-<tr>
-<td><b>启动与工作台</b> —— 一句结论（已部署文件数、冲突数）加支撑它的证据。体检未通过时「启动只狼」置灰，不用点了才知道不行。</td>
-<td><b>整合包预设</b> —— 「启用集合 + 顺位」的快照，一键切换整套配置，也能导出成 <code>.smmpack</code>。</td>
-</tr>
-<tr>
-<td><img src="docs/design/assets/screenshots/settings.webp" alt="全局配置（深色）" width="400"></td>
-<td><img src="docs/design/assets/screenshots/settings-light.webp" alt="全局配置（浅色）" width="400"></td>
-</tr>
-<tr>
-<td><b>全局配置</b> —— 游戏与暂存目录（同卷时提示零拷贝硬链接）、主题、语言与字体。每个设置项是两列：标签与说明在左，控件对齐在同一列宽上。</td>
-<td><b>全局配置（浅色）</b> —— 同一套 token 而不是第二套配色；首屏画作上的按钮对比度就是在这里核对的。</td>
-</tr>
-</table>
-
-<img src="docs/design/assets/screenshots/about.webp" alt="关于" width="880">
+- **启动与工作台**：![启动与工作台](assets/screenshots/hub.webp)
+- **整合包预设（`.smmpack`）**：![整合包预设](assets/screenshots/packs.webp)
+- **全局配置（深色 / 浅色）**：![全局配置深色](assets/screenshots/settings.webp) ![全局配置浅色](assets/screenshots/settings-light.webp)
+- **关于**：![关于](assets/screenshots/about.webp)
 
 </details>
 
-所有截图都拍自 `scripts/local/seed_demo.ps1` 生成的虚构演示库，不是真实安装；可用
-`scripts/local/capture_screenshots.ps1` 重新生成，说明见 [docs/design/screenshots.md](docs/design/screenshots.md)。
+**Sekiro Mod Manager (SMM)** 是专为《只狼：影逝二度》打造的原生 C++17 / Qt 6 Windows 桌面模组管理器。模组统一隔离在暂存区，仅通过 **NTFS 硬链接**投射到游戏 `mods/` 目录——零额外磁盘占用、秒级部署切换、一键纯净回滚。
 
-## 模块架构
+- **零拷贝硬链接与纯净回滚**：同卷走 `CreateHardLinkW`（跨卷自动回退复制并提示），每次部署写入 `.smm_manifest.json`，一键还原不误伤游戏原文件。
+- **自动归一化与三级冲突仲裁**：支持 `.zip` / `.7z` / `.rar` 与任意层级文件夹（最多 6 层递归解包），自动识别 `parts/`、`chr/`、`param/`、`menu/font/` 等目录结构；按优先级裁决「严重 / 警告 / 提示」三类文件冲突。
+- **`.smmpack` 整合包预设**：将当前启用集合与顺位打包为可移植 `.smmpack` 一键导入切换；官网 [sekiro.srprolin.com](https://sekiro.srprolin.com/) 同时提供社区尝鲜整合包索引，方便新玩家快速体验。
+- **内置环境诊断**：一键核验 `sekiro.exe`、ModEngine `dinput8.dll`、`modengine.ini`、暂存卷一致性与部署状态，支持自动修复。不修改游戏可执行文件。
 
-```
-                    smm_core   （C++17，不依赖 Qt，不负责打印）
-                        ▲
-          ┌─────────────┴─────────────┐
-       smm.exe                     smm_gui.exe
-       CLI + JSON 接口             Qt 6 / QML + HuskarUI
-                                   controller → service → core
-```
+## 使用方法
 
-两个入口是互相独立的进程，链接同一个静态库。GUI 之上只有一层 Qt 专用适配层（`src/gui/backend/`）；参数解析、表格/JSON 输出与退出码属于 CLI。详见 [docs/architecture/layers.md](docs/architecture/layers.md)。
+### 1. 下载并启动
 
-## 快速开始
+从官网 [sekiro.srprolin.com](https://sekiro.srprolin.com/)（内置站内镜像加速 / GitHub 直连切换）或 [GitHub Releases](https://github.com/RolinShmily/sekiro-mod-manager/releases) 下载安装版（`setup.exe`）或便携版（`gui.zip`）。启动时会请求一次 UAC 管理员权限，以避免 Steam 的 `PreferSystem32` 策略拦截 ModEngine 的本地 `dinput8.dll`。
 
-环境要求：Windows 10/11 x64、Visual Studio 2022（MSVC v143）、CMake 3.25+、Qt 6.11.2、Python 3.9+（打包 Skill 与打 HuskarUI 补丁）。
+### 2. 导入、排序与排错
 
-```bash
-git clone --recurse-submodules https://github.com/RolinShmily/sekiro-mod-manager.git
-cd sekiro-mod-manager
-cmake --preset msvc-x64-release && cmake --build --preset build-release
-```
+1. **设置与体检**：确认只狼安装目录与暂存区目录（建议置于同一 NTFS 分区以启用零拷贝硬链接），并在环境检测页确认 5 项检查通过。
+2. **模组管理**：拖入或导入压缩包、文件夹或 `.smmpack` 整合包；逐模组或逐文件开关资产，调整裁决顺位（数字越小优先级越高），点击冲突徽标查看覆盖详情。
+3. **整合包预设**：将当前搭配保存为预设或导出 `.smmpack`，随时整套切换。
 
-产物：`build/msvc-x64-release/src/cli/smm.exe` 与 `.../src/gui/smm_gui.exe`。各预设含义、增量构建、`core-only`（不需要 Qt）构建与常见故障：[docs/development/build.md](docs/development/build.md)。
+### 3. 部署并启动
 
-## 常用命令
+在「启动与工作台」点击 **部署** 或 **部署并启动**，SMM 会按 `.smm_manifest.json` 原子同步 `mods/` 并启动游戏；需要恢复原版时点击 **还原纯净** 即可。
 
-```bash
-smm doctor                       # 环境与 ModEngine 健康检查
-smm list                         # 暂存区模组、顺位、冲突
-smm import ~/Downloads/mod.zip   # 导入压缩包或文件夹
-smm plan && smm deploy           # 先看计划，再硬链接进 mods/
-smm restore                      # 把游戏目录还原成纯净状态
-```
+> **关于 ModEngine**：SMM 仅检测与修补 `modengine.ini`，**绝不内置或再分发 `dinput8.dll`**。请自行从 [Nexus Mods #6](https://www.nexusmods.com/sekiro/mods/6) 获取原版 ModEngine。
 
-完整命令、选项与退出码：[docs/reference/cli.md](docs/reference/cli.md)；`--json` 契约：[docs/reference/json-contract.md](docs/reference/json-contract.md)。
+## 文档
 
-`smm.exe` 与桌面端一样声明 `requireAdministrator`。Windows 的 `CreateProcess` 弹不出 UAC，所以请在管理员终端里执行——普通终端里 `smm doctor` 会直接失败为 `ERROR_ELEVATION_REQUIRED`（740）且没有弹窗；`start smm ...` 能从普通终端提权，但输出进新窗口。
+| 文档 | 内容范围 |
+| :--- | :--- |
+| [`docs/architecture.md`](docs/architecture.md) | 仓库分层边界、平铺 `src/core`、GUI 后台线程模型、Worker 反代与 R2 整合包架构 |
+| [`docs/design.md`](docs/design.md) | 桌面端界面骨架、HuskarUI 主题 Token、预览图加载、双语本地化与截图规范 |
+| [`docs/reference.md`](docs/reference.md) | 磁盘契约（`.smm_mod.json` / `.smmpack` / `.smm_manifest.json`）、`ErrorCode` 全表与 `smm_core` 接口 |
+| [`docs/development.md`](docs/development.md) | 本地编译、统一 `tests/` 测试、打包脚本、CI/CD（`test`/`build`/`release`/`deploy`）与官网开发 |
 
-## 文档体系
+另见 [`CONTRIBUTING.md`](CONTRIBUTING.md)、[`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES) 与 [`CHANGELOG.md`](CHANGELOG.md)。
 
-索引在 [docs/README.md](docs/README.md)。
+## 开源许可与免责声明
 
-| 分册 | 内容 |
-|---|---|
-| [architecture/](docs/architecture/README.md) | 分层边界、GUI 后端角色、异步与线程模型、四条主链路、取舍记录。 |
-| [design/](docs/design/README.md) | 设计 token、复用组件、无动效约定、双语与可达性。 |
-| [development/](docs/development/README.md) | 环境与预设、书写规范、测试分层、分支与提交约定。 |
-| [reference/](docs/reference/README.md) | CLI 参考、JSON 契约、错误码、磁盘格式、`smm_core` 头文件索引。 |
+本项目自有代码与文档基于 **[MIT License](LICENSE)** 开源发布，Copyright (c) 2025–2026 **RoL1n_SrP**。第三方组件完整许可文本及合规边界详见 [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES)。
 
-贡献者快速指引：[CONTRIBUTING.md](CONTRIBUTING.md)。
-
-## 开源协议与版权声明
-
-- 本项目源码采用 [MIT 许可证](LICENSE) 开源发布。
-- 第三方组件、许可证全文与声明详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [`licenses/`](licenses/)。
-- 《只狼：影逝二度》(Sekiro: Shadows Die Twice) 是 FromSoftware, Inc. 与 Activision 的注册商标。本项目为玩家社区自主开发的开源工具，与 FromSoftware 或 Activision 无任何商业关联。
+*《只狼：影逝二度》(Sekiro: Shadows Die Twice) 是 FromSoftware, Inc. 与 Activision 的注册商标。本项目为独立开源社区工具，与上述公司无任何关联或背书。任何第三方社区 Mod 及官网展示的可选社区 `.smmpack` 尝鲜整合包均归原作者所有并遵循其原始授权条款；如涉及署名更新或下架请求，请通过 Issue 联系处理。*

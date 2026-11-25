@@ -1,12 +1,5 @@
-# Line-ending policy for license texts.
-#
-# These files are redistributed verbatim inside the NSIS installer and alongside the
-# portable artifacts. On checkouts where core.autocrlf=true (as on GitHub's windows
-# runners) Git would otherwise rewrite LF to CRLF, so the *published* copies would no
-# longer be byte-identical to the upstream texts -- e.g. RARLAB's license, whose
-# clause 2 requires the verbatim text, or the SIL OFL text for the embedded fonts.
-#
-# Pinning eol=lf keeps source, repository and shipped copies identical on every platform.
+# Line-ending policy for license and notice texts.
+# Pinning eol=lf keeps source, repository and shipped copies byte-identical across platforms.
 
 LICENSE                  text eol=lf
-licenses/**              text eol=lf
+THIRD_PARTY_NOTICES      text eol=lf
