@@ -1,11 +1,15 @@
+# Static site + /releases/* streaming proxy Worker (GitHub Releases source of truth).
+# Community .smmpack showcase bundles are hosted externally on a dedicated Cloudflare R2 custom domain.
 name = "sekiro-mod-manager"
 compatibility_date = "2026-10-06"
+main = "./worker/index.ts"
 workers_dev = false
 preview_urls = false
 
 # DNS and hostname routing are managed in the Cloudflare dashboard.
 
-# Vite emits a static SPA shell plus prerendered HTML; no server Worker entry is needed.
 [assets]
 directory = "./website/dist"
+binding = "ASSETS"
 not_found_handling = "404-page"
+run_worker_first = ["/releases/*"]

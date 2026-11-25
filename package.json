@@ -1,12 +1,13 @@
 {
   "name": "sekiro-mod-manager",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@11.24.0",
   "scripts": {
     "dev": "pnpm --filter sekiro-mod-manager-website dev",
     "build": "pnpm --filter sekiro-mod-manager-website build",
     "preview": "pnpm --filter sekiro-mod-manager-website preview",
-    "test": "pnpm --filter sekiro-mod-manager-website test",
+    "test": "node --experimental-strip-types --test tests/worker/*.test.mjs tests/website/*.test.mjs",
     "lint": "pnpm --filter sekiro-mod-manager-website lint",
     "licenses:collect": "pnpm --filter sekiro-mod-manager-website licenses:collect"
   }
